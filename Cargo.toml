@@ -1,0 +1,19 @@
+[package]
+name = "move-to-ts"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+itertools = "0.10.3"
+clap = { version = "3.1.8", features = ["derive"] }
+
+move-core-types = { git = "https://github.com/move-language/move", rev = "ece13ae276e3925111bf48cd85b73af4287210e7" }
+move-compiler = { git = "https://github.com/move-language/move", rev = "ece13ae276e3925111bf48cd85b73af4287210e7" }
+move-ir-types = { git = "https://github.com/move-language/move", rev = "ece13ae276e3925111bf48cd85b73af4287210e7" }
+move-package = { git = "https://github.com/move-language/move", rev = "ece13ae276e3925111bf48cd85b73af4287210e7" }
+move-command-line-common = { git = "https://github.com/move-language/move", rev = "ece13ae276e3925111bf48cd85b73af4287210e7" }
+
+[features]
+default = ["move-core-types/address32"]
