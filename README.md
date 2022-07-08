@@ -1,13 +1,18 @@
 # move-to-ts
+```
+# from your package directory, run these
+aptos move compile  # need this to fetch dependencies
+move-to-ts # this creates a tsgen folder under build, with all the transpiled ts files
+
+```
 
 A Move-to-TypeScript transpiler & emulator. Still a work in progress. Transpilation *seems* to work but is still being 
-tested. Currently generated TypeScript code is not executable because:
+tested. 
 
-- imports are not fully implemented
-- TypeScript runtime library not fully implemented.
+Currently generated TypeScript code is not executable because its corresponding TypeScript runtime library isn't fully
+implemented yet. We should get it to a fully working state in about a week's time.
 
-Both hurdles were already solved in an earlier iteration of a similar project, so you can expect the generated 
-TypeScript to be fully executable in probably a week. I'm only putting this out as a pre-alpha to gather feedback.
+
 
 
 # Why?

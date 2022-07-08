@@ -1,17 +1,15 @@
-use crate::shared::*;
 use crate::ast_exp::*;
+use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
 use itertools::Itertools;
 use move_compiler::{
     diagnostics::{Diagnostic, Diagnostics},
     expansion::ast::{ModuleAccess, ModuleAccess_, ModuleIdent, Value, Value_},
     naming::ast::{
-        BuiltinTypeName_, FunctionSignature, StructDefinition, StructFields,
-        StructTypeParameter, Type, TypeName_, Type_,
+        BuiltinTypeName_, FunctionSignature, StructDefinition, StructFields, StructTypeParameter,
+        Type, TypeName_, Type_,
     },
-    parser::ast::{
-        Ability_, ConstantName, FunctionName, StructName, Var, Visibility,
-    },
+    parser::ast::{Ability_, ConstantName, FunctionName, StructName, Var, Visibility},
     typing::ast::*,
 };
 use move_ir_types::location::Loc;
@@ -44,7 +42,29 @@ pub fn translate_module(
 pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Diagnostic> {
     let mut writer = TsgenWriter::new();
     v.write_ts(&mut writer, c)?;
-    Ok(format!("{}", writer))
+    let mut lines = vec![
+        "import * as $ from \"@manahippo/move-to-ts\";".to_string(),
+        "import {AptosDataCache, AptosParserRepo} from \"@manahippo/move-to-ts\";".to_string(),
+        "import {U8, U64, U128} from \"@manahippo/move-to-ts\";".to_string(),
+        "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
+        "import {AtomicTypeTag, StructTag, TypeTag, VectorTag} from \"@manahippo/move-to-ts\";"
+            .to_string(),
+        "import {HexString, AptosClient} from \"aptos\";".to_string(),
+    ];
+    for package_name in c.package_imports.iter() {
+        lines.push(format!(
+            "import * as {} from \"../{}\";",
+            package_name, package_name
+        ));
+    }
+    for module_name in c.same_package_imports.iter() {
+        lines.push(format!(
+            "import * as {} from \"./{}\";",
+            module_name, module_name
+        ));
+    }
+    lines.push(format!("{}", writer));
+    Ok(lines.join("\n"))
 }
 
 impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
@@ -158,7 +178,6 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
         w.new_line();
         w.writeln(format!("export class {} ", name));
         w.short_block(|w| {
-            // FIXME
             w.writeln("static moduleAddress = moduleAddress;");
             w.writeln("static moduleName = moduleName;");
             w.writeln(format!("static structName: string = {};", quote(name)));
@@ -335,11 +354,11 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 let mident = c.current_module.unwrap();
                 let address = format_address_hex(mident.value.address);
                 if num_tparams > 0 {
-                    w.writeln("const typeParamStrings = $p.map(t=>getTypeTagFullname(t));");
+                    w.writeln("const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));");
                 } else {
                     w.writeln("const typeParamStrings = \"\";");
                 }
-                w.writeln("return buildPayload(");
+                w.writeln("return $.buildPayload(");
                 // function_name
                 w.writeln(format!(
                     "  \"{}::{}::{}\",",

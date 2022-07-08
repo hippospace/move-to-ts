@@ -1,14 +1,9 @@
 use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
 use move_compiler::{
-    diagnostics::{Diagnostic},
-    naming::ast::{
-        BuiltinTypeName, BuiltinTypeName_,
-        TParam, Type, TypeName, TypeName_, Type_,
-    },
-    parser::ast::{
-        BinOp, BinOp_, UnaryOp,
-    },
+    diagnostics::Diagnostic,
+    naming::ast::{BuiltinTypeName, BuiltinTypeName_, TParam, Type, TypeName, TypeName_, Type_},
+    parser::ast::{BinOp, BinOp_, UnaryOp},
     typing::ast::*,
 };
 use move_ir_types::location::Loc;
@@ -263,19 +258,19 @@ impl AstTsPrinter for (&Box<BuiltinFunction>, &Box<Exp>) {
         };
         use BuiltinFunction_ as F;
         match &builtin_f.value {
-            F::MoveTo(bt) => Ok(format!("$move_to($c, {}, {})", bt.term(c)?, args_str)),
-            F::MoveFrom(bt) => Ok(format!("$move_to($c, {}, {})", bt.term(c)?, args_str)),
+            F::MoveTo(bt) => Ok(format!("$c.move_to({}, {})", bt.term(c)?, args_str)),
+            F::MoveFrom(bt) => Ok(format!("$c.move_to({}, {})", bt.term(c)?, args_str)),
             F::BorrowGlobal(true, bt) => Ok(format!(
-                "$borrow_global_mut($c, {}, {})",
+                "$c.borrow_global_mut({}, {})",
                 bt.term(c)?,
                 args_str
             )),
             F::BorrowGlobal(false, bt) => {
-                Ok(format!("$borrow_global($c, {}, {})", bt.term(c)?, args_str))
+                Ok(format!("$c.borrow_global({}, {})", bt.term(c)?, args_str))
             }
-            F::Exists(bt) => Ok(format!("$exists($c, {}, {})", bt.term(c)?, args_str)),
-            F::Freeze(bt) => Ok(format!("$freeze($c, {}, {})", bt.term(c)?, args_str)),
-            F::Assert(_) => Ok(format!("$assert({})", args_str)),
+            F::Exists(bt) => Ok(format!("$c.exists({}, {})", bt.term(c)?, args_str)),
+            F::Freeze(bt) => Ok(format!("$c.freeze({}, {})", bt.term(c)?, args_str)),
+            F::Assert(_) => Ok(format!("$.assert({})", args_str)),
         }
     }
 }

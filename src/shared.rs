@@ -1,5 +1,5 @@
-use itertools::Itertools;
 use crate::tsgen_writer::TsgenWriter;
+use itertools::Itertools;
 use move_compiler::{
     diagnostics::{
         codes::{Category, DiagnosticCode, Severity},
@@ -69,7 +69,16 @@ impl Context {
     }
 
     pub fn is_current_package(&self, other: &ModuleIdent) -> bool {
-        self.current_module.unwrap().value.address == other.value.address
+        match self.current_module.unwrap().value.address {
+            // Address eq implementation ignores name, but we cannot ignore that
+            Address::Numerical(name, num) => match other.value.address {
+                Address::Numerical(name2, num2) => name == name2 && num == num2,
+                _ => false,
+            },
+            Address::NamedUnassigned(_) => {
+                self.current_module.unwrap().value.address == other.value.address
+            }
+        }
     }
 
     pub fn is_current_module(&self, other: &ModuleIdent) -> bool {

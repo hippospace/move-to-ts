@@ -1,8 +1,8 @@
+mod ast_exp;
 pub mod ast_to_ts;
 mod shared;
 pub mod tsgen_writer;
 pub mod utils;
-mod ast_exp;
 
 use clap::Parser;
 use move_command_line_common::address::NumericalAddress;
