@@ -41,3 +41,67 @@ Turn this into a development framework similar to Truffle/Anchor, and provide di
 # Experimental objectives:
 
 - Generate programmer-guided, informal proof-of-correctness
+
+
+# Example
+Here's the `AccountUtil.move` from AptosFramework:
+```
+module AptosFramework::AccountUtils {
+    use AptosFramework::Account;
+    use AptosFramework::Coin;
+    use AptosFramework::TestCoin::TestCoin;
+
+    public(script) fun create_and_fund_account(funder: &signer, account: address, amount: u64) {
+        Account::create_account(account);
+        Coin::transfer<TestCoin>(funder, account, amount);
+    }
+}
+```
+
+Here's the transpiled code:
+```
+import * as $ from "@manahippo/move-to-ts";
+import {AptosDataCache, AptosParserRepo} from "@manahippo/move-to-ts";
+import {U8, U64, U128} from "@manahippo/move-to-ts";
+import {TypeParamDeclType, FieldDeclType} from "@manahippo/move-to-ts";
+import {AtomicTypeTag, StructTag, TypeTag, VectorTag} from "@manahippo/move-to-ts";
+import {HexString, AptosClient} from "aptos";
+import * as Std from "../Std";
+import * as Account from "./Account";
+import * as Coin from "./Coin";
+export const package = "AptosFramework";
+export const moduleAddress = "0x1";
+export const moduleName = "AccountUtils";
+
+
+
+export function create_and_fund_account (
+  funder: HexString,
+  account: HexString,
+  amount: U64,
+  $c: $.AptosDataCache,
+): void {
+  Account.create_account(account, $c);
+  Coin.transfer(funder, account, amount, $c, [new StructTag(new HexString("0x1"), "TestCoin", "TestCoin", [])]);
+  return;
+}
+
+
+export function buildPayload_create_and_fund_account (
+  funder: HexString,
+  account: HexString,
+  amount: U64,
+) {
+  const typeParamStrings = "";
+  return $.buildPayload(
+    "0x1::AccountUtils::create_and_fund_account",
+    typeParamStrings,
+    [
+      account,
+      amount.toPayloadArg(),
+    ]
+  );
+
+}
+
+```
