@@ -8,6 +8,12 @@ pub struct TsgenWriter {
     lines: Vec<String>,
 }
 
+impl Default for TsgenWriter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TsgenWriter {
     pub fn new() -> Self {
         Self {

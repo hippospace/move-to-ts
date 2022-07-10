@@ -1,10 +1,12 @@
 use crate::ast_exp::*;
+use crate::ast_tests::check_test;
 use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
+use crate::utils::rename_keywords;
 use itertools::Itertools;
 use move_compiler::{
     diagnostics::{Diagnostic, Diagnostics},
-    expansion::ast::{ModuleAccess, ModuleAccess_, ModuleIdent, Value, Value_},
+    expansion::ast::ModuleIdent,
     naming::ast::{
         BuiltinTypeName_, FunctionSignature, StructDefinition, StructFields, StructTypeParameter,
         Type, TypeName_, Type_,
@@ -13,7 +15,7 @@ use move_compiler::{
     typing::ast::*,
 };
 use move_ir_types::location::Loc;
-use std::collections::{BTreeSet, VecDeque};
+use std::collections::VecDeque;
 
 pub fn translate_module(
     mident: ModuleIdent,
@@ -25,10 +27,8 @@ pub fn translate_module(
         format_address(mident.value.address),
         mident.value.module
     );
-    c.current_module = Some(mident);
-    c.same_package_imports = BTreeSet::new();
+    c.reset_for_module(mident);
     let content = to_ts_string(&(mident, mdef), c);
-    c.current_module = None;
     match content {
         Err(diag) => {
             let mut diags = Diagnostics::new();
@@ -46,6 +46,7 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
         "import * as $ from \"@manahippo/move-to-ts\";".to_string(),
         "import {AptosDataCache, AptosParserRepo} from \"@manahippo/move-to-ts\";".to_string(),
         "import {U8, U64, U128} from \"@manahippo/move-to-ts\";".to_string(),
+        "import {u8, u64, u128} from \"@manahippo/move-to-ts\";".to_string(),
         "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
         "import {AtomicTypeTag, StructTag, TypeTag, VectorTag} from \"@manahippo/move-to-ts\";"
             .to_string(),
@@ -91,10 +92,13 @@ impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
         let package_name = package_name.map_or("".to_string(), |symbol| symbol.to_string());
 
         // module meta
-        w.export_const("package", quote(&package_name));
+        w.export_const("packageName", quote(&package_name));
         w.export_const(
             "moduleAddress",
-            quote(&format_address_hex(name.value.address)),
+            format!(
+                "new HexString({})",
+                quote(&format_address_hex(name.value.address))
+            ),
         );
         w.export_const("moduleName", quote(&name.value.module.0));
         w.new_line();
@@ -122,21 +126,21 @@ impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
 impl AstTsPrinter for ConstantName {
     const CTOR_NAME: &'static str = "_ConstantName";
     fn term(&self, _c: &mut Context) -> TermResult {
-        Ok(format!("{}", self))
+        Ok(rename_keywords(self))
     }
 }
 
 impl AstTsPrinter for FunctionName {
     const CTOR_NAME: &'static str = "_FunctionName";
     fn term(&self, _c: &mut Context) -> TermResult {
-        Ok(format!("{}", self))
+        Ok(rename_keywords(self))
     }
 }
 
 impl AstTsPrinter for StructName {
     const CTOR_NAME: &'static str = "_StructName";
     fn term(&self, _c: &mut Context) -> TermResult {
-        Ok(format!("{}", self))
+        Ok(rename_keywords(self))
     }
 }
 
@@ -152,8 +156,8 @@ impl AstTsPrinter for (ConstantName, &Constant) {
                 value,
             },
         ) = self;
-        let typename = ts_constant_type(&signature, c)?;
-        w.write(format!("export const {} : {} = ", name, typename));
+        let typename = ts_constant_type(signature, c)?;
+        w.write(format!("export const {} : {} = ", name.term(c)?, typename));
         value.write_ts(w, c)?;
         w.writeln(";");
         Ok(())
@@ -165,7 +169,7 @@ impl AstTsPrinter for StructTypeParameter {
     const CTOR_NAME: &'static str = "StructTypeParameter";
     fn term(&self, _c: &mut Context) -> TermResult {
         let Self { is_phantom, param } = self;
-        let name = quote(&param.user_specified_name);
+        let name = rename_keywords(&quote(&param.user_specified_name));
         Ok(format!("{{ name: {}, isPhantom: {} }}", name, is_phantom))
     }
 }
@@ -176,11 +180,11 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
         let (name, sdef) = self;
 
         w.new_line();
-        w.writeln(format!("export class {} ", name));
+        w.writeln(format!("export class {} ", name.term(c)?));
         w.short_block(|w| {
             w.writeln("static moduleAddress = moduleAddress;");
             w.writeln("static moduleName = moduleName;");
-            w.writeln(format!("static structName: string = {};", quote(name)));
+            w.writeln(format!("static structName: string = {};", quote(&name.term(c)?)));
 
             // 0. type parameters
             // 1. static field decl
@@ -208,8 +212,8 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                     w.list(fields.key_cloned_iter(), ",", |w, (name, (_, ty))| {
                         w.write(format!(
                             "{{ name: {}, typeTag: {} }}",
-                            quote(&name),
-                            type_to_typetag_builder(&ty, &sdef.type_parameters, c)?
+                            quote(&rename_keywords(&name)),
+                            type_to_typetag_builder(ty, &sdef.type_parameters, c)?
                         ));
                         Ok(true)
                     })?;
@@ -217,9 +221,10 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                     w.new_line();
 
                     // 2. actual class fields
-                    if fields.len() > 0 {
+                    if !fields.is_empty() {
                         w.list(fields.key_cloned_iter(), "", |w, (name, (_, ty))| {
-                            w.write(format!("{}: {};", name, type_to_tstype(&ty, c)?));
+                            w.write(format!("{}: {};", rename_keywords(&name), type_to_tstype
+                                (ty, c)?));
                             Ok(true)
                         })?;
                         w.new_line();
@@ -231,7 +236,8 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                     w.indent(2, |w| {
                         // one line for each field
                         w.list(fields.key_cloned_iter(), "", |w, (name, (_, ty))| {
-                            let tstype = type_to_tstype(&ty, c)?;
+                            let name = rename_keywords(&name);
+                            let tstype = type_to_tstype(ty, c)?;
                             w.write(
                                 format!("this.{} = proto['{}'] as {};", name, name, tstype));
                             Ok(true)
@@ -243,7 +249,7 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                     // 4. static Parser
                     w.new_line();
                     w.writeln(format!("static {}Parser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : {} {{", name, name));
-                    w.writeln(format!("  const proto = parseStructProto(data, typeTag, repo, {});", name));
+                    w.writeln(format!("  const proto = $.parseStructProto(data, typeTag, repo, {});", name));
                     w.writeln(format!("  return new {}(proto, typeTag);", name));
                     w.writeln("}");
 
@@ -272,7 +278,11 @@ pub fn write_parameters(
 ) -> WriteResult {
     w.increase_indent();
     for (name, ty) in &sig.parameters {
-        w.writeln(format!("{}: {},", name, type_to_tstype(ty, c)?));
+        w.writeln(format!(
+            "{}: {},",
+            rename_keywords(name),
+            type_to_tstype(ty, c)?
+        ));
     }
     w.decrease_indent();
 
@@ -284,14 +294,15 @@ impl AstTsPrinter for (FunctionName, &Function) {
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
         let (name, func) = self;
         c.current_function_signature = Some(func.signature.clone());
-        let is_entry = if let Visibility::Script(_) = func.visibility {
-            true
-        } else {
-            false
-        };
-        w.new_line();
+        let is_entry = matches!(func.visibility, Visibility::Script(_));
+        if c.config.test {
+            let is_test = check_test(name, func, c)?;
+            if is_test {
+                w.writeln("// test func");
+            }
+        }
         // yep, regardless of visibility, we always export it
-        w.writeln(format!("export function {} (", name));
+        w.writeln(format!("export function {} (", rename_keywords(name)));
         // write parameters
         write_parameters(&func.signature, w, c)?;
         // cache & typeTags
@@ -322,7 +333,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 })?;
             }
             FunctionBody_::Defined(seq) => {
-                write_seq_possibly_return(&seq, w, c)?;
+                write_seq_possibly_return(seq, w, c)?;
             }
         }
         w.new_line();
@@ -356,7 +367,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 if num_tparams > 0 {
                     w.writeln("const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));");
                 } else {
-                    w.writeln("const typeParamStrings = \"\";");
+                    w.writeln("const typeParamStrings = [] as string[];");
                 }
                 w.writeln("return $.buildPayload(");
                 // function_name
@@ -367,7 +378,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 // type arguments
                 w.writeln("  typeParamStrings,");
                 // arguments
-                if params_no_signers.len() == 0 {
+                if params_no_signers.is_empty() {
                     w.writeln("  []");
                 } else {
                     w.writeln("  [");
@@ -391,19 +402,20 @@ impl AstTsPrinter for (FunctionName, &Function) {
     }
 }
 
-pub fn extract_builtin_type(ty: &Type) -> Result<(&BuiltinTypeName_, &Vec<Type>), ()> {
+pub fn extract_builtin_type(ty: &Type) -> Result<(&BuiltinTypeName_, &Vec<Type>), bool> {
     if let Type_::Apply(_, typename, ty_args) = &ty.value {
         if let TypeName_::Builtin(builtin) = &typename.value {
-            return Ok((&builtin.value, &ty_args));
+            return Ok((&builtin.value, ty_args));
         }
     }
-    return Err(());
+    Err(false)
 }
 
 pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &Type) -> TermResult {
+    let name = rename_keywords(name);
     if let Ok((builtin, ty_args)) = extract_builtin_type(ty) {
         match builtin {
-            BuiltinTypeName_::Bool | BuiltinTypeName_::Address => Ok(format!("{}", name)),
+            BuiltinTypeName_::Bool | BuiltinTypeName_::Address => Ok(name),
             BuiltinTypeName_::U8 | BuiltinTypeName_::U64 | BuiltinTypeName_::U128 => {
                 Ok(format!("{}.toPayloadArg()", name))
             }
@@ -413,9 +425,7 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &Type) -> TermRe
                 assert!(ty_args.len() == 1);
                 if let Ok((inner_builtin, inner_ty_args)) = extract_builtin_type(&ty_args[0]) {
                     match inner_builtin {
-                        BuiltinTypeName_::Bool | BuiltinTypeName_::Address => {
-                            Ok(format!("{}", name))
-                        }
+                        BuiltinTypeName_::Bool | BuiltinTypeName_::Address => Ok(name),
                         BuiltinTypeName_::U8 | BuiltinTypeName_::U64 | BuiltinTypeName_::U128 => {
                             Ok(format!("{}.map(u => u.toPayloadArg())", name))
                         }
@@ -478,34 +488,6 @@ pub fn is_type_signer(ty: &Type) -> bool {
     }
 }
 
-impl AstTsPrinter for ModuleAccess {
-    const CTOR_NAME: &'static str = "ModuleAccess";
-    fn term(&self, c: &mut Context) -> TermResult {
-        match &self.value {
-            ModuleAccess_::Name(n) => Ok(format!("{}", n)),
-            ModuleAccess_::ModuleAccess(m, n) => Ok(format_qualified_name(m, n, c)),
-        }
-    }
-}
-
-impl AstTsPrinter for Value {
-    // Native Literals
-    const CTOR_NAME: &'static str = "Value";
-    fn term(&self, _c: &mut Context) -> TermResult {
-        use Value_ as V;
-        match &self.value {
-            V::Address(addr) => ts_format_address_as_literal(addr, self.loc),
-            // FIXME bigInt needs type cast when assigned to U8/64/128?
-            V::InferredNum(u) => Ok(format!("bigInt(\"{}\")", u)),
-            V::U8(u) => Ok(format!("U8(\"{}\")", u)),
-            V::U64(u) => Ok(format!("U64(\"{}\")", u)),
-            V::U128(u) => Ok(format!("U128(\"{}\")", u)),
-            V::Bool(b) => Ok(format!("{}", b)),
-            V::Bytearray(v) => Ok(format!("{:?}", v)),
-        }
-    }
-}
-
 pub fn ts_constant_type(ty: &Type, c: &mut Context) -> TermResult {
     // only builtin types allowed as top-level constants
     match &ty.value {
@@ -536,18 +518,10 @@ how do we handle them systematically?
 We start at function_body, whose last SequenceItem can be handled with is_returning = true
  */
 
-pub fn is_value_yielding(e: &Box<Exp>) -> Result<bool, Diagnostic> {
-    match &e.ty.value {
-        Type_::Unit => Ok(false),
-        Type_::UnresolvedError => derr!((e.exp.loc, "Unresolvable type")),
-        _ => Ok(true),
-    }
-}
-
 pub fn write_if_else_possibly_return(
-    cond: &Box<Exp>,
-    t: &Box<Exp>,
-    f: &Box<Exp>,
+    cond: &Exp,
+    t: &Exp,
+    f: &Exp,
     w: &mut TsgenWriter,
     c: &mut Context,
 ) -> WriteResult {
@@ -558,12 +532,14 @@ pub fn write_if_else_possibly_return(
             write_seq_possibly_return(tseq, w, c)?;
         }
         _ => {
-            if is_value_yielding(t)? {
+            if need_add_return(t, c)? {
                 // lambda-wrapped / ternary
                 w.write("return ");
+                w.writeln(format!("{};", t.term(c)?));
+            } else {
+                t.write_ts(w, c)?;
+                w.writeln(";");
             }
-            // else non-returning
-            w.writeln(format!("{};", t.term(c)?));
         }
     }
     w.write("else ");
@@ -575,10 +551,13 @@ pub fn write_if_else_possibly_return(
             write_if_else_possibly_return(fcond, ft, ff, w, c)?;
         }
         _ => {
-            if is_value_yielding(f)? {
+            if need_add_return(f, c)? {
                 w.write("return ");
+                w.writeln(format!("{};", f.term(c)?));
+            } else {
+                t.write_ts(w, c)?;
+                w.writeln(";");
             }
-            w.writeln(format!("{};", f.term(c)?));
         }
     }
 
@@ -594,9 +573,12 @@ pub fn write_last_si_possibly_return(
         SequenceItem_::Seq(e) => {
             match &e.exp.value {
                 UnannotatedExp_::Unit { trailing: _ } => {
-                    w.write("return;");
+                    w.writeln("return;");
                 }
                 UnannotatedExp_::Return(_e) => {
+                    last.write_ts(w, c)?;
+                }
+                UnannotatedExp_::Abort(_e) => {
                     last.write_ts(w, c)?;
                 }
                 UnannotatedExp_::Break | UnannotatedExp_::Continue => {
@@ -618,7 +600,7 @@ pub fn write_last_si_possibly_return(
                 }
                 UnannotatedExp_::Block(_body) => {
                     // could yield value
-                    if is_value_yielding(e)? {
+                    if need_add_return(e, c)? {
                         w.write("return ");
                     }
                     last.write_ts(w, c)?;
@@ -648,7 +630,7 @@ pub fn write_seq_possibly_return(
      */
     w.writeln("{");
     w.increase_indent();
-    if seq.len() != 0 {
+    if !seq.is_empty() {
         let last = &seq[seq.len() - 1];
         let mut cloned = seq.clone();
         let stmts = cloned.make_contiguous()[0..seq.len() - 1].to_vec();
@@ -694,12 +676,26 @@ pub fn write_sequence_item(
         I::Seq(e) => match &e.exp.value {
             UnannotatedExp_::IfElse(cond, t, f) => {
                 w.writeln(format!("if ({}) ", cond.term(c)?));
+                let need_curly = ifelse_need_curly(t);
+                if need_curly {
+                    w.writeln("{");
+                }
                 t.write_ts(w, c)?;
+                if need_curly {
+                    w.writeln("}");
+                }
                 match f.exp.value {
                     UnannotatedExp_::Unit { trailing: _ } => (),
                     _ => {
                         w.write("else ");
+                        let need_curly = ifelse_need_curly(f);
+                        if need_curly {
+                            w.writeln("{");
+                        }
                         f.write_ts(w, c)?;
+                        if need_curly {
+                            w.writeln("}");
+                        }
                     }
                 }
             }
@@ -721,7 +717,7 @@ pub fn write_sequence_item(
                 // nop
             }
             _ => {
-                e.exp.write_ts(w, c)?;
+                w.write(e.term(c)?);
                 w.write(";");
             }
         },
@@ -731,10 +727,14 @@ pub fn write_sequence_item(
             w.write(";");
         }
         I::Bind(lvalues, _expected_types, e) => {
-            w.write("let ");
-            lvalues.write_ts(w, c)?;
-            w.write(" = ");
-            e.exp.write_ts(w, c)?;
+            if is_empty_lvalue_list(lvalues) {
+                w.write(e.term(c)?);
+            } else {
+                w.write("let ");
+                lvalues.write_ts(w, c)?;
+                w.write(" = ");
+                w.write(e.term(c)?);
+            }
             w.write(";");
         }
     }
@@ -749,7 +749,7 @@ impl AstTsPrinter for SequenceItem {
         // some value-yielding Block can be formatted as lambdas, and need statements to be
         // presented in the form of ts_term
         match &self.value {
-            I::Seq(e) => Ok(format!("{};", e.exp.term(c)?)),
+            I::Seq(e) => Ok(format!("{};", e.term(c)?)),
             I::Declare(lvalues) => Ok(format!("let {};", lvalues.term(c)?)),
             I::Bind(lvalues, _expected_types, e) => {
                 /*
@@ -757,7 +757,7 @@ impl AstTsPrinter for SequenceItem {
                 - lambda-needed
                 - lambda not needed
                  */
-                Ok(format!("let {} = {};", lvalues.term(c)?, e.exp.term(c)?))
+                Ok(format!("let {} = {};", lvalues.term(c)?, e.term(c)?))
             }
         }
     }

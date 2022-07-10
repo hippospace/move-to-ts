@@ -1,32 +1,49 @@
 use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
+use crate::utils::rename_keywords;
 use move_compiler::{
     diagnostics::Diagnostic,
+    expansion::ast::{ModuleAccess, ModuleAccess_, Value, Value_},
     naming::ast::{BuiltinTypeName, BuiltinTypeName_, TParam, Type, TypeName, TypeName_, Type_},
     parser::ast::{BinOp, BinOp_, UnaryOp},
     typing::ast::*,
 };
 use move_ir_types::location::Loc;
 
-impl AstTsPrinter for UnannotatedExp {
-    const CTOR_NAME: &'static str = "UnannotatedExp";
-    // print all variants as non-statement expressions. I.e. for statement-only expressions
-    // (while, loop, block) we'll panic, as that should have been handled by SequenceItem
+pub fn ifelse_need_curly(body: &Exp) -> bool {
+    match &body.exp.value {
+        UnannotatedExp_::While(_, _)
+        | UnannotatedExp_::IfElse(_, _, _)
+        | UnannotatedExp_::Block(_)
+        | UnannotatedExp_::Loop {
+            has_break: _,
+            body: _,
+        } => false,
+        _ => true,
+    }
+}
+
+impl AstTsPrinter for Exp {
+    const CTOR_NAME: &'static str = "Exp";
     fn term(&self, c: &mut Context) -> TermResult {
+        let Exp { ty: exp_ty, exp } = self;
         use UnannotatedExp_ as E;
-        match &self.value {
-            E::Unit { trailing: _ } => Ok("void".to_string()),
+        match &exp.value {
+            E::Unit { trailing: _ } => {
+                unreachable!("Cannot output Unit as value");
+                //derr!((exp.loc, "Cannot output Unit as value"))
+            }
             E::Value(v) => Ok(v.term(c)?),
             E::Move {
                 from_user: _,
                 var: v,
-            } => Ok(format!("{}", v)),
+            } => Ok(rename_keywords(v)),
             E::Copy {
                 from_user: _,
                 var: v,
-            } => Ok(format!("{}", v)),
-            E::Use(v) => Ok(format!("{}", v)),
-            E::Constant(None, c) => Ok(format!("{}", c)),
+            } => Ok(rename_keywords(v)),
+            E::Use(v) => Ok(rename_keywords(v)),
+            E::Constant(None, c) => Ok(rename_keywords(c)),
             E::Constant(Some(m), cc) => Ok(format_qualified_name(m, cc, c)),
             E::ModuleCall(mcall) => {
                 // ModuleCall
@@ -36,8 +53,8 @@ impl AstTsPrinter for UnannotatedExp {
                 // BuiltinCall
                 Ok((bf, rhs).term(c)?)
             }
-            E::Vector(_loc, _usize, _ty, elems) => Ok(elems.exp.term(c)?),
-            E::Pack(m, s, tys, fields) => {
+            E::Vector(_loc, _usize, _ty, elems) => Ok(elems.term(c)?),
+            E::Pack(m, s, _tys, fields) => {
                 // ["Pack", "StructFullname", typeParams, fields]
                 // construct a new struct/class value using proto constructor
                 // constructor(proto: any, public typeTag: TypeTag)
@@ -48,8 +65,8 @@ impl AstTsPrinter for UnannotatedExp {
                         Ok(format!("{}: {}", fname, e.term(c)?))
                     })?;
                 let proto = format!("{{ {} }}", inner_fields);
-                let ty_args = format!("[{}]", comma_term(tys, c, |ty, c| type_to_typetag(ty, c))?);
-                Ok(format!("new {}({}, {})", struct_name, proto, ty_args))
+                let tag = type_to_typetag(exp_ty, c)?;
+                Ok(format!("new {}({}, {})", struct_name, proto, tag))
             }
             E::IfElse(b, t, f) => {
                 // treat this as the ternary operator ? : and handle its statement case from
@@ -62,39 +79,39 @@ impl AstTsPrinter for UnannotatedExp {
                 ))
             }
             E::While(_b, _e) => {
-                derr!((self.loc, "While cannot be printed as ts term"))
+                derr!((exp.loc, "While cannot be printed as ts term"))
             }
             E::Loop {
                 has_break: _,
                 body: _,
             } => {
-                derr!((self.loc, "Loop cannot be printed as ts term"))
+                derr!((exp.loc, "Loop cannot be printed as ts term"))
             }
             E::Block(seq) => {
-                assert!(seq.len() > 0);
+                assert!(!seq.is_empty());
                 let last = &seq[seq.len() - 1];
                 if seq.len() == 1 {
                     if let SequenceItem_::Seq(e) = &last.value {
                         assert_ne!(e.ty.value, Type_::Unit, "Cannot print block as ts term");
                         e.term(c)
                     } else {
-                        assert!(false);
-                        derr!((self.loc, "Block cannot be printed as ts term"))
+                        unreachable!("Block cannot be printed as ts term");
+                        //derr!((exp.loc, "Block cannot be printed as ts term"))
                     }
                 } else {
                     let mut cloned = seq.clone();
                     let stmts = cloned.make_contiguous()[0..seq.len() - 1].to_vec();
-                    let stmts_str = comma_term(&stmts, c, |si, c| si.term(c))?;
+                    let stmts_str = semicolon_term(&stmts, c, |si, c| si.term(c))?;
                     if let SequenceItem_::Seq(e) = &last.value {
                         if e.ty.value == Type_::Unit {
-                            assert!(false);
-                            return derr!((self.loc, "Block cannot be printed as ts term"));
+                            unreachable!("Block cannot be printed as ts term");
+                            //return derr!((exp.loc, "Block cannot be printed as ts term"));
                         }
                         let ret_val = e.term(c)?;
                         Ok(format!("(()=>{{ {} return {}; }})()", stmts_str, ret_val))
                     } else {
-                        assert!(false);
-                        derr!((self.loc, "Block cannot be printed as ts term"))
+                        unreachable!("Block cannot be printed as ts term");
+                        //derr!((exp.loc, "Block cannot be printed as ts term"))
                     }
                 }
             }
@@ -111,14 +128,24 @@ impl AstTsPrinter for UnannotatedExp {
                 - lambda-needed
                 - lambda not needed
                  */
-                Ok(format!("{} = {}", lvalues.term(c)?, rhs.term(c)?))
+                if is_empty_lvalue_list(lvalues) {
+                    Ok(rhs.term(c)?)
+                } else {
+                    Ok(format!("{} = {}", lvalues.term(c)?, rhs.term(c)?))
+                }
             }
 
             // dereferencing mutation
             E::Mutate(lhs, rhs) => Ok(format!("{} = {}", lhs.term(c)?, rhs.term(c)?)),
 
-            E::Return(e) => Ok(format!("return {}", e.term(c)?)),
-            E::Abort(e) => Ok(format!("abort({})", e.term(c)?)),
+            E::Return(e) => {
+                if is_type_void(&e.ty)? {
+                    Ok("return".to_string())
+                } else {
+                    Ok(format!("return {}", e.term(c)?))
+                }
+            }
+            E::Abort(e) => Ok(format!("throw {}", e.term(c)?)),
             E::Break => Ok("break".to_string()),
             E::Continue => Ok("continue".to_string()),
             E::Dereference(e) => e.term(c),
@@ -130,20 +157,25 @@ impl AstTsPrinter for UnannotatedExp {
                 // op_u64(l, r)
                 (l, op, ty, r).term(c)
             }
-            E::Borrow(_mut_, e, f) => Ok(format!("{}.{}", e.term(c)?, f)),
+            E::Borrow(_mut_, e, f) => Ok(format!("{}.{}", e.term(c)?, rename_keywords(f))),
             E::TempBorrow(_mut_, e) => e.term(c),
             E::BorrowLocal(_mut, v) => Ok(format!("{}", v)),
             E::Cast(e, ty) => {
                 if let Type_::Apply(_, tname, _) = &ty.value {
                     if let TypeName_::Builtin(builtin) = &tname.value {
-                        return Ok(format!("{}({})", builtin.term(c)?, e.term(c)?));
+                        return Ok(format!(
+                            "{}({})",
+                            builtin_cast_name(builtin, c)?,
+                            e.term(c)?
+                        ));
                     }
                 }
-                derr!((self.loc, "Cannot cast to non-builtin type"))
+                derr!((exp.loc, "Cannot cast to non-builtin type"))
             }
-            E::Annotate(_e, _ty) => {
+            E::Annotate(e, _ty) => {
                 // FIXME
-                derr!((self.loc, "Unable to handle  Annotate"))
+                //derr!((exp.loc, "Unable to handle  Annotate"))
+                Ok(e.term(c)?)
                 /*
                 w.write("annot(");
                 e.write_value(w);
@@ -154,29 +186,36 @@ impl AstTsPrinter for UnannotatedExp {
             }
             E::Spec(_, _) => Ok("".to_string()),
             E::UnresolvedError => {
-                derr!((self.loc, "Encountered UnresolvedError"))
+                derr!((exp.loc, "Encountered UnresolvedError"))
             }
         }
-    }
-}
-
-impl AstTsPrinter for Exp {
-    const CTOR_NAME: &'static str = "Exp";
-    fn term(&self, c: &mut Context) -> TermResult {
-        let Exp { ty: _, exp } = self;
-        exp.term(c)
     }
 
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
         match &self.exp.value {
             UnannotatedExp_::IfElse(cond, t, f) => {
-                w.writeln(format!("if ({}) ", cond.term(c)?));
+                let need_curly = ifelse_need_curly(t);
+                w.writeln(format!(
+                    "if ({}) {}",
+                    cond.term(c)?,
+                    if need_curly { "{" } else { "" }
+                ));
                 t.write_ts(w, c)?;
+                if need_curly {
+                    w.new_line();
+                    w.writeln("}");
+                }
                 match f.exp.value {
                     UnannotatedExp_::Unit { trailing: _ } => Ok(()),
                     _ => {
-                        w.write(" else ");
-                        f.write_ts(w, c)
+                        let need_curly = ifelse_need_curly(t);
+                        w.writeln(format!(" else {}", if need_curly { "{" } else { "" }));
+                        f.write_ts(w, c)?;
+                        if need_curly {
+                            w.new_line();
+                            w.writeln("}");
+                        }
+                        Ok(())
                     }
                 }
             }
@@ -189,17 +228,20 @@ impl AstTsPrinter for Exp {
                 body.write_ts(w, c)
             }
             UnannotatedExp_::Block(body) => body.write_ts(w, c),
-            _ => self.exp.write_ts(w, c),
+            _ => {
+                w.write(self.term(c)?);
+                Ok(())
+            }
         }
     }
 }
 
 pub fn format_type_args_at_instantiation(type_args: &Vec<Type>, c: &mut Context) -> TermResult {
-    if type_args.len() == 0 {
+    if type_args.is_empty() {
         return Ok("".to_string());
     }
-    let inner = comma_term(type_args, c, |t, c| type_to_typetag(t, c))?;
-    Ok(format!("[{}]", inner))
+    let inner = comma_term(type_args, c, type_to_typetag)?;
+    Ok(format!("[{}] as TypeTag[]", inner))
 }
 
 impl AstTsPrinter for ModuleCall {
@@ -224,7 +266,7 @@ impl AstTsPrinter for ModuleCall {
         let tparams_ = format_type_args_at_instantiation(type_arguments, c)?;
         if arguments.ty.value == Type_::Unit {
             // no arguments
-            if type_arguments.len() == 0 {
+            if type_arguments.is_empty() {
                 Ok(format!("{}($c)", func_name))
             } else {
                 Ok(format!("{}($c, {})", func_name, tparams_))
@@ -258,18 +300,36 @@ impl AstTsPrinter for (&Box<BuiltinFunction>, &Box<Exp>) {
         };
         use BuiltinFunction_ as F;
         match &builtin_f.value {
-            F::MoveTo(bt) => Ok(format!("$c.move_to({}, {})", bt.term(c)?, args_str)),
-            F::MoveFrom(bt) => Ok(format!("$c.move_to({}, {})", bt.term(c)?, args_str)),
-            F::BorrowGlobal(true, bt) => Ok(format!(
-                "$c.borrow_global_mut({}, {})",
-                bt.term(c)?,
+            F::MoveTo(bt) => Ok(format!(
+                "$c.move_to({}, {})",
+                type_to_typetag(bt, c)?,
                 args_str
             )),
-            F::BorrowGlobal(false, bt) => {
-                Ok(format!("$c.borrow_global({}, {})", bt.term(c)?, args_str))
-            }
-            F::Exists(bt) => Ok(format!("$c.exists({}, {})", bt.term(c)?, args_str)),
-            F::Freeze(bt) => Ok(format!("$c.freeze({}, {})", bt.term(c)?, args_str)),
+            F::MoveFrom(bt) => Ok(format!(
+                "$c.move_from<{}>({}, {})",
+                type_to_tstype(bt, c)?,
+                type_to_typetag(bt, c)?,
+                args_str
+            )),
+            F::BorrowGlobal(true, bt) => Ok(format!(
+                "$c.borrow_global_mut<{}>({}, {})",
+                type_to_tstype(bt, c)?,
+                type_to_typetag(bt, c)?,
+                args_str
+            )),
+            F::BorrowGlobal(false, bt) => Ok(format!(
+                "$c.borrow_global<{}>({}, {})",
+                type_to_tstype(bt, c)?,
+                type_to_typetag(bt, c)?,
+                args_str
+            )),
+            F::Exists(bt) => Ok(format!(
+                "$c.exists({}, {})",
+                type_to_typetag(bt, c)?,
+                args_str
+            )),
+            F::Freeze(_bt) => Ok("/*freeze NOP*/".to_string()), // freeze is NOP according to
+            // interpreter
             F::Assert(_) => Ok(format!("$.assert({})", args_str)),
         }
     }
@@ -306,8 +366,8 @@ impl AstTsPrinter for Type {
                 if let Some(idx) = c.get_tparam_index(tp) {
                     Ok(format!("$p[{}]", idx))
                 } else {
-                    assert!(false);
-                    derr!((self.loc, "Non-existent type parameter"))
+                    unreachable!("Non-existent type parameter");
+                    //derr!((self.loc, "Non-existent type parameter"))
                 }
             }
             Type_::Apply(_abilities_opt, m, ss) => {
@@ -339,10 +399,7 @@ impl AstTsPrinter for Type {
 impl AstTsPrinter for Vec<Type> {
     const CTOR_NAME: &'static str = "TypeList";
     fn term(&self, c: &mut Context) -> TermResult {
-        Ok(format!(
-            "[{}]",
-            comma_term(self, c, |t, c| type_to_tstype(t, c))?
-        ))
+        Ok(format!("[{}]", comma_term(self, c, type_to_tstype)?))
     }
 }
 
@@ -375,6 +432,18 @@ impl AstTsPrinter for BuiltinTypeName {
     }
 }
 
+pub fn builtin_cast_name(builtin: &BuiltinTypeName, _c: &mut Context) -> TermResult {
+    match builtin.value {
+        BuiltinTypeName_::Address => derr!((builtin.loc, "Cannot cast to address")),
+        BuiltinTypeName_::Bool => derr!((builtin.loc, "Cannot cast to bool")),
+        BuiltinTypeName_::U8 => Ok("u8".to_string()),
+        BuiltinTypeName_::U64 => Ok("u64".to_string()),
+        BuiltinTypeName_::U128 => Ok("u128".to_string()),
+        BuiltinTypeName_::Signer => derr!((builtin.loc, "Cannot cast to signer")),
+        BuiltinTypeName_::Vector => derr!((builtin.loc, "Cannot cast to vector")),
+    }
+}
+
 impl AstTsPrinter for LValueList {
     const CTOR_NAME: &'static str = "LValueList";
     fn term(&self, c: &mut Context) -> TermResult {
@@ -387,6 +456,33 @@ impl AstTsPrinter for LValueList {
     }
 }
 
+pub fn is_empty_lvalue_list(lvalues: &LValueList) -> bool {
+    if lvalues.value.is_empty() {
+        true
+    } else {
+        for lvalue in lvalues.value.iter() {
+            if !is_empty_lvalue(lvalue) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+pub fn is_empty_lvalue(lvalue: &LValue) -> bool {
+    use LValue_ as L;
+    match &lvalue.value {
+        L::Ignore => true,
+        L::Unpack(_, _, _, fields) => fields
+            .key_cloned_iter()
+            .all(|(_, (_, (_, as_lvalue)))| is_empty_lvalue(as_lvalue)),
+        L::BorrowUnpack(_, _, _, _, fields) => fields
+            .key_cloned_iter()
+            .all(|(_, (_, (_, as_lvalue)))| is_empty_lvalue(as_lvalue)),
+        _ => false,
+    }
+}
+
 impl AstTsPrinter for LValue {
     const CTOR_NAME: &'static str = "LValue";
     fn term(&self, c: &mut Context) -> TermResult {
@@ -396,19 +492,37 @@ impl AstTsPrinter for LValue {
             L::Var(v, _st) => Ok(format!("{}", v)),
             L::Unpack(_, _, _, fields) => Ok(format!(
                 "{{ {} }}",
-                comma_term(fields.key_cloned_iter(), c, |kv, c| {
-                    let name = kv.0;
-                    let as_name = kv.1 .1 .1.term(c)?;
-                    Ok(format!("{}: {}", name, as_name))
-                })?
+                comma_term_opt(
+                    fields.key_cloned_iter(),
+                    c,
+                    |kv, c| {
+                        let name = rename_keywords(&kv.0);
+                        let as_name = rename_keywords(&kv.1 .1 .1.term(c)?);
+                        if as_name.is_empty() {
+                            Ok("".to_string())
+                        } else {
+                            Ok(format!("{}: {}", name, as_name))
+                        }
+                    },
+                    false
+                )?
             )),
             L::BorrowUnpack(_, _, _, _, fields) => Ok(format!(
                 "{{ {} }}",
-                comma_term(fields.key_cloned_iter(), c, |kv, c| {
-                    let name = kv.0;
-                    let as_name = kv.1 .1 .1.term(c)?;
-                    Ok(format!("{}: {}", name, as_name))
-                })?
+                comma_term_opt(
+                    fields.key_cloned_iter(),
+                    c,
+                    |kv, c| {
+                        let name = rename_keywords(&kv.0);
+                        let as_name = rename_keywords(&kv.1 .1 .1.term(c)?);
+                        if as_name.is_empty() {
+                            Ok("".to_string())
+                        } else {
+                            Ok(format!("{}: {}", name, as_name))
+                        }
+                    },
+                    false
+                )?
             )),
         }
     }
@@ -427,7 +541,7 @@ impl AstTsPrinter for TParam {
             user_specified_name,
             abilities: _,
         } = self;
-        Ok(format!("{}", quote(user_specified_name)))
+        Ok(quote(user_specified_name))
     }
 }
 
@@ -449,24 +563,24 @@ impl AstTsPrinter for BinOp {
 
 pub fn dynamic_binop_name(op: BinOp_) -> &'static str {
     match op {
-        BinOp_::Add => "dyn_add",
-        BinOp_::Sub => "dyn_sub",
-        BinOp_::Mul => "dyn_mul",
-        BinOp_::Mod => "dyn_mod",
-        BinOp_::Div => "dyn_div",
-        BinOp_::BitOr => "dyn_bitor",
-        BinOp_::BitAnd => "dyn_bitand",
-        BinOp_::Xor => "dyn_xor",
-        BinOp_::Shl => "dyn_shl",
-        BinOp_::Shr => "dyn_shr",
-        BinOp_::And => "dyn_and",
-        BinOp_::Or => "dyn_or",
-        BinOp_::Eq => "dyn_eq",
-        BinOp_::Neq => "dyn_neq",
-        BinOp_::Lt => "dyn_lt",
-        BinOp_::Gt => "dyn_gt",
-        BinOp_::Le => "dyn_le",
-        BinOp_::Ge => "dyn_ge",
+        BinOp_::Add => "$.dyn_add",
+        BinOp_::Sub => "$.dyn_sub",
+        BinOp_::Mul => "$.dyn_mul",
+        BinOp_::Mod => "$.dyn_mod",
+        BinOp_::Div => "$.dyn_div",
+        BinOp_::BitOr => "$.dyn_bitor",
+        BinOp_::BitAnd => "$.dyn_bitand",
+        BinOp_::Xor => "$.dyn_xor",
+        BinOp_::Shl => "$.dyn_shl",
+        BinOp_::Shr => "$.dyn_shr",
+        BinOp_::And => "$.dyn_and",
+        BinOp_::Or => "$.dyn_or",
+        BinOp_::Eq => "$.dyn_eq",
+        BinOp_::Neq => "$.dyn_neq",
+        BinOp_::Lt => "$.dyn_lt",
+        BinOp_::Gt => "$.dyn_gt",
+        BinOp_::Le => "$.dyn_le",
+        BinOp_::Ge => "$.dyn_ge",
         _ => panic!("Unsupported binop: {}", op),
     }
 }
@@ -474,8 +588,8 @@ pub fn dynamic_binop_name(op: BinOp_) -> &'static str {
 pub fn handle_binop_for_type(
     ty: &Type, // usually type of lhs, but also inner type of Ref
     binop: &BinOp,
-    lhs: &Box<Exp>,
-    rhs: &Box<Exp>,
+    lhs: &Exp,
+    rhs: &Exp,
     c: &mut Context,
 ) -> TermResult {
     match &ty.value {
@@ -557,7 +671,7 @@ pub fn handle_binop_for_type(
                     }
                 }
                 TypeName_::ModuleType(_mident, _s) => {
-                    Ok(format!("deep_eq({}, {})", lhs.term(c)?, rhs.term(c)?))
+                    Ok(format!("$.deep_eq({}, {})", lhs.term(c)?, rhs.term(c)?))
                 }
                 _ => derr!((
                     binop.loc,
@@ -571,16 +685,17 @@ pub fn handle_binop_for_type(
         }
         Type_::Param(tp) => {
             let fname = dynamic_binop_name(binop.value);
+            let tparams_ = format!("$p[{}]", c.get_tparam_index(tp).unwrap());
             Ok(format!(
                 "{}({}, {}, {})",
                 fname,
-                format!("$p[{}]", c.get_tparam_index(tp).unwrap()),
+                tparams_,
                 lhs.term(c)?,
                 rhs.term(c)?
             ))
         }
         Type_::Ref(_, ty) => match &binop.value {
-            BinOp_::Eq | BinOp_::Neq => handle_binop_for_type(&ty, binop, lhs, rhs, c),
+            BinOp_::Eq | BinOp_::Neq => handle_binop_for_type(ty, binop, lhs, rhs, c),
             _ => panic!("Reftype does not have this binop: {}", binop),
         },
         _ => panic!("Not sure how to handle binop for {}", lhs.ty.term(c)?),
@@ -591,7 +706,7 @@ impl AstTsPrinter for (&Box<Exp>, &BinOp, &Box<Type>, &Box<Exp>) {
     const CTOR_NAME: &'static str = "BinopExp";
     fn term(&self, c: &mut Context) -> TermResult {
         let (lhs, binop, _ty, rhs) = *self;
-        handle_binop_for_type(&lhs.ty, &binop, lhs, rhs, c)
+        handle_binop_for_type(&lhs.ty, binop, lhs, rhs, c)
     }
 }
 
@@ -599,5 +714,39 @@ impl AstTsPrinter for UnaryOp {
     const CTOR_NAME: &'static str = "UnaryOp";
     fn term(&self, _c: &mut Context) -> TermResult {
         Ok(format!("{}", self))
+    }
+}
+
+impl AstTsPrinter for ModuleAccess {
+    const CTOR_NAME: &'static str = "ModuleAccess";
+    fn term(&self, c: &mut Context) -> TermResult {
+        match &self.value {
+            ModuleAccess_::Name(n) => Ok(format!("{}", n)),
+            ModuleAccess_::ModuleAccess(m, n) => Ok(format_qualified_name(m, n, c)),
+        }
+    }
+}
+
+impl AstTsPrinter for Value {
+    // Native Literals
+    const CTOR_NAME: &'static str = "Value";
+    fn term(&self, _c: &mut Context) -> TermResult {
+        use Value_ as V;
+        match &self.value {
+            V::Address(addr) => ts_format_address_as_literal(addr, self.loc),
+            // FIXME bigInt needs type cast when assigned to U8/64/128?
+            V::InferredNum(u) => Ok(format!("bigInt(\"{}\")", u)),
+            V::U8(u) => Ok(format!("u8(\"{}\")", u)),
+            V::U64(u) => Ok(format!("u64(\"{}\")", u)),
+            V::U128(u) => Ok(format!("u128(\"{}\")", u)),
+            V::Bool(b) => Ok(format!("{}", b)),
+            V::Bytearray(v) => {
+                let mut vals = vec![];
+                for val in v {
+                    vals.push(format!("u8(\"{}\")", *val));
+                }
+                Ok(format!("[{}]", vals.join(", ")))
+            }
+        }
     }
 }
