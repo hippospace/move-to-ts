@@ -7,11 +7,9 @@ use move_compiler::{
         Diagnostic,
     },
     expansion::ast::{Address, Attribute, ModuleIdent},
-    naming::ast::{
-        BuiltinTypeName_, FunctionSignature, StructTypeParameter, TParam, Type, TypeName_, Type_,
-    },
+    hlir::ast::*,
+    naming::ast::{BuiltinTypeName_, StructTypeParameter, TParam},
     parser::ast::FunctionName,
-    typing::ast::{Exp, UnannotatedExp_},
 };
 use move_ir_types::location::Loc;
 use std::collections::{BTreeMap, BTreeSet};
@@ -71,8 +69,9 @@ pub struct MoveToTsOptions {
     pub package_json_name: String,
 }
 
-use crate::utils::rename_keywords;
+use crate::utils::rename;
 pub(crate) use derr;
+use move_command_line_common::address::NumericalAddress;
 
 pub struct Context {
     pub current_module: Option<ModuleIdent>,
@@ -88,7 +87,12 @@ pub struct Context {
     // configs
     pub config: MoveToTsOptions,
     // unit test info
-    pub tests: Vec<(FunctionName, FunctionSignature, Attribute)>,
+    pub tests: Vec<(
+        FunctionName,
+        FunctionSignature,
+        Attribute,
+        Option<Attribute>,
+    )>,
 }
 
 pub fn is_same_package(a1: Address, a2: Address) -> bool {
@@ -206,6 +210,7 @@ pub fn comma_term<T, F: Fn(T, &mut Context) -> TermResult>(
     comma_term_opt(items, c, f, true)
 }
 
+/*
 pub fn semicolon_term<T, F: Fn(T, &mut Context) -> TermResult>(
     items: impl std::iter::IntoIterator<Item = T>,
     c: &mut Context,
@@ -220,6 +225,7 @@ pub fn semicolon_term<T, F: Fn(T, &mut Context) -> TermResult>(
     }
     Ok(parts.join("; "))
 }
+ */
 
 pub fn format_address(address: Address) -> String {
     // this one prefers Name if it exists
@@ -238,6 +244,13 @@ pub fn format_address_hex(address: Address) -> String {
     }
 }
 
+pub fn ts_format_numerical_address(numerical: &NumericalAddress) -> TermResult {
+    Ok(format!(
+        "new HexString(\"{}\")",
+        numerical.into_inner().to_hex_literal()
+    ))
+}
+
 pub fn ts_format_address_as_literal(addr: &Address, loc: Loc) -> TermResult {
     /*
     e.g.:
@@ -245,10 +258,7 @@ pub fn ts_format_address_as_literal(addr: &Address, loc: Loc) -> TermResult {
     - AptosFramework.address
      */
     match addr {
-        Address::Numerical(_opt_name, numerical) => Ok(format!(
-            "new HexString(\"{}\")",
-            numerical.value.into_inner().to_hex_literal()
-        )),
+        Address::Numerical(_opt_name, numerical) => ts_format_numerical_address(&numerical.value),
         Address::NamedUnassigned(name) => derr!((loc, format!("Unassigned address: {}", name))),
     }
 }
@@ -258,7 +268,7 @@ pub fn format_qualified_name(
     name: &impl fmt::Display,
     c: &mut Context,
 ) -> String {
-    let name = rename_keywords(name);
+    let name = rename(name);
     if c.is_current_module(mident) {
         // name exists in same module, no qualifier needed
         name
@@ -274,13 +284,13 @@ pub fn format_qualified_name(
     }
 }
 
-pub fn type_to_typetag_builder(
-    ty: &Type,
+pub fn base_type_to_typetag_builder(
+    base_ty: &BaseType,
     tparams: &Vec<StructTypeParameter>,
     c: &mut Context,
 ) -> TermResult {
-    match &ty.value {
-        Type_::Param(tp) => {
+    match &base_ty.value {
+        BaseType_::Param(tp) => {
             let idx = tparams
                 .iter()
                 .find_position(|tp2| tp2.param.user_specified_name == tp.user_specified_name)
@@ -288,14 +298,11 @@ pub fn type_to_typetag_builder(
                 .0;
             Ok(format!("new $.TypeParamIdx({})", idx))
         }
-        Type_::Unit => derr!((ty.loc, "Cannot construct Unit type")),
-        Type_::Ref(_mut, _s) => derr!((ty.loc, "Cannot construct typetag for Ref type")),
-        // Apply-Multiple
-        Type_::Apply(_abilities_opt, typename, ss) => match &typename.value {
+        BaseType_::Apply(_, typename, ss) => match &typename.value {
             TypeName_::Builtin(builtin) => match &builtin.value {
                 BuiltinTypeName_::Vector => {
                     assert!(ss.len() == 1);
-                    let inner_builder = type_to_typetag_builder(&ss[0], tparams, c)?;
+                    let inner_builder = base_type_to_typetag_builder(&ss[0], tparams, c)?;
                     Ok(format!("new VectorTag({})", inner_builder))
                 }
                 BuiltinTypeName_::Bool => Ok("AtomicTypeTag.Bool".to_string()),
@@ -310,38 +317,32 @@ pub fn type_to_typetag_builder(
                 let modname = mident.value.module;
                 let tparams = format!(
                     "[{}]",
-                    comma_term(ss, c, |t, c| type_to_typetag_builder(t, tparams, c))?
+                    comma_term(ss, c, |t, c| base_type_to_typetag_builder(t, tparams, c))?
                 );
                 Ok(format!(
                     "new StructTag(new HexString({}), {}, {}, {})",
                     quote(&address),
                     quote(&modname),
-                    quote(sname),
+                    quote(&sname),
                     tparams
                 ))
             }
-            TypeName_::Multiple(_) => derr!((ty.loc, "Cannot construct typeTag for tuples")),
         },
-        Type_::Var(_tv) => derr!((ty.loc, "Received Type variable")),
-        Type_::Anything => derr!((ty.loc, "Cannot construct typetag for the Anything type")),
-        Type_::UnresolvedError => derr!((ty.loc, "Received Unresolved Type")),
+        _ => derr!((base_ty.loc, "Received Unresolved Type")),
     }
 }
 
-pub fn type_to_typetag(ty: &Type, c: &mut Context) -> TermResult {
-    match &ty.value {
-        Type_::Param(tp) => {
+pub fn base_type_to_typetag(base_ty: &BaseType, c: &mut Context) -> TermResult {
+    match &base_ty.value {
+        BaseType_::Param(tp) => {
             let idx = c.get_tparam_index(tp).unwrap();
             Ok(format!("$p[{}]", idx))
         }
-        Type_::Unit => derr!((ty.loc, "Cannot construct Unit type")),
-        Type_::Ref(_mut, _s) => derr!((ty.loc, "Cannot construct typetag for Ref type")),
-        // Apply-Multiple
-        Type_::Apply(_abilities_opt, typename, ss) => match &typename.value {
+        BaseType_::Apply(_, typename, ss) => match &typename.value {
             TypeName_::Builtin(builtin) => match &builtin.value {
                 BuiltinTypeName_::Vector => {
                     assert!(ss.len() == 1);
-                    let inner_builder = type_to_typetag(&ss[0], c)?;
+                    let inner_builder = base_type_to_typetag(&ss[0], c)?;
                     Ok(format!("new VectorTag({})", inner_builder))
                 }
                 BuiltinTypeName_::Bool => Ok("AtomicTypeTag.Bool".to_string()),
@@ -354,7 +355,7 @@ pub fn type_to_typetag(ty: &Type, c: &mut Context) -> TermResult {
             TypeName_::ModuleType(mident, sname) => {
                 let address = format_address_hex(mident.value.address);
                 let modname = mident.value.module;
-                let tparams = format!("[{}]", comma_term(ss, c, type_to_typetag)?);
+                let tparams = format!("[{}]", comma_term(ss, c, base_type_to_typetag)?);
                 Ok(format!(
                     "new StructTag(new HexString({}), {}, {}, {})",
                     quote(&address),
@@ -363,40 +364,19 @@ pub fn type_to_typetag(ty: &Type, c: &mut Context) -> TermResult {
                     tparams
                 ))
             }
-            TypeName_::Multiple(_) => derr!((ty.loc, "Cannot construct typeTag for tuples")),
         },
-        Type_::Var(_tv) => derr!((ty.loc, "Received Type variable")),
-        Type_::Anything => derr!((ty.loc, "Cannot construct typetag for the Anything type")),
-        Type_::UnresolvedError => derr!((ty.loc, "Received Unresolved Type")),
+        BaseType_::UnresolvedError => derr!((base_ty.loc, "Received Unresolved Type")),
+        BaseType_::Unreachable => derr!((base_ty.loc, "Received Unresolved Type")),
     }
 }
 
-/*
-pub fn print_type(ty: &Type, c: &mut Context) -> TermResult {
+pub fn type_to_typetag(ty: &Type, c: &mut Context) -> TermResult {
     match &ty.value {
-        Type_::Ref(_, inner) => Ok(format!("Ref {}", print_type(&inner, c)?)),
-        Type_::Unit => Ok("Unit".to_string()),
-        Type_::Param(name) => Ok(format!("param {}", name.user_specified_name)),
-        Type_::Apply(_, tname, _ss) => tname.term(c),
-        Type_::Var(tvar) => Ok("TypeVariable".to_string()),
-        Type_::Anything => Ok("anything".to_string()),
-        Type_::UnresolvedError => Ok("UnresolvedError".to_string()),
-    }
-}
- */
-
-pub fn is_type_void(ty: &Type) -> Result<bool, Diagnostic> {
-    match &ty.value {
-        Type_::Unit => Ok(true),
-        Type_::Ref(_, inner) => is_type_void(inner),
-        Type_::UnresolvedError => derr!((ty.loc, "Unresolvable type")),
-        _ => Ok(false),
-    }
-}
-
-pub fn need_add_return(e: &Exp, _c: &mut Context) -> Result<bool, Diagnostic> {
-    match &e.exp.value {
-        UnannotatedExp_::Return(_) | UnannotatedExp_::Abort(_) => Ok(false),
-        _ => Ok(!is_type_void(&e.ty)?),
+        Type_::Unit => derr!((ty.loc, "Cannot construct Unit type")),
+        Type_::Single(single_ty) => match &single_ty.value {
+            SingleType_::Ref(_, _) => derr!((ty.loc, "Cannot construct typetag for Ref type")),
+            SingleType_::Base(base_ty) => base_type_to_typetag(base_ty, c),
+        },
+        Type_::Multiple(_) => derr!((ty.loc, "Cannot construct typeTag for tuples")),
     }
 }

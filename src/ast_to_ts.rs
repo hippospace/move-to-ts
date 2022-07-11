@@ -2,20 +2,17 @@ use crate::ast_exp::*;
 use crate::ast_tests::check_test;
 use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
-use crate::utils::rename_keywords;
+use crate::utils::rename;
 use itertools::Itertools;
 use move_compiler::{
     diagnostics::{Diagnostic, Diagnostics},
     expansion::ast::ModuleIdent,
-    naming::ast::{
-        BuiltinTypeName_, FunctionSignature, StructDefinition, StructFields, StructTypeParameter,
-        Type, TypeName_, Type_,
-    },
+    hlir::ast::*,
+    naming::ast::{BuiltinTypeName_, StructTypeParameter},
     parser::ast::{Ability_, ConstantName, FunctionName, StructName, Var, Visibility},
-    typing::ast::*,
 };
 use move_ir_types::location::Loc;
-use std::collections::VecDeque;
+use std::collections::BTreeSet;
 
 pub fn translate_module(
     mident: ModuleIdent,
@@ -126,22 +123,46 @@ impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
 impl AstTsPrinter for ConstantName {
     const CTOR_NAME: &'static str = "_ConstantName";
     fn term(&self, _c: &mut Context) -> TermResult {
-        Ok(rename_keywords(self))
+        Ok(rename(self))
     }
 }
 
 impl AstTsPrinter for FunctionName {
     const CTOR_NAME: &'static str = "_FunctionName";
     fn term(&self, _c: &mut Context) -> TermResult {
-        Ok(rename_keywords(self))
+        Ok(rename(self))
     }
 }
 
 impl AstTsPrinter for StructName {
     const CTOR_NAME: &'static str = "_StructName";
     fn term(&self, _c: &mut Context) -> TermResult {
-        Ok(rename_keywords(self))
+        Ok(rename(self))
     }
+}
+
+pub fn write_simplify_constant_block(
+    block: &Block,
+    w: &mut TsgenWriter,
+    c: &mut Context,
+) -> WriteResult {
+    if block.len() == 1 {
+        match &block[0].value {
+            Statement_::Command(cmd) => match &cmd.value {
+                Command_::Return { from_user: _, exp } => {
+                    w.write(exp.term(c)?);
+                    return Ok(());
+                }
+                _ => (),
+            },
+            _ => (),
+        }
+    }
+    // write block as lambda
+    w.write("( () => ");
+    block.write_ts(w, c)?;
+    w.write(")()");
+    Ok(())
 }
 
 impl AstTsPrinter for (ConstantName, &Constant) {
@@ -156,9 +177,11 @@ impl AstTsPrinter for (ConstantName, &Constant) {
                 value,
             },
         ) = self;
+        let (_, value_block) = value;
         let typename = ts_constant_type(signature, c)?;
         w.write(format!("export const {} : {} = ", name.term(c)?, typename));
-        value.write_ts(w, c)?;
+        // FIXME this is a block
+        write_simplify_constant_block(value_block, w, c)?;
         w.writeln(";");
         Ok(())
     }
@@ -169,7 +192,7 @@ impl AstTsPrinter for StructTypeParameter {
     const CTOR_NAME: &'static str = "StructTypeParameter";
     fn term(&self, _c: &mut Context) -> TermResult {
         let Self { is_phantom, param } = self;
-        let name = rename_keywords(&quote(&param.user_specified_name));
+        let name = rename(&quote(&param.user_specified_name));
         Ok(format!("{{ name: {}, isPhantom: {} }}", name, is_phantom))
     }
 }
@@ -209,11 +232,11 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
 
                     // 1: static field decls
                     w.writeln("static fields: FieldDeclType[] = [");
-                    w.list(fields.key_cloned_iter(), ",", |w, (name, (_, ty))| {
+                    w.list(fields, ",", |w, (name, ty)| {
                         w.write(format!(
                             "{{ name: {}, typeTag: {} }}",
-                            quote(&rename_keywords(&name)),
-                            type_to_typetag_builder(ty, &sdef.type_parameters, c)?
+                            quote(&rename(&name)),
+                            base_type_to_typetag_builder(ty, &sdef.type_parameters, c)?
                         ));
                         Ok(true)
                     })?;
@@ -222,9 +245,8 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
 
                     // 2. actual class fields
                     if !fields.is_empty() {
-                        w.list(fields.key_cloned_iter(), "", |w, (name, (_, ty))| {
-                            w.write(format!("{}: {};", rename_keywords(&name), type_to_tstype
-                                (ty, c)?));
+                        w.list(fields, "", |w, (name, ty)| {
+                            w.write(format!("{}: {};", rename(&name), base_type_to_tstype(ty, c)?));
                             Ok(true)
                         })?;
                         w.new_line();
@@ -235,9 +257,9 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                     w.write("constructor(proto: any, public typeTag: TypeTag) {");
                     w.indent(2, |w| {
                         // one line for each field
-                        w.list(fields.key_cloned_iter(), "", |w, (name, (_, ty))| {
-                            let name = rename_keywords(&name);
-                            let tstype = type_to_tstype(ty, c)?;
+                        w.list(fields, "", |w, (name, ty)| {
+                            let name = rename(&name);
+                            let tstype = base_type_to_tstype(ty, c)?;
                             w.write(
                                 format!("this.{} = proto['{}'] as {};", name, name, tstype));
                             Ok(true)
@@ -280,8 +302,8 @@ pub fn write_parameters(
     for (name, ty) in &sig.parameters {
         w.writeln(format!(
             "{}: {},",
-            rename_keywords(name),
-            type_to_tstype(ty, c)?
+            rename(name),
+            single_type_to_tstype(ty, c)?
         ));
     }
     w.decrease_indent();
@@ -293,7 +315,6 @@ impl AstTsPrinter for (FunctionName, &Function) {
     const CTOR_NAME: &'static str = "FunctionDef";
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
         let (name, func) = self;
-        c.current_function_signature = Some(func.signature.clone());
         let is_entry = matches!(func.visibility, Visibility::Script(_));
         if c.config.test {
             let is_test = check_test(name, func, c)?;
@@ -302,7 +323,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
             }
         }
         // yep, regardless of visibility, we always export it
-        w.writeln(format!("export function {} (", rename_keywords(name)));
+        w.writeln(format!("export function {}$ (", rename(name)));
         // write parameters
         write_parameters(&func.signature, w, c)?;
         // cache & typeTags
@@ -325,6 +346,16 @@ impl AstTsPrinter for (FunctionName, &Function) {
         let ret_type_str = type_to_tstype(&func.signature.return_type, c)?;
         w.write(ret_type_str);
         w.write(" ");
+
+        // set current_function_signature as we enter body
+        c.current_function_signature = Some(func.signature.clone());
+        //assert!(c.local_decl_stack.len() == 0);
+        //c.push_new_local_frame();
+        // add parameters to local frame
+        let mut param_names = BTreeSet::new();
+        for (name, _) in func.signature.parameters.iter() {
+            param_names.insert(name.to_string());
+        }
         match &func.body.value {
             FunctionBody_::Native => {
                 w.short_block(|w| {
@@ -332,10 +363,17 @@ impl AstTsPrinter for (FunctionName, &Function) {
                     Ok(())
                 })?;
             }
-            FunctionBody_::Defined(seq) => {
-                write_seq_possibly_return(seq, w, c)?;
+            FunctionBody_::Defined { locals, body } => {
+                let new_vars = locals
+                    .key_cloned_iter()
+                    .map(|(name, _)| name)
+                    .filter(|name| !param_names.contains(&name.to_string()))
+                    .collect::<Vec<_>>();
+                write_func_body(body, &new_vars, w, c)?;
             }
         }
+        //c.pop_local_frame();
+        //assert!(c.local_decl_stack.len() == 0);
         w.new_line();
 
         if is_entry {
@@ -402,8 +440,10 @@ impl AstTsPrinter for (FunctionName, &Function) {
     }
 }
 
-pub fn extract_builtin_type(ty: &Type) -> Result<(&BuiltinTypeName_, &Vec<Type>), bool> {
-    if let Type_::Apply(_, typename, ty_args) = &ty.value {
+pub fn extract_builtin_from_base_type(
+    ty: &BaseType,
+) -> Result<(&BuiltinTypeName_, &Vec<BaseType>), bool> {
+    if let BaseType_::Apply(_, typename, ty_args) = &ty.value {
         if let TypeName_::Builtin(builtin) = &typename.value {
             return Ok((&builtin.value, ty_args));
         }
@@ -411,8 +451,15 @@ pub fn extract_builtin_type(ty: &Type) -> Result<(&BuiltinTypeName_, &Vec<Type>)
     Err(false)
 }
 
-pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &Type) -> TermResult {
-    let name = rename_keywords(name);
+pub fn extract_builtin_type(ty: &SingleType) -> Result<(&BuiltinTypeName_, &Vec<BaseType>), bool> {
+    match &ty.value {
+        SingleType_::Base(base_ty) => extract_builtin_from_base_type(base_ty),
+        SingleType_::Ref(_, base_ty) => extract_builtin_from_base_type(base_ty),
+    }
+}
+
+pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> TermResult {
+    let name = rename(name);
     if let Ok((builtin, ty_args)) = extract_builtin_type(ty) {
         match builtin {
             BuiltinTypeName_::Bool | BuiltinTypeName_::Address => Ok(name),
@@ -423,7 +470,9 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &Type) -> TermRe
             BuiltinTypeName_::Vector => {
                 // handle vector
                 assert!(ty_args.len() == 1);
-                if let Ok((inner_builtin, inner_ty_args)) = extract_builtin_type(&ty_args[0]) {
+                if let Ok((inner_builtin, inner_ty_args)) =
+                    extract_builtin_from_base_type(&ty_args[0])
+                {
                     match inner_builtin {
                         BuiltinTypeName_::Bool | BuiltinTypeName_::Address => Ok(name),
                         BuiltinTypeName_::U8 | BuiltinTypeName_::U64 | BuiltinTypeName_::U128 => {
@@ -452,8 +501,8 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &Type) -> TermRe
     }
 }
 
-pub fn get_ts_handler_for_vector_in_vector(inner_ty: &Type) -> TermResult {
-    if let Ok((builtin, inner_ty_args)) = extract_builtin_type(inner_ty) {
+pub fn get_ts_handler_for_vector_in_vector(inner_ty: &BaseType) -> TermResult {
+    if let Ok((builtin, inner_ty_args)) = extract_builtin_from_base_type(inner_ty) {
         match builtin {
             BuiltinTypeName_::Bool | BuiltinTypeName_::Address => {
                 Ok("array => return array".to_string())
@@ -473,25 +522,30 @@ pub fn get_ts_handler_for_vector_in_vector(inner_ty: &Type) -> TermResult {
     }
 }
 
-pub fn is_type_signer(ty: &Type) -> bool {
-    // includes signer or &signer
-    if let Type_::Apply(_, typename, _) = &ty.value {
-        if let TypeName_::Builtin(builtin_name) = &typename.value {
-            builtin_name.value == BuiltinTypeName_::Signer
-        } else {
-            false
-        }
-    } else if let Type_::Ref(_, inner_ty) = &ty.value {
-        is_type_signer(inner_ty)
-    } else {
-        false
+pub fn is_base_type_signer(ty: &BaseType) -> bool {
+    match &ty.value {
+        BaseType_::Apply(_, typename, _) => match &typename.value {
+            TypeName_::Builtin(builtin) => {
+                return builtin.value == BuiltinTypeName_::Signer;
+            }
+            _ => false,
+        },
+        _ => false,
     }
 }
 
-pub fn ts_constant_type(ty: &Type, c: &mut Context) -> TermResult {
+pub fn is_type_signer(ty: &SingleType) -> bool {
+    // includes signer or &signer
+    match &ty.value {
+        SingleType_::Base(base_ty) => is_base_type_signer(base_ty),
+        SingleType_::Ref(_, base_ty) => is_base_type_signer(base_ty),
+    }
+}
+
+pub fn ts_constant_type(ty: &BaseType, c: &mut Context) -> TermResult {
     // only builtin types allowed as top-level constants
     match &ty.value {
-        Type_::Apply(_, type_name, type_args) => match &type_name.value {
+        BaseType_::Apply(_, type_name, type_args) => match &type_name.value {
             TypeName_::Builtin(builtin_type_name) => match builtin_type_name.value {
                 BuiltinTypeName_::Vector => {
                     Ok(format!("{}[]", ts_constant_type(&type_args[0], c)?))
@@ -504,264 +558,273 @@ pub fn ts_constant_type(ty: &Type, c: &mut Context) -> TermResult {
     }
 }
 
-/*
-4 types of If/Block
-- non-returning (type is Unit)
-- returning (end-of-function)
-  - implicit return by value-yielding
-  - explicit return
-- lambda-wrapped expression
-- ternary (only for IfElse)
-
-how do we handle them systematically?
-
-We start at function_body, whose last SequenceItem can be handled with is_returning = true
- */
-
-pub fn write_if_else_possibly_return(
-    cond: &Exp,
-    t: &Exp,
-    f: &Exp,
-    w: &mut TsgenWriter,
-    c: &mut Context,
-) -> WriteResult {
-    w.write(format!("if ({})", cond.term(c)?));
-    match &t.exp.value {
-        // returning (end-of-function)
-        UnannotatedExp_::Block(tseq) => {
-            write_seq_possibly_return(tseq, w, c)?;
-        }
-        _ => {
-            if need_add_return(t, c)? {
-                // lambda-wrapped / ternary
-                w.write("return ");
-                w.writeln(format!("{};", t.term(c)?));
-            } else {
-                t.write_ts(w, c)?;
-                w.writeln(";");
-            }
-        }
+pub fn is_empty_block(block: &Block) -> bool {
+    if block.is_empty() {
+        return true;
+    } else if block.len() == 1 {
+        return match &block[0].value {
+            Statement_::Command(cmd) => match &cmd.value {
+                Command_::IgnoreAndPop { pop_num: _, exp: _ } => true,
+                _ => false,
+            },
+            _ => false,
+        };
     }
-    w.write("else ");
-    match &f.exp.value {
-        UnannotatedExp_::Block(fseq) => {
-            write_seq_possibly_return(fseq, w, c)?;
-        }
-        UnannotatedExp_::IfElse(fcond, ft, ff) => {
-            write_if_else_possibly_return(fcond, ft, ff, w, c)?;
-        }
-        _ => {
-            if need_add_return(f, c)? {
-                w.write("return ");
-                w.writeln(format!("{};", f.term(c)?));
-            } else {
-                t.write_ts(w, c)?;
-                w.writeln(";");
-            }
-        }
-    }
-
-    Ok(())
+    false
 }
 
-pub fn write_last_si_possibly_return(
-    last: &SequenceItem,
-    w: &mut TsgenWriter,
-    c: &mut Context,
-) -> WriteResult {
-    match &last.value {
-        SequenceItem_::Seq(e) => {
-            match &e.exp.value {
-                UnannotatedExp_::Unit { trailing: _ } => {
-                    w.writeln("return;");
-                }
-                UnannotatedExp_::Return(_e) => {
-                    last.write_ts(w, c)?;
-                }
-                UnannotatedExp_::Abort(_e) => {
-                    last.write_ts(w, c)?;
-                }
-                UnannotatedExp_::Break | UnannotatedExp_::Continue => {
-                    return derr!((last.loc, "Cannot use break/continue to end a function"));
-                }
-                UnannotatedExp_::IfElse(cond, t, f) => {
-                    write_if_else_possibly_return(cond, t, f, w, c)?;
-                }
-                UnannotatedExp_::While(_cond, _body) => {
-                    // not gonna yield value
-                    last.write_ts(w, c)?;
-                }
-                UnannotatedExp_::Loop {
-                    has_break: _,
-                    body: _,
-                } => {
-                    // not gonna yield value
-                    last.write_ts(w, c)?;
-                }
-                UnannotatedExp_::Block(_body) => {
-                    // could yield value
-                    if need_add_return(e, c)? {
-                        w.write("return ");
-                    }
-                    last.write_ts(w, c)?;
-                }
-                _ => {
-                    // actually returning a value
-                    w.write("return ");
-                    last.write_ts(w, c)?;
+pub fn identify_declared_vars_in_lvalue(lvalue: &LValue, declared: &mut BTreeSet<String>) {
+    use LValue_ as L;
+    match &lvalue.value {
+        L::Ignore => (),
+        L::Var(_, _) => {
+            //declared.insert(var.to_string());
+        }
+        L::Unpack(_, _, fields) => {
+            for (_, lvalue) in fields.iter() {
+                if let LValue_::Var(var, _) = &lvalue.value {
+                    declared.insert(var.to_string());
+                } else {
+                    identify_declared_vars_in_lvalue(lvalue, declared);
                 }
             }
         }
-        SequenceItem_::Declare(_) => last.write_ts(w, c)?,
-        SequenceItem_::Bind(_, _, _) => last.write_ts(w, c)?,
     }
-    w.new_line();
-    Ok(())
 }
 
-pub fn write_seq_possibly_return(
-    seq: &Sequence,
+pub fn identify_declared_vars_in_cmd(cmd: &Command, declared: &mut BTreeSet<String>) {
+    use Command_ as C;
+    match &cmd.value {
+        C::Assign(lvalues, _) => lvalues.iter().for_each(|lvalue| {
+            identify_declared_vars_in_lvalue(lvalue, declared);
+        }),
+        _ => (),
+    }
+}
+
+pub fn identify_declared_vars_in_stmt(stmt: &Statement, declared: &mut BTreeSet<String>) {
+    use Statement_ as S;
+    match &stmt.value {
+        S::Command(cmd) => identify_declared_vars_in_cmd(cmd, declared),
+        S::IfElse {
+            cond: _,
+            if_block,
+            else_block,
+        } => {
+            identify_declared_vars_in_block(if_block, declared);
+            identify_declared_vars_in_block(else_block, declared);
+        }
+        S::While { cond, block } => {
+            let (pre_block, _cond_exp) = cond;
+            identify_declared_vars_in_block(block, declared);
+            identify_declared_vars_in_block(pre_block, declared);
+        }
+        S::Loop {
+            has_break: _,
+            block,
+        } => identify_declared_vars_in_block(block, declared),
+    };
+}
+
+pub fn identify_declared_vars_in_block(block: &Block, undeclared: &mut BTreeSet<String>) {
+    for stmt in block.iter() {
+        identify_declared_vars_in_stmt(stmt, undeclared);
+    }
+}
+
+pub fn write_func_body(
+    block: &Block,
+    new_vars: &Vec<Var>,
     w: &mut TsgenWriter,
     c: &mut Context,
 ) -> WriteResult {
-    /*
-    - If the last SequenceItem yields a void, translate it to "return"
-    - If the last SequenceItem yields a non-void Expr, translate it to "return e;"
-     */
     w.writeln("{");
     w.increase_indent();
-    if !seq.is_empty() {
-        let last = &seq[seq.len() - 1];
-        let mut cloned = seq.clone();
-        let stmts = cloned.make_contiguous()[0..seq.len() - 1].to_vec();
 
-        for stmt in stmts.iter() {
-            stmt.write_ts(w, c)?;
-            w.new_line();
+    let mut declared_vars = BTreeSet::<String>::new();
+    identify_declared_vars_in_block(block, &mut declared_vars);
+
+    let undeclared = new_vars
+        .iter()
+        .filter(|var| !declared_vars.contains(&var.to_string()))
+        .collect::<Vec<_>>();
+
+    if undeclared.len() > 0 {
+        w.writeln(format!(
+            "let {};",
+            undeclared
+                .into_iter()
+                .map(|v| rename(&v.to_string()))
+                .join(", ")
+        ));
+        /*
+        for v in new_vars.iter() {
+            c.declare_local(v.to_string());
         }
-
-        // hanlde the last return
-        write_last_si_possibly_return(last, w, c)?;
+         */
     }
+
+    for stmt in block.iter() {
+        stmt.write_ts(w, c)?;
+    }
+
     w.decrease_indent();
     w.writeln("}");
 
     Ok(())
 }
 
-impl AstTsPrinter for VecDeque<SequenceItem> {
-    const CTOR_NAME: &'static str = "Sequence";
+impl AstTsPrinter for Block {
+    const CTOR_NAME: &'static str = "Block";
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
-        w.write("{");
-        w.indent(2, |w| {
-            w.list(self, "", |w, seq_item| {
-                seq_item.write_ts(w, c)?;
-                Ok(true)
-            })?;
-            Ok(())
-        })?;
-        w.write("}");
+        w.writeln("{");
+        w.increase_indent();
+
+        //c.push_new_local_frame();
+        for stmt in self.iter() {
+            stmt.write_ts(w, c)?;
+        }
+        //c.pop_local_frame();
+
+        w.decrease_indent();
+        w.writeln("}");
 
         Ok(())
     }
 }
 
-pub fn write_sequence_item(
-    item: &SequenceItem,
-    w: &mut TsgenWriter,
-    c: &mut Context,
-) -> WriteResult {
-    use SequenceItem_ as I;
-    match &item.value {
-        I::Seq(e) => match &e.exp.value {
-            UnannotatedExp_::IfElse(cond, t, f) => {
-                w.writeln(format!("if ({}) ", cond.term(c)?));
-                let need_curly = ifelse_need_curly(t);
-                if need_curly {
-                    w.writeln("{");
-                }
-                t.write_ts(w, c)?;
-                if need_curly {
-                    w.writeln("}");
-                }
-                match f.exp.value {
-                    UnannotatedExp_::Unit { trailing: _ } => (),
-                    _ => {
-                        w.write("else ");
-                        let need_curly = ifelse_need_curly(f);
-                        if need_curly {
-                            w.writeln("{");
-                        }
-                        f.write_ts(w, c)?;
-                        if need_curly {
-                            w.writeln("}");
-                        }
-                    }
-                }
-            }
-            UnannotatedExp_::Block(body) => {
-                // may yield value
-                body.write_ts(w, c)?;
-            }
-            UnannotatedExp_::While(cond, body) => {
-                // may not yield value
-                w.writeln(format!("while ({}) ", cond.term(c)?));
-                body.write_ts(w, c)?;
-            }
-            UnannotatedExp_::Loop { has_break: _, body } => {
-                // may not yield value
-                w.writeln("while (true) ");
-                body.write_ts(w, c)?;
-            }
-            UnannotatedExp_::Unit { trailing: _ } => {
-                // nop
-            }
-            _ => {
-                w.write(e.term(c)?);
-                w.write(";");
-            }
-        },
-        I::Declare(lvalues) => {
-            w.write("let ");
-            lvalues.write_ts(w, c)?;
-            w.write(";");
-        }
-        I::Bind(lvalues, _expected_types, e) => {
-            if is_empty_lvalue_list(lvalues) {
-                w.write(e.term(c)?);
-            } else {
-                w.write("let ");
-                lvalues.write_ts(w, c)?;
-                w.write(" = ");
-                w.write(e.term(c)?);
-            }
-            w.write(";");
-        }
-    }
-
-    Ok(())
-}
-
-impl AstTsPrinter for SequenceItem {
-    const CTOR_NAME: &'static str = "SequenceItem";
-    fn term(&self, c: &mut Context) -> TermResult {
-        use SequenceItem_ as I;
+impl AstTsPrinter for Statement {
+    const CTOR_NAME: &'static str = "Statement";
+    fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
+        use Statement_ as S;
         // some value-yielding Block can be formatted as lambdas, and need statements to be
         // presented in the form of ts_term
         match &self.value {
-            I::Seq(e) => Ok(format!("{};", e.term(c)?)),
-            I::Declare(lvalues) => Ok(format!("let {};", lvalues.term(c)?)),
-            I::Bind(lvalues, _expected_types, e) => {
-                /*
-                There are two types of value-yielding statements:
-                - lambda-needed
-                - lambda not needed
-                 */
-                Ok(format!("let {} = {};", lvalues.term(c)?, e.term(c)?))
+            S::Command(cmd) => cmd.write_ts(w, c),
+            S::IfElse {
+                cond,
+                if_block,
+                else_block,
+            } => {
+                // FIXME in case it's a single statement, need indentation here
+                if !is_empty_block(if_block) {
+                    // if-block is non-empty
+                    w.write(format!("if ({}) ", cond.term(c)?));
+                    if_block.write_ts(w, c)?;
+                    if else_block.len() > 0 {
+                        w.write("else");
+                        else_block.write_ts(w, c)?;
+                    }
+                } else {
+                    // if-block is empty, negate condition and output else block only
+                    w.write(format!("if (!{}) ", cond.term(c)?));
+                    else_block.write_ts(w, c)?;
+                }
+                Ok(())
+            }
+            S::While { cond, block } => {
+                let (pre_block, cond_exp) = cond;
+                // FIXME need to handle the empty case
+                if pre_block.len() > 0 {
+                    pre_block.write_ts(w, c)?;
+                }
+                w.write(format!("while ({}) ", cond_exp.term(c)?));
+                // FIXME in case it's a single statement, need indentation here
+                block.write_ts(w, c)
+            }
+            S::Loop {
+                has_break: _,
+                block,
+            } => {
+                w.write("while (true) ");
+                block.write_ts(w, c)
             }
         }
     }
+}
+
+/*
+// returns true if this is a new variable to be declared
+fn lvalues_has_new_decl(lvalues: &Vec<LValue>, c: &mut Context) -> Result<bool, Diagnostic> {
+    let mut has_new = false;
+    for lvalue in lvalues.iter() {
+        if lvalue.value == LValue_::Ignore {
+            continue;
+        }
+        let is_new = is_lvalue_new_decl(lvalue, c)?;
+        if has_new && !is_new {
+            return derr!((
+                lvalue.loc,
+                "Cannot redeclare existing variables with new variables"
+            ));
+        }
+        has_new = has_new | is_new;
+    }
+    Ok(has_new)
+}
+ */
+
+impl AstTsPrinter for Command {
+    const CTOR_NAME: &'static str = "Command";
+
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
-        write_sequence_item(self, w, c)
+        use Command_ as C;
+        match &self.value {
+            C::Assign(lvalues, rhs) => {
+                if is_empty_lvalue_list(lvalues) {
+                    w.writeln(format!("{};", rhs.term(c)?));
+                } else {
+                    /*
+                    if lvalues_has_new_decl(lvalues, c)? {
+                        w.write("let ");
+                    }
+                     */
+                    if lvalues.len() == 1 && matches!(lvalues[0].value, LValue_::Unpack(_, _, _)) {
+                        w.write("let ");
+                    }
+                    /*
+                    if *is_new_decl {
+                        w.write("let ");
+                    }
+                     */
+                    // using write_ts instead of term to allow prettier printing in case we ever
+                    // want to do that
+                    lvalues.write_ts(w, c)?;
+                    w.write(" = ");
+                    w.write(rhs.term(c)?);
+                    w.writeln(";");
+                }
+            }
+            C::Mutate(lhs, rhs) => match &lhs.exp.value {
+                UnannotatedExp_::Borrow(_, _, _) => {
+                    w.writeln(format!("{} = {};", lhs.term(c)?, rhs.term(c)?));
+                }
+                _ => {
+                    w.writeln(format!("{}.$set({});", lhs.term(c)?, rhs.term(c)?));
+                }
+            },
+            C::Abort(e) => w.writeln(format!("throw {};", e.term(c)?)),
+            C::Return { from_user: _, exp } => {
+                if exp.ty.value == Type_::Unit {
+                    w.writeln("return;");
+                } else {
+                    w.writeln(format!("return {};", exp.term(c)?));
+                }
+            }
+            C::Break => w.writeln("break;"),
+            C::Continue => w.writeln("continue;"),
+            C::IgnoreAndPop { pop_num: _, exp } => {
+                if let UnannotatedExp_::Unit { case: _ } = exp.exp.value {
+                    // do nothing..
+                    // w.writeln("/*PopAndIgnore*/");
+                } else {
+                    w.writeln(format!("{};", exp.term(c)?));
+                }
+            }
+            _ => {
+                return derr!((self.loc, "Unsupported Command (Jump)"));
+            }
+        }
+        Ok(())
     }
 }

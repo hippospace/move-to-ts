@@ -23,6 +23,8 @@ use std::process;
 fn write_file(root_path: &PathBuf, pair: (String, String)) {
     let (filename, content) = pair;
     let path_to_save = root_path.join(filename);
+    let parent = path_to_save.parent().unwrap();
+    std::fs::create_dir_all(&parent).expect("Failed to create directory");
     std::fs::write(path_to_save, content).expect("Failed to write file to output");
 }
 
@@ -100,46 +102,46 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         Compiler::from_package_paths(source_package_paths.clone(), vec![]).set_flags(flags);
 
     let (files, res_comments_compiler) = compiler
-        .run::<{ move_compiler::PASS_TYPING }>()
+        .run::<{ move_compiler::PASS_HLIR }>()
         .expect("Compilation failed");
 
-    let (_comments, typing_compiler) = unwrap_or_report_diagnostics(&files, res_comments_compiler);
+    let (_comments, hlir_compiler) = unwrap_or_report_diagnostics(&files, res_comments_compiler);
 
-    let (_, typing_program) = typing_compiler.into_ast();
+    let (_, hlir_program) = hlir_compiler.into_ast();
 
     // run the full pipeline to check errors/warnings
     // move package doesn't provide a way to save intermediate program ast, so rerunning the
     // entire pipeline to check all errors. We need to make a PR upstream to avoid doing repeat
     // work here.
 
+    // commented out for faster testing >.<
+    /*
     let compiler = Compiler::from_package_paths(source_package_paths, vec![]);
     let (_, full_res) = compiler
         .run::<{ move_compiler::PASS_COMPILATION }>()
         .expect("Compilation failed");
     unwrap_or_report_diagnostics(&files, full_res);
+     */
 
     // 2 & 3
     let build_root_path = project_root
         .join(CompiledPackageLayout::Root.path())
         .join("typescript");
     let mut ctx = Context::new(config);
-    for (mident, mdef) in typing_program.modules.key_cloned_iter() {
+    for (mident, mdef) in hlir_program.modules.key_cloned_iter() {
         // 2
         let result = ast_to_ts::translate_module(mident, mdef, &mut ctx);
 
         let (filename, content) = unwrap_or_report_diagnostics(&files, result);
 
         // 3
-        let path_to_save = build_root_path.join("src").join(filename);
-        let parent = path_to_save.parent().unwrap();
-        std::fs::create_dir_all(&parent).expect("Failed to create directory");
-        std::fs::write(path_to_save, content).expect("Failed to write file to output");
+        write_file(&build_root_path.join("src"), (filename, content));
 
         // 4 tests
-        if config.test {
+        if config.test && !ctx.tests.is_empty() {
             let test_res = ast_tests::generate_tests(&mut ctx);
             let (filename, content) = unwrap_or_report_diagnostics(&files, test_res);
-            write_file(&build_root_path.join("src"), (filename, content));
+            write_file(&build_root_path.join("src/tests"), (filename, content));
         }
     }
 
@@ -152,6 +154,12 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         // tsconfig.json
         let (filename, content) = utils::generate_ts_config();
         write_file(&build_root_path, (filename, content));
+
+        // jest.config.js
+        if config.test {
+            let (filename, content) = utils::generate_jest_config();
+            write_file(&build_root_path, (filename, content));
+        }
     }
 
     // 6

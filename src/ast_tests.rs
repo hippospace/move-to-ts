@@ -4,8 +4,8 @@ use itertools::Itertools;
 use move_compiler::{
     diagnostics::{Diagnostic, Diagnostics},
     expansion::ast::{AttributeValue, AttributeValue_, Attribute_},
+    hlir::ast::*,
     parser::ast::FunctionName,
-    typing::ast::*,
 };
 use move_ir_types::location::Loc;
 
@@ -23,6 +23,15 @@ pub fn check_test(
         })
         .collect::<Vec<_>>();
 
+    let expect_failure_attr = func
+        .attributes
+        .key_cloned_iter()
+        .find(|(k, _)| {
+            let string_name = k.to_string();
+            string_name == "expected_failure"
+        })
+        .map(|(_k, v)| v.clone());
+
     if !test_attr.is_empty() {
         if test_attr.len() != 1 {
             return derr!((
@@ -31,8 +40,12 @@ pub fn check_test(
             ));
         }
 
-        c.tests
-            .push((*name, func.signature.clone(), test_attr[0].1.clone()));
+        c.tests.push((
+            *name,
+            func.signature.clone(),
+            test_attr[0].1.clone(),
+            expect_failure_attr,
+        ));
 
         return Ok(true);
     }
@@ -76,8 +89,10 @@ pub fn generate_tests(c: &mut Context) -> Result<(String, String), Diagnostics> 
 
 pub fn write_tests(w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
     let mident = c.current_module.unwrap();
+
     w.writeln(format!(
-        "import * as Source from './{}'; ",
+        "import * as Source from '../../{}/{}'; ",
+        format_address(mident.value.address),
         mident.value.module
     ));
     w.writeln("import * as $ from '@manahippo/move-to-ts';");
@@ -86,7 +101,7 @@ pub fn write_tests(w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
     w.new_line();
 
     // one test runner for each $[test]
-    for (name, sig, attr) in c.tests.clone().iter() {
+    for (name, sig, attr, expect_failure_attr) in c.tests.clone().iter() {
         w.writeln(format!(
             "test('{}::{}', () => {{",
             mident.value.module, name
@@ -115,17 +130,27 @@ pub fn write_tests(w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
                 }
             }
         }
+
         let args = sig
             .parameters
             .iter()
             .map(|(var, _ty)| var.to_string())
             .join(", ");
-        w.writeln(format!(
-            "Source.{}({}{}$c);",
-            name,
-            args,
-            if !args.is_empty() { ", " } else { "" }
-        ));
+        if let Some(failure_attr) = expect_failure_attr {
+            w.writeln(format!(
+                "expect( () => Source.{}$({}{}$c) ).toThrow();",
+                name,
+                args,
+                if !args.is_empty() { ", " } else { "" }
+            ));
+        } else {
+            w.writeln(format!(
+                "Source.{}$({}{}$c);",
+                name,
+                args,
+                if !args.is_empty() { ", " } else { "" }
+            ));
+        }
 
         w.decrease_indent();
         w.writeln("});");

@@ -30,7 +30,7 @@ pub fn generate_package_json(package_name: String) -> (String, String) {
   "dependencies": {{
     "aptos": "^1.2.0",
     "big-integer": "^1.6.51",
-    "@manahippo/move-to-ts": "^0.0.7"
+    "@manahippo/move-to-ts": "^0.0.8"
   }}
 }}
 "###,
@@ -61,13 +61,38 @@ pub fn generate_ts_config() -> (String, String) {
     ("tsconfig.json".to_string(), content.to_string())
 }
 
-pub fn rename_keywords(name: &impl fmt::Display) -> String {
+pub fn generate_jest_config() -> (String, String) {
+    let content = r###"
+module.exports = {
+  preset: "ts-jest",
+  testEnvironment: "node",
+  testPathIgnorePatterns: ["dist/*"],
+};
+"###;
+    ("jest.config.js".to_string(), content.to_string())
+}
+
+/*
+1. Replace typescript keywords with WORD__
+2. rename temporary variables
+ */
+pub fn rename(name: &impl fmt::Display) -> String {
     let name_str = format!("{}", name);
     match name_str.as_str() {
         "new" => "new__".to_string(),
         "default" => "default__".to_string(),
         "for" => "for__".to_string(),
-        _ => name_str,
+        _ => {
+            if name_str.starts_with("%#") {
+                // replace temporaries
+                format!("temp${}", name_str.split_at(2).1)
+            } else if name_str.contains("#") {
+                // normalize shadowed variable names
+                name_str.replace("#", "__")
+            } else {
+                name_str
+            }
+        }
     }
 }
 
