@@ -21,6 +21,10 @@ export class UnsignedInt<T extends IntInterface<T>> {
     return this.value.toString();
   }
 
+  $set(val: T) {
+    this.value = val.value;
+  }
+
   or(other: T): T {
     return other.make(this.value.or(other.value));
   }

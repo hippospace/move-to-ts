@@ -107,3 +107,7 @@ export function dyn_le(_tag: TypeTag, _lhs: any, _rhs: any): boolean {
 export function dyn_ge(_tag: TypeTag, _lhs: any, _rhs: any): boolean {
   throw new Error("Not implemented");
 }
+
+export function veq(_lhs: any, _rhs: any): boolean {
+  throw new Error("Not implemented");
+}
