@@ -105,3 +105,50 @@ export function buildPayload_create_and_fund_account (
 }
 
 ```
+
+
+# Known issues with AptosFramework
+
+There are a total of 3 places in AptosFramework that need to be edited before `move-to-ts` will happily transpile your
+project. Two of them are minor mistakes in `AptosFramework` and one of them a consequence of the transpiler being
+limited. The needed changes are listed below. You can apply the changes to `~/.move/` where the move build system caches
+its dependencies.
+
+```
+diff --git a/aptos-move/framework/aptos-framework/sources/configs/ConsensusConfig.move b/aptos-move/framework/aptos-framework/sources/configs/ConsensusConfig.move
+index 6a0272341..687946bf1 100644
+--- a/aptos-move/framework/aptos-framework/sources/configs/ConsensusConfig.move
++++ b/aptos-move/framework/aptos-framework/sources/configs/ConsensusConfig.move
+@@ -29,8 +29,7 @@ module AptosFramework::ConsensusConfig {
+     /// Update the config.
+     public fun set(account: &signer, config: vector<u8>) acquires ConsensusConfig {
+         SystemAddresses::assert_core_resource(account);
+-        let config_ref = &mut borrow_global_mut<ConsensusConfig>(@CoreResources).config;
+-        *config_ref = config;
++        borrow_global_mut<ConsensusConfig>(@CoreResources).config = config;
+         Reconfiguration::reconfigure();
+     }
+ }
+diff --git a/aptos-move/framework/aptos-framework/sources/configs/Stake.move b/aptos-move/framework/aptos-framework/sources/configs/Stake.move
+index d58d55217..235911e2b 100644
+--- a/aptos-move/framework/aptos-framework/sources/configs/Stake.move
++++ b/aptos-move/framework/aptos-framework/sources/configs/Stake.move
+@@ -434,7 +434,7 @@ module AptosFramework::Stake {
+     }
+ 
+     /// Allows an owner to change the delegated voter of the stake pool.
+-    public(script) fun set_delegated_voter_with_cap(
++    public fun set_delegated_voter_with_cap(
+         pool_address: address,
+         owner_cap: &OwnerCapability,
+         new_delegated_voter: address,
+@@ -1234,7 +1234,7 @@ module AptosFramework::Stake {
+     }
+ 
+     #[test_only]
+-    public(script) fun register_mint_stake(
++    public fun register_mint_stake(
+         account: &signer,
+         mint_cap: &MintCapability<TestCoin>,
+     ) acquires OwnerCapability, StakePool, StakePoolEvents, ValidatorConfig, ValidatorSet, ValidatorSetConfiguration {
+```
