@@ -14,11 +14,10 @@ yarn test
 ```
 
 A Move-to-TypeScript transpiler & emulator. Still a work in progress. We're still building the runtime library and
-debugging. Currently we are running unit tests from 4 packages:
-- AptosFramework
-- Std
-- HippoSwap
-- TokenRegistry
+debugging. Currently we are running unit tests from 3 packages:
+- [AptosFramework](https://github.com/aptos-labs/aptos-core/tree/main/aptos-move/framework)
+- [HippoSwap](https://github.com/hippospace/hippo-swap)
+- [TokenRegistry](https://github.com/hippospace/aptos-registry)
 
 153 of 188 test cases in total are passing. Many of the failed tests are due to unimplemented runtime features. We aim
 to reduce number of failed tests to < 10 within the week.
