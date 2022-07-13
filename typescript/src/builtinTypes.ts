@@ -14,11 +14,23 @@ export class UnsignedInt<T extends IntInterface<T>> {
   checkBounds() {
   }
   make(value: bigInt.BigInteger) {
-    return new UnsignedInt(value);
+    return new UnsignedInt<T>(value);
+  }
+
+  copy() : UnsignedInt<T> {
+    return this.make(this.value);
   }
 
   toPayloadArg() {
     return this.value.toString();
+  }
+
+  toJsNumber() {
+    return this.value.toJSNumber();
+  }
+
+  toBigInt() {
+    return BigInt(this.value.toString());
   }
 
   $set(val: T) {
@@ -52,13 +64,13 @@ export class UnsignedInt<T extends IntInterface<T>> {
   mod(other: T): T {
     return other.make(this.value.mod(other.value));
   }
-  shl(other: T): T {
+  shl(other: UnsignedInt<any>): UnsignedInt<T> {
     // FIXME: need to match this with move's implementation
-    return other.make(this.value.shiftLeft(other.value));
+    return this.make(this.value.shiftLeft(other.value));
   }
-  shr(other: T): T {
+  shr(other: UnsignedInt<any>): UnsignedInt<T> {
     // FIXME: need to match this with move's implementation
-    return other.make(this.value.shiftRight(other.value));
+    return this.make(this.value.shiftRight(other.value));
   }
   lt(other: T): boolean {
     return this.value.lt(other.value);

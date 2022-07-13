@@ -358,8 +358,37 @@ impl AstTsPrinter for (FunctionName, &Function) {
         }
         match &func.body.value {
             FunctionBody_::Native => {
+                let mident = c.current_module.unwrap();
+                let native_name = format!(
+                    "return $.{}_{}_{}",
+                    format_address(mident.value.address),
+                    mident.value.module,
+                    name
+                );
+                let args = func
+                    .signature
+                    .parameters
+                    .iter()
+                    .map(|(n, _)| rename(&n.to_string()))
+                    .join(", ");
+                let args_comma = format!("{}{}", args, if args.is_empty() { "" } else { ", " });
+                let comma_tags = format!(
+                    "{}{}",
+                    if num_tparams == 0 { "" } else { ", " },
+                    if num_tparams == 0 {
+                        "".to_string()
+                    } else {
+                        format!(
+                            "[{}]",
+                            (0..num_tparams)
+                                .into_iter()
+                                .map(|u| format!("$p[{}]", u))
+                                .join(", ")
+                        )
+                    }
+                );
                 w.short_block(|w| {
-                    w.writeln("throw new Error(\"Native function not implemented\");");
+                    w.writeln(format!("{}({}$c{});", native_name, args_comma, comma_tags));
                     Ok(())
                 })?;
             }
@@ -564,7 +593,7 @@ pub fn is_empty_block(block: &Block) -> bool {
     } else if block.len() == 1 {
         return match &block[0].value {
             Statement_::Command(cmd) => match &cmd.value {
-                Command_::IgnoreAndPop { pop_num: _, exp: _ } => true,
+                Command_::IgnoreAndPop { pop_num: _, exp } => is_exp_unit(exp),
                 _ => false,
             },
             _ => false,
@@ -725,12 +754,24 @@ impl AstTsPrinter for Statement {
             S::While { cond, block } => {
                 let (pre_block, cond_exp) = cond;
                 // FIXME need to handle the empty case
-                if pre_block.len() > 0 {
-                    pre_block.write_ts(w, c)?;
-                }
-                w.write(format!("while ({}) ", cond_exp.term(c)?));
-                // FIXME in case it's a single statement, need indentation here
-                block.write_ts(w, c)
+                let has_pre_block = pre_block.len() > 0;
+                w.write(format!(
+                    "while ({}) ",
+                    if has_pre_block {
+                        "true".to_string()
+                    } else {
+                        cond_exp.term(c)?
+                    }
+                ));
+                w.short_block(|w| {
+                    if has_pre_block {
+                        pre_block.write_ts(w, c)?;
+                        w.writeln(format!("if (!({})) break;", cond_exp.term(c)?));
+                    }
+                    block.write_ts(w, c)?;
+                    Ok(())
+                })?;
+                Ok(())
             }
             S::Loop {
                 has_break: _,
@@ -763,6 +804,10 @@ fn lvalues_has_new_decl(lvalues: &Vec<LValue>, c: &mut Context) -> Result<bool, 
     Ok(has_new)
 }
  */
+
+pub fn is_exp_unit(exp: &Exp) -> bool {
+    matches!(exp.exp.value, UnannotatedExp_::Unit { case: _})
+}
 
 impl AstTsPrinter for Command {
     const CTOR_NAME: &'static str = "Command";
@@ -805,7 +850,7 @@ impl AstTsPrinter for Command {
             },
             C::Abort(e) => w.writeln(format!("throw {};", e.term(c)?)),
             C::Return { from_user: _, exp } => {
-                if exp.ty.value == Type_::Unit {
+                if is_exp_unit(exp) {
                     w.writeln("return;");
                 } else {
                     w.writeln(format!("return {};", exp.term(c)?));
@@ -814,7 +859,7 @@ impl AstTsPrinter for Command {
             C::Break => w.writeln("break;"),
             C::Continue => w.writeln("continue;"),
             C::IgnoreAndPop { pop_num: _, exp } => {
-                if let UnannotatedExp_::Unit { case: _ } = exp.exp.value {
+                if is_exp_unit(exp) {
                     // do nothing..
                     // w.writeln("/*PopAndIgnore*/");
                 } else {

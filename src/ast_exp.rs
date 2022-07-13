@@ -27,7 +27,34 @@ impl AstTsPrinter for Exp {
             E::Copy {
                 from_user: _,
                 var: v,
-            } => Ok(rename(v)),
+            } => {
+                // value-types and immutables are copied by default
+                let nocopy = rename(v);
+                let explicit_copy = Ok(format!("$.copy({})", nocopy));
+                match &exp_ty.value {
+                    Type_::Single(single_ty) => match &single_ty.value {
+                        SingleType_::Ref(_, _) => Ok(nocopy),
+                        SingleType_::Base(base_ty) => match &base_ty.value {
+                            BaseType_::Param(_) => explicit_copy,
+                            BaseType_::Apply(_, typename, _) => match &typename.value {
+                                TypeName_::Builtin(builtin) => match &builtin.value {
+                                    // vector needs explicit copy
+                                    BuiltinTypeName_::Vector => explicit_copy,
+                                    // immutable types, address, signer do not need explicit copy
+                                    _ => Ok(nocopy),
+                                }
+                                TypeName_::ModuleType(_, _) => explicit_copy,
+                            },
+                            BaseType_::Unreachable => unreachable!(),
+                            BaseType_::UnresolvedError => unreachable!(),
+                        }
+                    }
+                    Type_::Unit => {
+                        return derr!((exp.loc, "Cannot copy Unit"));
+                    }
+                    Type_::Multiple(_) => explicit_copy,
+                }
+            },
             E::Constant(c) => Ok(rename(c)),
             E::ModuleCall(mcall) => {
                 // ModuleCall
@@ -49,48 +76,6 @@ impl AstTsPrinter for Exp {
                 let tag = type_to_typetag(exp_ty, c)?;
                 Ok(format!("new {}({}, {})", s, proto, tag))
             }
-            /*
-            E::IfElse(b, t, f) => {
-                // treat this as the ternary operator ? : and handle its statement case from
-                // SequenceItem
-                Ok(format!(
-                    "({}) ? {} : {}",
-                    b.term(c)?,
-                    t.term(c)?,
-                    f.term(c)?
-                ))
-            }
-             */
-            /*
-            E::Block(seq) => {
-                assert!(!seq.is_empty());
-                let last = &seq[seq.len() - 1];
-                if seq.len() == 1 {
-                    if let SequenceItem_::Seq(e) = &last.value {
-                        assert_ne!(e.ty.value, Type_::Unit, "Cannot print block as ts term");
-                        e.term(c)
-                    } else {
-                        unreachable!("Block cannot be printed as ts term");
-                        //derr!((exp.loc, "Block cannot be printed as ts term"))
-                    }
-                } else {
-                    let mut cloned = seq.clone();
-                    let stmts = cloned.make_contiguous()[0..seq.len() - 1].to_vec();
-                    let stmts_str = semicolon_term(&stmts, c, |si, c| si.term(c))?;
-                    if let SequenceItem_::Seq(e) = &last.value {
-                        if e.ty.value == Type_::Unit {
-                            unreachable!("Block cannot be printed as ts term");
-                            //return derr!((exp.loc, "Block cannot be printed as ts term"));
-                        }
-                        let ret_val = e.term(c)?;
-                        Ok(format!("(()=>{{ {} return {}; }})()", stmts_str, ret_val))
-                    } else {
-                        unreachable!("Block cannot be printed as ts term");
-                        //derr!((exp.loc, "Block cannot be printed as ts term"))
-                    }
-                }
-            }
-             */
             E::ExpList(es) => {
                 // FIXME: for now just output as [...]
                 // FIXME: what is this, really?
@@ -513,9 +498,25 @@ pub fn handle_binop_for_base_type(
                 TypeName_::Builtin(builtin) => {
                     // XXX
                     match &builtin.value {
-                        BuiltinTypeName_::Signer
-                        | BuiltinTypeName_::Address
-                        | BuiltinTypeName_::Bool => {
+                        BuiltinTypeName_::Signer | BuiltinTypeName_::Address => {
+                            let js_op = match &binop.value {
+                                BinOp_::Eq => "===",
+                                BinOp_::Neq => "!==",
+                                _ => {
+                                    return derr!((
+                                        binop.loc,
+                                        "Operation not supported on address/signer"
+                                    ));
+                                }
+                            };
+                            Ok(format!(
+                                "({}.hex() {} {}.hex())",
+                                lhs.term(c)?,
+                                js_op,
+                                rhs.term(c)?
+                            ))
+                        }
+                        BuiltinTypeName_::Bool => {
                             // not precision-sensitive, and these operators are compatible
                             // with typescript
                             Ok(format!(

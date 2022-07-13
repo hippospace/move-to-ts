@@ -1,8 +1,22 @@
 import { AptosClient, HexString, Types } from "aptos";
 import { DeleteResource, WriteResource } from "aptos/dist/api/data-contracts";
+import bigInt from "big-integer";
+import { U128, U64 } from "./builtinTypes";
 import { AptosParserRepo, StructInfoType } from "./parserRepo";
 import { getTypeTagFullname, parseTypeTagOrThrow, StructTag, TypeTag } from "./typeTag";
+import stringify from "json-stable-stringify";
 
+
+export interface ITable {
+  handle: U128;
+  length: U64;
+  typeTag: TypeTag;
+}
+
+export interface IBox {
+  val: any;
+  typeTag: TypeTag;
+}
 
 export interface AptosDataCache {
   exists(tag: TypeTag, address: HexString): boolean;
@@ -10,6 +24,16 @@ export interface AptosDataCache {
   move_from<T>(tag: TypeTag, address: HexString): T;
   borrow_global<T>(tag: TypeTag, address: HexString): T;
   borrow_global_mut<T>(tag: TypeTag, address: HexString): T;
+
+  // Table
+  table_new_handle(): U128;
+  table_add_box(table: ITable, key: any, value: IBox): void;
+  table_borrow_box(table: ITable, key: any): IBox;
+  table_borrow_box_mut(table: ITable, key: any): IBox;
+  table_contains_box(table: ITable, key: any): boolean;
+  table_remove_box(table: ITable, key: any): IBox;
+  table_destroy_empty_box(table: ITable): void;
+  table_drop_unchecked_box(table: ITable): void;
 }
 
 export class DummyCache implements AptosDataCache {
@@ -27,6 +51,30 @@ export class DummyCache implements AptosDataCache {
   }
   borrow_global_mut<T>(_tag: TypeTag, _address: HexString): T {
     throw new Error("DummyCache does not support 'borrow_global_mut'");
+  }
+  table_new_handle(): U128 {
+    throw new Error("DummyCache does not support table_new_handle");
+  }
+  table_add_box(table: ITable, key: any, value: IBox){
+    throw new Error("DummyCache does not support table_add_box");
+  }
+  table_borrow_box(table: ITable, key: any): IBox {
+    throw new Error("Not implemented");
+  }
+  table_borrow_box_mut(table: ITable, key: any): IBox {
+    throw new Error("Not implemented");
+  }
+  table_contains_box(table: ITable, key: any): boolean {
+    throw new Error("Not implemented");
+  }
+  table_remove_box(table: ITable, key: any): IBox {
+    throw new Error("Not implemented");
+  }
+  table_destroy_empty_box(table: ITable) {
+    throw new Error("Not implemented");
+  }
+  table_drop_unchecked_box(table: ITable) {
+    throw new Error("Not implemented");
   }
 }
 
@@ -71,8 +119,12 @@ class AccountCache {
 export class AptosLocalCache implements AptosDataCache {
   // maps account address (HexString.hex()) to AccountCache
   public accounts: Map<string, AccountCache>;
+  public tables: Map<string, Map<string, IBox>>;
+  nextTableHandle: number;
   constructor() {
     this.accounts = new Map();
+    this.tables = new Map();
+    this.nextTableHandle = 1;
   }
   exists(tag: TypeTag, address: HexString): boolean {
     const account = this.accounts.get(address.hex());
@@ -106,6 +158,64 @@ export class AptosLocalCache implements AptosDataCache {
   borrow_global_mut<T>(tag: TypeTag, address: HexString): T {
     return this.borrow_global<T>(tag, address);
   }
+  table_get_or_create(handle: number): Map<string, any> {
+    const table = this.tables.get(handle.toString());
+    if (table) {
+      return table;
+    } else {
+      const newTable: Map<string, any> = new Map();
+      this.tables.set(handle.toString(), newTable);
+      return newTable;
+    }
+  }
+  table_new_handle(): U128 {
+    const handle = this.nextTableHandle++;
+    const table: Map<string, IBox> = new Map();
+    this.tables.set(handle.toString(), table);
+    return new U128(bigInt(handle));
+  }
+
+  table_add_box(table: ITable, key: any, value: IBox) {
+    const tableMap = this.table_get_or_create(table.handle.value.toJSNumber());
+    const stringKey = stringify(key);
+    if (tableMap.has(stringKey)) {
+      throw new Error("key already exists");
+    }
+    tableMap.set(stringKey, value);
+  }
+  table_borrow_box(table: ITable, key: any): IBox {
+    const tableMap = this.table_get_or_create(table.handle.value.toJSNumber());
+    const stringKey = stringify(key);
+    const value = tableMap.get(stringKey);
+    if (!value) {
+      throw new Error("key does not exist");
+    }
+    return value;
+  }
+  table_borrow_box_mut(table: ITable, key: any): IBox {
+    // FIXME this isn't great, consider RefMut<T>
+    return this.table_borrow_box(table, key);
+  }
+  table_contains_box(table: ITable, key: any): boolean {
+    const tableMap = this.table_get_or_create(table.handle.value.toJSNumber());
+    const stringKey = stringify(key);
+    return tableMap.has(stringKey);
+  }
+  table_remove_box(table: ITable, key: any): IBox {
+    const tableMap = this.table_get_or_create(table.handle.value.toJSNumber());
+    const stringKey = stringify(key);
+    const entry = tableMap.get(stringKey);
+    if (!entry) {
+      throw new Error("Key does not exist");
+    }
+    return entry;
+  }
+  table_destroy_empty_box(table: ITable) {
+    // NOP
+  }
+  table_drop_unchecked_box(table: ITable) {
+    // NOP
+  }
 }
 
 // caches data locally, and attempts to fetch from chain when needed
@@ -124,6 +234,30 @@ export class AptosSyncedCache implements AptosDataCache {
   }
   borrow_global_mut<T>(_tag: TypeTag, _address: HexString): T {
     throw new Error("DummyCache does not support 'borrow_global_mut'");
+  }
+  table_new_handle(): U128 {
+    throw new Error("DummyCache does not support table_new_handle");
+  }
+  table_add_box(table: ITable, key: any, value: IBox) {
+    throw new Error("DummyCache does not support table_add_box");
+  }
+  table_borrow_box(table: ITable, key: any): IBox {
+    throw new Error("Not implemented");
+  }
+  table_borrow_box_mut(table: ITable, key: any): IBox {
+    throw new Error("Not implemented");
+  }
+  table_contains_box(table: ITable, key: any): boolean {
+    throw new Error("Not implemented");
+  }
+  table_remove_box(table: ITable, key: any): IBox {
+    throw new Error("Not implemented");
+  }
+  table_destroy_empty_box(table: ITable) {
+    throw new Error("Not implemented");
+  }
+  table_drop_unchecked_box(table: ITable) {
+    throw new Error("Not implemented");
   }
 }
 

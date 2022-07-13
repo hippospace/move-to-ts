@@ -2,17 +2,32 @@
 ```
 # from your package directory, run these
 aptos move compile  # need this to fetch dependencies
-move-to-ts # this creates a tsgen folder under build, with all the transpiled ts files
+move-to-ts # this creates a typescript folder under build, with all the transpiled ts files
+
+# or this, generates package.json and tests
+move-to-ts --test --pakcage-json-name myPackageName
+# in the generated build/typescript folder, you'll be able to do these:
+yarn install
+yarn build
+yarn test
 
 ```
 
-A Move-to-TypeScript transpiler & emulator. Still a work in progress. Transpilation *seems* to work but is still being 
-tested. 
+A Move-to-TypeScript transpiler & emulator. Still a work in progress. We're still building the runtime library and
+debugging. Currently we are running unit tests from 4 packages:
+- AptosFramework
+- Std
+- HippoSwap
+- TokenRegistry
 
-Currently generated TypeScript code is not executable because its corresponding TypeScript runtime library isn't fully
-implemented yet. We should get it to a fully working state in about a week's time.
+153 of 188 test cases in total are passing. Many of the failed tests are due to unimplemented runtime features. We aim
+to reduce number of failed tests to < 10 within the week.
 
-
+```
+# test cases aggregated across AptosFramework, Std, HippoSwap, TokenRegistry
+Test Suites: 11 failed, 26 passed, 37 total
+Tests:       35 failed, 153 passed, 188 total
+```
 
 
 # Why?
