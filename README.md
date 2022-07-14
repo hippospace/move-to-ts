@@ -19,13 +19,12 @@ debugging. Currently we are running unit tests from 3 packages:
 - [HippoSwap](https://github.com/hippospace/hippo-swap)
 - [TokenRegistry](https://github.com/hippospace/aptos-registry)
 
-179 of 197 test cases in total are passing. Many of the failed tests are due to unimplemented runtime features. We aim
-to reduce number of failed tests to < 10 within the week.
-
+191 of 197 test cases in total are passing. 5 of the failed tests are due to unimplemented signing/hash feature in the
+runtime. We aim to squash the remaining bug and possibly implement the hash/signing features in the week.
 ```
 # test cases aggregated across AptosFramework, Std, HippoSwap, TokenRegistry
-Test Suites: 9 failed, 28 passed, 37 total
-Tests:       18 failed, 179 passed, 197 total
+Test Suites: 3 failed, 34 passed, 37 total
+Tests:       6 failed, 191 passed, 197 total
 ```
 
 

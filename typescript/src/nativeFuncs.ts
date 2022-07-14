@@ -1,7 +1,7 @@
 import { HexString } from "aptos";
 import { AptosDataCache, IBox, ITable } from "./aptosDataCache";
 import { U128, U64, U8, UnsignedInt } from "./builtinTypes";
-import { AtomicTypeTag, StructTag, substituteTypeParams, TypeParamIdx, TypeTag, VectorTag } from "./typeTag";
+import { AtomicTypeTag, getTypeParamsString, getTypeTagFullname, StructTag, substituteTypeParams, TypeParamIdx, TypeTag, VectorTag } from "./typeTag";
 import * as sha from "sha.js";
 import { SHA3 } from "sha3";
 import bigInt from "big-integer";
@@ -300,7 +300,8 @@ export function AptosFramework_Table_drop_unchecked_box(table: ITable, $c: Aptos
 }
 
 export function AptosFramework_TransactionContext_get_script_hash($c: AptosDataCache): U8[] {
-  throw new Error("Not implemented");
+  // we only support ScriptFunction, for which script hash is empty
+  return [];
 }
 
 export interface ITypeInfo {
@@ -345,10 +346,11 @@ export function AptosFramework_TypeInfo_type_of($c: AptosDataCache, tags: TypeTa
   if (!(tag instanceof StructTag)) {
     throw new Error("type_of requires Struct type as type argument");
   }
+  const struct_name = tag.typeParams.length > 0 ? `${tag.name}::${getTypeParamsString(tag.typeParams)}` : tag.name;
   const newTag = new StructTag(new HexString("0x1"), "TypeInfo", "TypeInfo", []);
   return new ActualTypeInfoClass({
     account_address: tag.address,
     module_name: stringToU8Array(tag.module),
-    struct_name: stringToU8Array(tag.name),
+    struct_name: stringToU8Array(struct_name),
   }, newTag);
 }

@@ -1,6 +1,6 @@
 {
   "name": "@manahippo/move-to-ts",
-  "version": "0.0.24",
+  "version": "0.0.28",
   "license": "MIT",
   "scripts": {
     "build": "rm -rf dist; tsc -p tsconfig.json",

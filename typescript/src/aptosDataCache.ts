@@ -208,6 +208,7 @@ export class AptosLocalCache implements AptosDataCache {
     if (!entry) {
       throw new Error("Key does not exist");
     }
+    tableMap.delete(stringKey);
     return entry;
   }
   table_destroy_empty_box(table: ITable) {
