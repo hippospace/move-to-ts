@@ -1,12 +1,16 @@
 import { TypeTag, StructTag } from "./typeTag";
-import bigInt from "big-integer";
+import bigInt, { isInstance } from "big-integer";
 import { U8, U64, U128, UnsignedInt } from "./builtinTypes";
 import { HexString } from "aptos";
 import stringify from "json-stable-stringify";
 import { StructInfoType } from "./parserRepo";
 
-export function abort(code: any) {
-  throw code;
+export function abortCode(code: any) {
+  if (code instanceof U64) {
+    // consier making it nicer by parsing the first and second byte??
+    return new Error(`${code.value.toString()}`);
+  }
+  return code;
 }
 
 export function assert(cond: boolean, error: any) {
@@ -144,4 +148,44 @@ export function copy<T>(val: T): T {
   else {
     throw new Error(`Unreachable: ${val}`);
   }
+}
+
+export function set(lhs: any, rhs: any) {
+  if (lhs instanceof HexString) {
+    if (!(rhs instanceof HexString)) {
+      throw new Error("Expect both lhs and rhs to be HexString!");
+    }
+    (lhs as unknown as any).hexString = (rhs as unknown as any).hexString;
+  }
+  else if (typeof lhs === 'boolean') {
+    throw new Error("Mutating boolean value by reference not supported");
+  }
+  else if (lhs instanceof UnsignedInt) {
+    if (!(rhs instanceof UnsignedInt)) {
+      throw new Error("Expect both lhs and rhs to be UnsignedInt!");
+    }
+    lhs.$set(rhs);
+  }
+  else if (lhs instanceof Array) {
+    if (!(rhs instanceof Array)) {
+      throw new Error("Expect both lhs and rhs to be array type!");
+    }
+    // clear then copy by value
+    lhs.length = 0;
+    for(const val of rhs) {
+      lhs.push(copy(val));
+    }
+  }
+  else if (lhs.typeTag instanceof StructTag) {
+    // struct set
+    const structInfo = lhs.constructor as StructInfoType;
+    for(const field of structInfo.fields) {
+      lhs[field.name] = copy(rhs[field.name]);
+    }
+  }
+}
+
+export function u8str(array: U8[]): string {
+  const u8array = new Uint8Array(array.map(u => u.toJsNumber()));
+  return new TextDecoder().decode(u8array);
 }

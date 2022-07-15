@@ -405,7 +405,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
         //assert!(c.local_decl_stack.len() == 0);
         w.new_line();
 
-        if is_entry {
+        if is_entry && script_function_has_valid_parameter(&func.signature) {
             // TODO
             // uses entry-func signature, which returns TransactionInfo{toPayload(), send(),
             // sendAndWait()}
@@ -485,6 +485,19 @@ pub fn extract_builtin_type(ty: &SingleType) -> Result<(&BuiltinTypeName_, &Vec<
         SingleType_::Base(base_ty) => extract_builtin_from_base_type(base_ty),
         SingleType_::Ref(_, base_ty) => extract_builtin_from_base_type(base_ty),
     }
+}
+
+pub fn script_function_has_valid_parameter(sig: &FunctionSignature) -> bool {
+    for (var, ty) in sig.parameters.iter() {
+        if is_type_signer(ty) {
+            continue;
+        }
+        let ts_handler = get_ts_handler_for_script_function_param(var, ty);
+        if ts_handler.is_err() {
+            return false;
+        }
+    }
+    true
 }
 
 pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> TermResult {
@@ -806,7 +819,7 @@ fn lvalues_has_new_decl(lvalues: &Vec<LValue>, c: &mut Context) -> Result<bool, 
  */
 
 pub fn is_exp_unit(exp: &Exp) -> bool {
-    matches!(exp.exp.value, UnannotatedExp_::Unit { case: _})
+    matches!(exp.exp.value, UnannotatedExp_::Unit { case: _ })
 }
 
 impl AstTsPrinter for Command {
@@ -841,14 +854,42 @@ impl AstTsPrinter for Command {
                 }
             }
             C::Mutate(lhs, rhs) => match &lhs.exp.value {
+                // DerefAssign
                 UnannotatedExp_::Borrow(_, _, _) => {
                     w.writeln(format!("{} = {};", lhs.term(c)?, rhs.term(c)?));
                 }
+                /*
+                UnannotatedExp_::Copy {
+                    from_user: _,
+                    var: _,
+                } => match &lhs.ty.value {
+                    Type_::Unit => unreachable!(),
+                    Type_::Multiple(_) => {
+                        w.writeln(format!("$.set({}, {})", lhs.term(c)?, rhs.term(c)?));
+                    }
+                    Type_::Single(s_ty) => match &s_ty.value {
+                        SingleType_::Base(base_ty) => {
+                            unreachable!("Cannot DerefAssign on non-ref type");
+                        }
+                        SingleType_::Ref(mutable, base_ty) => match &base_ty.value {
+                            BaseType_::Apply(_, typename, ss) => {}
+                            BaseType_::Param(_) => {
+                                let lhs_str = lhs.term(c)?;
+                                let rhs_str = lhs.term(c)?;
+                                w.writeln(format!("$.set({}, {})" lhs_str, lhs_str));
+                            }
+                            BaseType_::Unreachable | BaseType_::UnresolvedError => {
+                                unreachable!();
+                            }
+                        },
+                    },
+                },
+                 */
                 _ => {
-                    w.writeln(format!("{}.$set({});", lhs.term(c)?, rhs.term(c)?));
+                    w.writeln(format!("$.set({}, {});", lhs.term(c)?, rhs.term(c)?));
                 }
             },
-            C::Abort(e) => w.writeln(format!("throw {};", e.term(c)?)),
+            C::Abort(e) => w.writeln(format!("throw $.abortCode({});", e.term(c)?)),
             C::Return { from_user: _, exp } => {
                 if is_exp_unit(exp) {
                     w.writeln("return;");

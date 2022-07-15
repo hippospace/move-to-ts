@@ -42,19 +42,19 @@ impl AstTsPrinter for Exp {
                                     BuiltinTypeName_::Vector => explicit_copy,
                                     // immutable types, address, signer do not need explicit copy
                                     _ => Ok(nocopy),
-                                }
+                                },
                                 TypeName_::ModuleType(_, _) => explicit_copy,
                             },
                             BaseType_::Unreachable => unreachable!(),
                             BaseType_::UnresolvedError => unreachable!(),
-                        }
-                    }
+                        },
+                    },
                     Type_::Unit => {
                         return derr!((exp.loc, "Cannot copy Unit"));
                     }
                     Type_::Multiple(_) => explicit_copy,
                 }
-            },
+            }
             E::Constant(c) => Ok(rename(c)),
             E::ModuleCall(mcall) => {
                 // ModuleCall
@@ -90,8 +90,21 @@ impl AstTsPrinter for Exp {
                 // op_u64(l, r)
                 (l, op, r).term(c)
             }
-            E::Borrow(_mut_, e, f) => Ok(format!("{}.{}", e.term(c)?, rename(f))),
-            E::BorrowLocal(_mut, v) => Ok(rename(v)),
+            E::Borrow(mutable, e, f) => {
+                /*
+                if *mutable && exp_ty_needs_refmut(exp_ty)  {
+                    Ok(format!("$.refmut({}.{})", e.term(c)?, rename(f)))
+                }
+                else {
+                    Ok(format!("{}.{}", e.term(c)?, rename(f)))
+                }
+                 */
+                Ok(format!("/*{} field*/{}.{}", mutable, e.term(c)?, rename(f)))
+            }
+            E::BorrowLocal(mutable, v) => {
+                Ok(format!("/*{} local*/{}", mutable, rename(v)))
+                //Ok(rename(v))
+            }
             E::Cast(e, ty) => {
                 return Ok(format!("{}({})", builtin_cast_name(&ty, c)?, e.term(c)?));
             }
@@ -103,6 +116,25 @@ impl AstTsPrinter for Exp {
             }
             E::Unreachable => unreachable!(),
         }
+    }
+}
+
+pub fn exp_ty_needs_refmut(ty: &Type) -> bool {
+    match &ty.value {
+        Type_::Unit => unreachable!(),
+        Type_::Multiple(_) => true,
+        Type_::Single(s_ty) => match &s_ty.value {
+            SingleType_::Ref(_, _) => false,
+            SingleType_::Base(base_ty) => match &base_ty.value {
+                BaseType_::UnresolvedError => unreachable!(),
+                BaseType_::Unreachable => unreachable!(),
+                BaseType_::Param(_) => true,
+                BaseType_::Apply(_, typename, _) => match &typename.value {
+                    TypeName_::Builtin(_) => true,
+                    TypeName_::ModuleType(_, _) => false,
+                },
+            },
+        },
     }
 }
 

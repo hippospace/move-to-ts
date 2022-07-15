@@ -35,6 +35,7 @@ export class UnsignedInt<T extends IntInterface<T>> {
 
   $set(val: T) {
     this.value = val.value;
+    this.checkBounds();
   }
 
   or(other: T): T {

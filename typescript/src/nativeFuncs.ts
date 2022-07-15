@@ -8,6 +8,9 @@ import bigInt from "big-integer";
 import * as elliptic from "elliptic";
 import { BCS } from "aptos";
 import { FieldDeclType, StructInfoType, TypeParamDeclType } from "./parserRepo";
+import { Bls12381G1KeyPair } from "@mattrglobal/bls12381-key-pair";
+import { u8str } from "./builtinFuncs";
+import base from "base-x";
 
 
 /*
@@ -257,6 +260,16 @@ export function AptosFramework_Signature_ed25519_validate_pubkey(pubkey: U8[], $
 
 export function AptosFramework_Signature_bls12381_validate_pubkey(pubkey: U8[], proof: U8[], $c: AptosDataCache): boolean {
   throw new Error("Not implemented");
+  /*
+  const bs58 = base('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
+  const pubkeyBytes = new Uint8Array(pubkey.map(u => u.toJsNumber()));
+  const proofBytes = new Uint8Array(proof.map(u => u.toJsNumber()));
+  const pubkeyBase58 = bs58.encode(pubkeyBytes);
+  const proofBase58 = bs58.encode(proofBytes);
+  const keypair = new Bls12381G1KeyPair({publicKeyBase58: pubkeyBase58});
+  const result = keypair.verifyFingerprint(proofBase58);
+  return !!result.valid;
+  */
 }
 
 export function AptosFramework_Signature_ed25519_verify(signature: U8[], pubkey: U8[], message: U8[], $c: AptosDataCache): boolean {
