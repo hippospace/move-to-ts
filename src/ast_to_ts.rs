@@ -858,6 +858,9 @@ impl AstTsPrinter for Command {
                 UnannotatedExp_::Borrow(_, _, _) => {
                     w.writeln(format!("{} = {};", lhs.term(c)?, rhs.term(c)?));
                 }
+                UnannotatedExp_::Dereference(_) => {
+                    return derr!((lhs.exp.loc, "Dereference in Mutate not implemented yet"));
+                }
                 /*
                 UnannotatedExp_::Copy {
                     from_user: _,

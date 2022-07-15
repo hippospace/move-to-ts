@@ -40,8 +40,10 @@ impl AstTsPrinter for Exp {
                                 TypeName_::Builtin(builtin) => match &builtin.value {
                                     // vector needs explicit copy
                                     BuiltinTypeName_::Vector => explicit_copy,
+                                    BuiltinTypeName_::Bool => Ok(nocopy),
                                     // immutable types, address, signer do not need explicit copy
-                                    _ => Ok(nocopy),
+                                    //_ => Ok(nocopy),
+                                    _ => explicit_copy,
                                 },
                                 TypeName_::ModuleType(_, _) => explicit_copy,
                             },
@@ -81,7 +83,10 @@ impl AstTsPrinter for Exp {
                 // FIXME: what is this, really?
                 Ok(format!("[{}]", comma_term(es, c, |e, c| e.term(c))?))
             }
-            E::Dereference(e) => e.term(c),
+            E::Dereference(e) => {
+                // dereference on RHS is copy, Dereference on LHS is handled in Mutate
+                Ok(format!("$.copy({})", e.term(c)?))
+            }
             E::UnaryExp(op, e) => {
                 // only '!', which should just work
                 Ok(format!("{}{}", op.term(c)?, e.term(c)?))
@@ -90,7 +95,7 @@ impl AstTsPrinter for Exp {
                 // op_u64(l, r)
                 (l, op, r).term(c)
             }
-            E::Borrow(mutable, e, f) => {
+            E::Borrow(_, e, f) => {
                 /*
                 if *mutable && exp_ty_needs_refmut(exp_ty)  {
                     Ok(format!("$.refmut({}.{})", e.term(c)?, rename(f)))
@@ -99,10 +104,10 @@ impl AstTsPrinter for Exp {
                     Ok(format!("{}.{}", e.term(c)?, rename(f)))
                 }
                  */
-                Ok(format!("/*{} field*/{}.{}", mutable, e.term(c)?, rename(f)))
+                Ok(format!("{}.{}", e.term(c)?, rename(f)))
             }
-            E::BorrowLocal(mutable, v) => {
-                Ok(format!("/*{} local*/{}", mutable, rename(v)))
+            E::BorrowLocal(_, v) => {
+                Ok(format!("{}", rename(v)))
                 //Ok(rename(v))
             }
             E::Cast(e, ty) => {

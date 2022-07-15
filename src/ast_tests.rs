@@ -3,7 +3,7 @@ use crate::tsgen_writer::TsgenWriter;
 use itertools::Itertools;
 use move_compiler::{
     diagnostics::{Diagnostic, Diagnostics},
-    expansion::ast::{AttributeValue, AttributeValue_, Attribute_},
+    expansion::ast::{Attribute, AttributeValue, AttributeValue_, Attribute_},
     hlir::ast::*,
     parser::ast::FunctionName,
 };
@@ -87,6 +87,31 @@ pub fn generate_tests(c: &mut Context) -> Result<(String, String), Diagnostics> 
     }
 }
 
+pub fn get_abort_code_from_expected_failure( expected_failure: &Attribute, ) -> String {
+    match &expected_failure.value {
+        Attribute_::Parameterized(_, attrs_inner) => {
+            for (name, attr) in attrs_inner.key_cloned_iter() {
+                if name.to_string() == "abort_code" {
+                    if let Attribute_::Assigned(_, val) = &attr.value {
+                        if let AttributeValue_::Value(v) = &val.value {
+                            use move_compiler::expansion::ast::Value_ as V;
+                            return match &v.value {
+                                V::U8(u) => quote(u),
+                                V::U64(u) => quote(u),
+                                V::U128(u) => quote(u),
+                                V::InferredNum(u) => quote(u),
+                                _ => "".to_string(),
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        _ => (),
+    }
+    "".to_string()
+}
+
 pub fn write_tests(w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
     let mident = c.current_module.unwrap();
 
@@ -137,11 +162,13 @@ pub fn write_tests(w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
             .map(|(var, _ty)| var.to_string())
             .join(", ");
         if let Some(failure_attr) = expect_failure_attr {
+            let abort_code = get_abort_code_from_expected_failure(failure_attr);
             w.writeln(format!(
-                "expect( () => Source.{}$({}{}$c) ).toThrow();",
+                "expect( () => Source.{}$({}{}$c) ).toThrow({});",
                 name,
                 args,
-                if !args.is_empty() { ", " } else { "" }
+                if !args.is_empty() { ", " } else { "" },
+                abort_code,
             ));
         } else {
             w.writeln(format!(
