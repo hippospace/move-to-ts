@@ -1,16 +1,8 @@
 # move-to-ts
+From your package directory, run these:
 ```
-# from your package directory, run these
-aptos move compile  # need this to fetch dependencies
-move-to-ts # this creates a typescript folder under build, with all the transpiled ts files
-
-# or this, generates package.json and tests
-move-to-ts --test --pakcage-json-name myPackageName
-# in the generated build/typescript folder, you'll be able to do these:
-yarn install
-yarn build
-yarn test
-
+aptos move compile          # need this to fetch dependencies
+move-to-ts                  # this creates a typescript folder under build, with all the transpiled ts files
 ```
 
 A Move-to-TypeScript transpiler & emulator. Everything *seems* to work now. We have a testsuite that aggregates 347 unit
@@ -24,8 +16,18 @@ We are only failing 6 out of 347 test cases. All 6 failures are due to unimpleme
 native functions. We are continuously adding more tests and packages to the testsuite so as to stress test our
 transpiler.
 ```
-# test cases aggregated across AptosFramework, Std, HippoSwap, TokenRegistry
 Tests:       6 failed, 347 passed, 353 total
+```
+
+To run the testsuite:
+```
+cd move-testsuite
+aptos move compile                                      # fetch dependencies
+move-to-ts --test --pakcage-json-name myPackageName     # build tests and the full ts package
+cd build/typescript
+yarn install                                            # install dependencies
+yarn build
+yarn test                                               # run all unit tests with jest
 ```
 
 
