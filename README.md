@@ -14,18 +14,18 @@ yarn test
 ```
 
 A Move-to-TypeScript transpiler & emulator. Still a work in progress. We're still building the runtime library and
-debugging. Currently we are running unit tests from 3 packages:
+debugging. Currently we are running unit tests from 4 packages:
 - [AptosFramework](https://github.com/aptos-labs/aptos-core/tree/main/aptos-move/framework)
 - [HippoSwap](https://github.com/hippospace/hippo-swap)
 - [TokenRegistry](https://github.com/hippospace/aptos-registry)
+- [Econia](https://github.com/econia-labs/econia)
 
-191 of 197 test cases in total are passing. 5 of the failed tests are due to unimplemented signing/hash feature in the
-runtime. We aim to squash the remaining bug and possibly implement the hash/signing features in the week.
+325 of 334 test cases in total are passing. 5 of the failed tests are due to unimplemented signing/hash feature in the
+runtime (we probably won't implement them in a while). We aim to squash the remaining 4 bugs in the week.
 ```
 # test cases aggregated across AptosFramework, Std, HippoSwap, TokenRegistry
-Test Suites: 3 failed, 34 passed, 37 total
-Tests:       6 failed, 191 passed, 197 total
-```
+Test Suites: 5 failed, 42 passed, 47 total
+Tests:       9 failed, 344 passed, 353 total
 
 
 # Why?
