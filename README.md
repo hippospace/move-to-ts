@@ -26,6 +26,7 @@ transpiler.
 ```
 # test cases aggregated across AptosFramework, Std, HippoSwap, TokenRegistry
 Tests:       6 failed, 347 passed, 353 total
+```
 
 
 # Why?
