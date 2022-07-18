@@ -1,5 +1,6 @@
 use move_compiler::expansion::ast::ModuleIdent;
 use std::fmt;
+use itertools::Itertools;
 
 pub fn generate_package_json(package_name: String) -> (String, String) {
     let content = format!(
@@ -30,7 +31,7 @@ pub fn generate_package_json(package_name: String) -> (String, String) {
   "dependencies": {{
     "aptos": "^1.2.0",
     "big-integer": "^1.6.51",
-    "@manahippo/move-to-ts": "^0.0.34"
+    "@manahippo/move-to-ts": "^0.0.40"
   }}
 }}
 "###,
@@ -98,7 +99,7 @@ pub fn rename(name: &impl fmt::Display) -> String {
 
 pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (String, String) {
     let filename = format!("{}/index.ts", package_name);
-    let content = modules
+    let exports = modules
         .iter()
         .map(|mi| {
             format!(
@@ -108,15 +109,73 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         })
         .collect::<Vec<_>>()
         .join("");
+
+    let imports = modules
+        .iter()
+        .map(|mi| {
+            format!(
+                "import * as {} from './{}';\n",
+                mi.value.module, mi.value.module
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("");
+
+    let loads = modules.iter().map(|mi| format!("  {}.loadParsers(repo);", mi.value.module)).join
+    ("\n");
+
+    let content = format!(
+        r###"
+import {{ AptosParserRepo }} from "@manahippo/move-to-ts";
+{}
+{}
+
+export function loadParsers(repo: AptosParserRepo) {{
+{}
+}}
+
+export function getPackageRepo(): AptosParserRepo {{
+  const repo = new AptosParserRepo();
+  loadParsers(repo);
+  repo.addDefaultParsers();
+  return repo;
+}}
+"###,
+        imports, exports, loads
+    );
+
     (filename, content)
 }
 
 pub fn generate_topmost_index(packages: &Vec<&String>) -> (String, String) {
     let filename = "index.ts".to_string();
-    let content = packages
+    let exports = packages
         .iter()
         .map(|package_name| format!("export * as {} from './{}';\n", package_name, package_name))
         .collect::<Vec<_>>()
         .join("");
+
+    let imports = packages
+        .iter()
+        .map(|package_name| format!("import * as {} from './{}';\n", package_name, package_name))
+        .collect::<Vec<_>>()
+        .join("");
+
+    let loads = packages.iter().map(|p| format!("  {}.loadParsers(repo);", p)).join("\n");
+
+    let content = format!(r###"
+import {{ AptosParserRepo }} from "@manahippo/move-to-ts";
+{}
+{}
+
+export function getProjectRepo(): AptosParserRepo {{
+  const repo = new AptosParserRepo();
+{}
+  repo.addDefaultParsers();
+  return repo;
+}}
+"###,
+        imports, exports, loads);
+
     (filename, content)
 }

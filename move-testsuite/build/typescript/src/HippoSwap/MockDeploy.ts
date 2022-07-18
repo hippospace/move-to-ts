@@ -47,7 +47,7 @@ export function init_registry$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_init_coin$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -64,4 +64,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

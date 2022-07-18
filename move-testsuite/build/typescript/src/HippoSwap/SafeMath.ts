@@ -51,7 +51,7 @@ export function unit_test_poison$ (
   return;
 }
 
-// test func
+// #[test]
 export function works$ (
   $c: AptosDataCache,
 ): void {
@@ -67,4 +67,6 @@ export function works$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

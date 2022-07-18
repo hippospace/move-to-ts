@@ -36,7 +36,7 @@ export const POOL_TYPE_PIECEWISE : U8 = u8("3");
 export const POOL_TYPE_STABLE_CURVE : U8 = u8("2");
 export const SWAPPER : HexString = new HexString("0x2ffe");
 
-// test func
+// #[test]
 export function test_pool_constant_product$ (
   admin: HexString,
   investor: HexString,
@@ -68,4 +68,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

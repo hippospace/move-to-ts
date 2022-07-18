@@ -230,7 +230,7 @@ export function destroy_empty$ (
   return;
 }
 
-// test func
+// #[test]
 export function hash_map_bucket_index_test$ (
   $c: AptosDataCache,
 ): void {
@@ -272,7 +272,7 @@ export function hash_map_bucket_index_test$ (
   return;
 }
 
-// test func
+// #[test]
 export function hash_map_split_test$ (
   $c: AptosDataCache,
 ): void {
@@ -301,7 +301,7 @@ export function hash_map_split_test$ (
   return;
 }
 
-// test func
+// #[test]
 export function hash_map_test$ (
   $c: AptosDataCache,
 ): void {
@@ -472,4 +472,8 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::BucketTable::BucketTable", BucketTable.BucketTableParser);
+  repo.addParser("0x1::BucketTable::Entry", Entry.EntryParser);
+}
 

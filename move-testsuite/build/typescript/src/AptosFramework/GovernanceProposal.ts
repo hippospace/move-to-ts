@@ -39,7 +39,7 @@ export function create_proposal$ (
   return new GovernanceProposal({  }, new StructTag(new HexString("0x1"), "GovernanceProposal", "GovernanceProposal", []));
 }
 
-// test func
+// #[test]
 export function create_test_proposal$ (
   $c: AptosDataCache,
 ): GovernanceProposal {
@@ -53,4 +53,7 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::GovernanceProposal::GovernanceProposal", GovernanceProposal.GovernanceProposalParser);
+}
 

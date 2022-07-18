@@ -249,4 +249,10 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::GUID::CreateCapability", CreateCapability.CreateCapabilityParser);
+  repo.addParser("0x1::GUID::GUID", GUID.GUIDParser);
+  repo.addParser("0x1::GUID::Generator", Generator.GeneratorParser);
+  repo.addParser("0x1::GUID::ID", ID.IDParser);
+}
 

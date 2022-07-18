@@ -445,7 +445,7 @@ export function deposit_y$ (
   return;
 }
 
-// test func
+// #[test]
 export function expand_to_decimals$ (
   num: U64,
   decimals: U8,
@@ -487,7 +487,7 @@ export function get_reserves$ (
   return [$.copy(reserve.reserve_x), $.copy(reserve.reserve_y), $.copy(reserve.block_timestamp_last)];
 }
 
-// test func
+// #[test]
 export function init_works$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -498,7 +498,7 @@ export function init_works$ (
   return;
 }
 
-// test func
+// #[test]
 export function issue_token$ (
   admin: HexString,
   to: HexString,
@@ -621,7 +621,7 @@ export function mint_lp_to$ (
   return;
 }
 
-// test func
+// #[test]
 export function mint_lp_to_self$ (
   amount: U64,
   $c: AptosDataCache,
@@ -633,7 +633,7 @@ export function mint_lp_to_self$ (
   return;
 }
 
-// test func
+// #[test]
 export function mint_works$ (
   admin: HexString,
   token_owner: HexString,
@@ -731,7 +731,7 @@ export function remove_liquidity_direct$ (
   return [coins_x, coins_y];
 }
 
-// test func
+// #[test]
 export function remove_liquidity_works$ (
   admin: HexString,
   token_owner: HexString,
@@ -893,7 +893,7 @@ export function swap_x_to_exact_y_direct$ (
   return [coins_x_out, coins_y_out];
 }
 
-// test func
+// #[test]
 export function swap_x_works$ (
   admin: HexString,
   token_owner: HexString,
@@ -1075,4 +1075,12 @@ export function update$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::CPSwap::CapContainer", CapContainer.CapContainerParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::CPSwap::LPToken", LPToken.LPTokenParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::CPSwap::Token0", Token0.Token0Parser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::CPSwap::Token1", Token1.Token1Parser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::CPSwap::TokenPairMetadata", TokenPairMetadata.TokenPairMetadataParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::CPSwap::TokenPairReserve", TokenPairReserve.TokenPairReserveParser);
+}
 

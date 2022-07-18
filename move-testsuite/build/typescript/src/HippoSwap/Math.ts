@@ -41,7 +41,7 @@ export function max_u64$ (
   return temp$1;
 }
 
-// test func
+// #[test]
 export function max_works$ (
   $c: AptosDataCache,
 ): void {
@@ -90,7 +90,7 @@ export function pow$ (
   return $.copy(result);
 }
 
-// test func
+// #[test]
 export function pow_works$ (
   $c: AptosDataCache,
 ): void {
@@ -137,7 +137,7 @@ export function sqrt$ (
   return temp$2;
 }
 
-// test func
+// #[test]
 export function sqrt_works$ (
   $c: AptosDataCache,
 ): void {
@@ -154,4 +154,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

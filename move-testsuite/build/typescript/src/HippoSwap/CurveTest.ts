@@ -185,7 +185,7 @@ export class WalletDelta
   }
 
 }
-// test func
+// #[test]
 export function add_param$ (
   amt_x: U64,
   amt_y: U64,
@@ -199,7 +199,7 @@ export function add_param$ (
   return new TransactionParams({ amt_x: $.copy(amt_x), amt_y: $.copy(amt_y), amt_lp: u64("0"), p: new PoolDelta({ sx: INC, sy: INC, slp: INC, sfx: INC, sfy: INC, sflp: INC, dx: $.copy(dx), dy: $.copy(dy), dlp: $.copy(dlp), dfx: $.copy(dfx), dfy: $.copy(dfy), dflp: u64("0") }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "PoolDelta", [])), w: new WalletDelta({ sx: DEC, sy: DEC, slp: INC, dx: $.copy(amt_x), dy: $.copy(amt_y), dlp: $.copy(dlp) }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "WalletDelta", [])) }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "TransactionParams", []));
 }
 
-// test func
+// #[test]
 export function new_transaction_param$ (
   amt_x: U64,
   amt_y: U64,
@@ -227,7 +227,7 @@ export function new_transaction_param$ (
   return new TransactionParams({ amt_x: $.copy(amt_x), amt_y: $.copy(amt_y), amt_lp: $.copy(amt_lp), p: new PoolDelta({ sx: $.copy(sx), sy: $.copy(sy), slp: $.copy(slp), sfx: $.copy(sfx), sfy: $.copy(sfy), sflp: $.copy(sflp), dx: $.copy(dx), dy: $.copy(dy), dlp: $.copy(dlp), dfx: $.copy(dfx), dfy: $.copy(dfy), dflp: $.copy(dflp) }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "PoolDelta", [])), w: new WalletDelta({ sx: $.copy(wsx), sy: $.copy(wsy), slp: $.copy(wslp), dx: $.copy(wdx), dy: $.copy(wdy), dlp: $.copy(wdlp) }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "WalletDelta", [])) }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "TransactionParams", []));
 }
 
-// test func
+// #[test]
 export function perform_transaction$ (
   trader: HexString,
   pool_type: U8,
@@ -263,7 +263,7 @@ export function perform_transaction$ (
   return;
 }
 
-// test func
+// #[test]
 export function remove_param$ (
   amt_lp: U64,
   dx: U64,
@@ -273,7 +273,7 @@ export function remove_param$ (
   return new TransactionParams({ amt_x: u64("0"), amt_y: u64("0"), amt_lp: $.copy(amt_lp), p: new PoolDelta({ sx: DEC, sy: DEC, slp: DEC, sfx: DEC, sfy: DEC, sflp: DEC, dx: $.copy(dx), dy: $.copy(dy), dlp: $.copy(amt_lp), dfx: u64("0"), dfy: u64("0"), dflp: u64("0") }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "PoolDelta", [])), w: new WalletDelta({ sx: INC, sy: INC, slp: DEC, dx: $.copy(dx), dy: $.copy(dy), dlp: $.copy(amt_lp) }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "WalletDelta", [])) }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "TransactionParams", []));
 }
 
-// test func
+// #[test]
 export function swap_param$ (
   amt_x: U64,
   amt_y: U64,
@@ -294,7 +294,7 @@ export function swap_param$ (
   return new TransactionParams({ amt_x: $.copy(amt_x), amt_y: $.copy(amt_y), amt_lp: u64("0"), p: new PoolDelta({ sx: $.copy(sx), sy: $.copy(sy), slp: INC, sfx: INC, sfy: INC, sflp: INC, dx: $.copy(dx), dy: $.copy(dy), dlp: u64("0"), dfx: $.copy(dfx), dfy: $.copy(dfy), dflp: u64("0") }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "PoolDelta", [])), w: new WalletDelta({ sx: $.copy(sy), sy: $.copy(sx), slp: INC, dx: $.copy(wdx), dy: $.copy(wdy), dlp: u64("0") }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "WalletDelta", [])) }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "CurveTest", "TransactionParams", []));
 }
 
-// test func
+// #[test]
 export function test_pool$ (
   admin: HexString,
   investor: HexString,
@@ -324,7 +324,7 @@ export function test_pool$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_case$ (
   admin: HexString,
   investor: HexString,
@@ -369,7 +369,7 @@ export function test_pool_case$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_debug$ (
   admin: HexString,
   investor: HexString,
@@ -400,7 +400,7 @@ export function test_pool_debug$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_2$ (
   admin: HexString,
   investor: HexString,
@@ -418,7 +418,7 @@ export function test_pool_stable_curve_2$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_3$ (
   admin: HexString,
   investor: HexString,
@@ -436,7 +436,7 @@ export function test_pool_stable_curve_3$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_4$ (
   admin: HexString,
   investor: HexString,
@@ -454,7 +454,7 @@ export function test_pool_stable_curve_4$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_5$ (
   admin: HexString,
   investor: HexString,
@@ -477,7 +477,7 @@ export function test_pool_stable_curve_5$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_6$ (
   admin: HexString,
   investor: HexString,
@@ -496,7 +496,7 @@ export function test_pool_stable_curve_6$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_7$ (
   admin: HexString,
   investor: HexString,
@@ -515,7 +515,7 @@ export function test_pool_stable_curve_7$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_8$ (
   admin: HexString,
   investor: HexString,
@@ -534,7 +534,7 @@ export function test_pool_stable_curve_8$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_accumulative_giant$ (
   admin: HexString,
   investor: HexString,
@@ -585,7 +585,7 @@ export function test_pool_stable_curve_accumulative_giant$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_accumulative_loop_swap$ (
   admin: HexString,
   investor: HexString,
@@ -624,7 +624,7 @@ export function test_pool_stable_curve_accumulative_loop_swap$ (
   }return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_add_remove$ (
   admin: HexString,
   investor: HexString,
@@ -642,7 +642,7 @@ export function test_pool_stable_curve_add_remove$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_deviant$ (
   admin: HexString,
   investor: HexString,
@@ -665,7 +665,7 @@ export function test_pool_stable_curve_deviant$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_standard$ (
   admin: HexString,
   investor: HexString,
@@ -683,7 +683,7 @@ export function test_pool_stable_curve_standard$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_pool_stable_curve_tiny_amt$ (
   admin: HexString,
   investor: HexString,
@@ -708,4 +708,9 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::CurveTest::PoolDelta", PoolDelta.PoolDeltaParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::CurveTest::TransactionParams", TransactionParams.TransactionParamsParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::CurveTest::WalletDelta", WalletDelta.WalletDeltaParser);
+}
 

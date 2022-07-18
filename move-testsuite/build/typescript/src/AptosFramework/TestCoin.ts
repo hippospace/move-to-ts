@@ -141,7 +141,6 @@ export function claim_mint_capability$ (
 
 
 export function buildPayload_claim_mint_capability (
-  account: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -176,7 +175,6 @@ export function delegate_mint_capability$ (
 
 
 export function buildPayload_delegate_mint_capability (
-  account: HexString,
   to: HexString,
 ) {
   const typeParamStrings = [] as string[];
@@ -184,7 +182,7 @@ export function buildPayload_delegate_mint_capability (
     "0x1::TestCoin::delegate_mint_capability",
     typeParamStrings,
     [
-      to,
+      $.payloadArg(to),
     ]
   );
 
@@ -249,7 +247,6 @@ export function mint$ (
 
 
 export function buildPayload_mint (
-  account: HexString,
   dst_addr: HexString,
   amount: U64,
 ) {
@@ -258,8 +255,8 @@ export function buildPayload_mint (
     "0x1::TestCoin::mint",
     typeParamStrings,
     [
-      dst_addr,
-      amount.toPayloadArg(),
+      $.payloadArg(dst_addr),
+      $.payloadArg(amount),
     ]
   );
 
@@ -271,4 +268,10 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::TestCoin::Capabilities", Capabilities.CapabilitiesParser);
+  repo.addParser("0x1::TestCoin::DelegatedMintCapability", DelegatedMintCapability.DelegatedMintCapabilityParser);
+  repo.addParser("0x1::TestCoin::Delegations", Delegations.DelegationsParser);
+  repo.addParser("0x1::TestCoin::TestCoin", TestCoin.TestCoinParser);
+}
 

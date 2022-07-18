@@ -56,7 +56,7 @@ export function get_v_n$ (
   return get_updated_mock_version_number$($c);
 }
 
-// test func
+// #[test]
 export function get_v_n_success$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -76,7 +76,6 @@ export function get_v_n_success$ (
 
 
 export function buildPayload_get_v_n_success (
-  econia: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -86,7 +85,7 @@ export function buildPayload_get_v_n_success (
   );
 
 }
-// test func
+// #[test]
 export function init_mock_failure_exists$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -98,7 +97,6 @@ export function init_mock_failure_exists$ (
 
 
 export function buildPayload_init_mock_failure_exists (
-  econia: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -108,7 +106,7 @@ export function buildPayload_init_mock_failure_exists (
   );
 
 }
-// test func
+// #[test]
 export function init_mock_failure_not_econia$ (
   account: HexString,
   $c: AptosDataCache,
@@ -119,7 +117,6 @@ export function init_mock_failure_not_econia$ (
 
 
 export function buildPayload_init_mock_failure_not_econia (
-  account: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -129,7 +126,7 @@ export function buildPayload_init_mock_failure_not_econia (
   );
 
 }
-// test func
+// #[test]
 export function init_mock_success$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -143,7 +140,6 @@ export function init_mock_success$ (
 
 
 export function buildPayload_init_mock_success (
-  econia: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -176,4 +172,7 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xc0deb00c::Version::MC", MC.MCParser);
+}
 

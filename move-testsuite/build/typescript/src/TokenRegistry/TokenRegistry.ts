@@ -192,7 +192,6 @@ export function add_token_script$ (
 
 
 export function buildPayload_add_token_script (
-  admin: HexString,
   name: U8[],
   symbol: U8[],
   description: U8[],
@@ -206,12 +205,12 @@ export function buildPayload_add_token_script (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::TokenRegistry::add_token_script",
     typeParamStrings,
     [
-      name.map(u => u.toPayloadArg()),
-      symbol.map(u => u.toPayloadArg()),
-      description.map(u => u.toPayloadArg()),
-      decimals.toPayloadArg(),
-      logo_url.map(u => u.toPayloadArg()),
-      project_url.map(u => u.toPayloadArg()),
+      $.u8ArrayArg(name),
+      $.u8ArrayArg(symbol),
+      $.u8ArrayArg(description),
+      $.payloadArg(decimals),
+      $.u8ArrayArg(logo_url),
+      $.u8ArrayArg(project_url),
     ]
   );
 
@@ -248,7 +247,6 @@ export function delist_token_script$ (
 
 
 export function buildPayload_delist_token_script (
-  admin: HexString,
   symbol: U8[],
 ) {
   const typeParamStrings = [] as string[];
@@ -256,12 +254,12 @@ export function buildPayload_delist_token_script (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::TokenRegistry::delist_token_script",
     typeParamStrings,
     [
-      symbol.map(u => u.toPayloadArg()),
+      $.u8ArrayArg(symbol),
     ]
   );
 
 }
-// test func
+// #[test]
 export function do_add_token$ (
   admin: HexString,
   symbol: U8[],
@@ -336,7 +334,6 @@ export function initialize_script$ (
 
 
 export function buildPayload_initialize_script (
-  admin: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -353,7 +350,7 @@ export function is_registry_initialized$ (
   return $c.exists(new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "TokenRegistry", "TokenRegistry", []), $.copy(admin));
 }
 
-// test func
+// #[test]
 export function test_add_then_delist_then_add$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -374,7 +371,7 @@ export function test_add_then_delist_then_add$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_add_token$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -384,7 +381,7 @@ export function test_add_token$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_add_token_before_initialize$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -393,7 +390,7 @@ export function test_add_token_before_initialize$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_add_token_same_symbol$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -404,7 +401,7 @@ export function test_add_token_same_symbol$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_add_token_same_type$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -415,7 +412,7 @@ export function test_add_token_same_type$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_add_token_twice$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -426,7 +423,7 @@ export function test_add_token_twice$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_initialize$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -441,7 +438,7 @@ export function test_initialize$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_initialize_twice$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -451,7 +448,7 @@ export function test_initialize_twice$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_update_token$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -526,7 +523,6 @@ export function update_token_info_script$ (
 
 
 export function buildPayload_update_token_info_script (
-  admin: HexString,
   symbol: U8[],
   description: U8[],
   logo_url: U8[],
@@ -537,12 +533,18 @@ export function buildPayload_update_token_info_script (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::TokenRegistry::update_token_info_script",
     typeParamStrings,
     [
-      symbol.map(u => u.toPayloadArg()),
-      description.map(u => u.toPayloadArg()),
-      logo_url.map(u => u.toPayloadArg()),
-      project_url.map(u => u.toPayloadArg()),
+      $.u8ArrayArg(symbol),
+      $.u8ArrayArg(description),
+      $.u8ArrayArg(logo_url),
+      $.u8ArrayArg(project_url),
     ]
   );
 
+}
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::TokenRegistry::FakeBtc", FakeBtc.FakeBtcParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::TokenRegistry::FakeEth", FakeEth.FakeEthParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::TokenRegistry::TokenInfo", TokenInfo.TokenInfoParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::TokenRegistry::TokenRegistry", TokenRegistry.TokenRegistryParser);
 }
 

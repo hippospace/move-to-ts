@@ -174,4 +174,8 @@ export function update_epoch_interval$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Block::BlockMetadata", BlockMetadata.BlockMetadataParser);
+  repo.addParser("0x1::Block::NewBlockEvent", NewBlockEvent.NewBlockEventParser);
+}
 

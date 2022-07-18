@@ -39,7 +39,6 @@ export function add_liquidity$ (
 
 
 export function buildPayload_add_liquidity (
-  sender: HexString,
   amount_x: U64,
   amount_y: U64,
   $p: TypeTag[], /* <X, Y>*/
@@ -49,13 +48,13 @@ export function buildPayload_add_liquidity (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::StableCurveScripts::add_liquidity",
     typeParamStrings,
     [
-      amount_x.toPayloadArg(),
-      amount_y.toPayloadArg(),
+      $.payloadArg(amount_x),
+      $.payloadArg(amount_y),
     ]
   );
 
 }
-// test func
+// #[test]
 export function assert_launch_lq$ (
   admin: HexString,
   core: HexString,
@@ -109,7 +108,7 @@ export function create_new_pool$ (
   return;
 }
 
-// test func
+// #[test]
 export function fail_lp_amt$ (
   admin: HexString,
   core: HexString,
@@ -128,8 +127,6 @@ export function fail_lp_amt$ (
 
 
 export function buildPayload_fail_lp_amt (
-  admin: HexString,
-  core: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -202,7 +199,6 @@ export function mock_deploy_script$ (
 
 
 export function buildPayload_mock_deploy_script (
-  admin: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -226,7 +222,6 @@ export function remove_liquidity$ (
 
 
 export function buildPayload_remove_liquidity (
-  sender: HexString,
   liquidity: U64,
   min_amount_x: U64,
   min_amount_y: U64,
@@ -237,14 +232,14 @@ export function buildPayload_remove_liquidity (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::StableCurveScripts::remove_liquidity",
     typeParamStrings,
     [
-      liquidity.toPayloadArg(),
-      min_amount_x.toPayloadArg(),
-      min_amount_y.toPayloadArg(),
+      $.payloadArg(liquidity),
+      $.payloadArg(min_amount_x),
+      $.payloadArg(min_amount_y),
     ]
   );
 
 }
-// test func
+// #[test]
 export function start_up$ (
   admin: HexString,
   user: HexString,
@@ -270,9 +265,6 @@ export function start_up$ (
 
 
 export function buildPayload_start_up (
-  admin: HexString,
-  user: HexString,
-  core: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -349,7 +341,6 @@ export function swap_script$ (
 
 
 export function buildPayload_swap_script (
-  sender: HexString,
   x_in: U64,
   y_in: U64,
   x_min_out: U64,
@@ -361,15 +352,15 @@ export function buildPayload_swap_script (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::StableCurveScripts::swap_script",
     typeParamStrings,
     [
-      x_in.toPayloadArg(),
-      y_in.toPayloadArg(),
-      x_min_out.toPayloadArg(),
-      y_min_out.toPayloadArg(),
+      $.payloadArg(x_in),
+      $.payloadArg(y_in),
+      $.payloadArg(x_min_out),
+      $.payloadArg(y_min_out),
     ]
   );
 
 }
-// test func
+// #[test]
 export function test_data_set_init_coins$ (
   admin: HexString,
   core: HexString,
@@ -394,7 +385,7 @@ export function test_data_set_init_coins$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_data_set_init_imbalance$ (
   admin: HexString,
   core: HexString,
@@ -404,7 +395,7 @@ export function test_data_set_init_imbalance$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_data_set_init_small_qr_1$ (
   admin: HexString,
   core: HexString,
@@ -414,7 +405,7 @@ export function test_data_set_init_small_qr_1$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_data_set_init_small_qr_2$ (
   admin: HexString,
   core: HexString,
@@ -424,7 +415,7 @@ export function test_data_set_init_small_qr_2$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_data_set_init_tiny_q$ (
   admin: HexString,
   core: HexString,
@@ -434,7 +425,7 @@ export function test_data_set_init_tiny_q$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_data_set_init_tiny_qr_1$ (
   admin: HexString,
   core: HexString,
@@ -444,7 +435,7 @@ export function test_data_set_init_tiny_qr_1$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_data_set_init_tiny_qr_2$ (
   admin: HexString,
   core: HexString,
@@ -454,7 +445,7 @@ export function test_data_set_init_tiny_qr_2$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_data_set_init_tiny_qr_3$ (
   admin: HexString,
   core: HexString,
@@ -464,7 +455,7 @@ export function test_data_set_init_tiny_qr_3$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_data_set_max_level$ (
   admin: HexString,
   core: HexString,
@@ -479,7 +470,7 @@ export function test_data_set_max_level$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_data_set_trade_proc$ (
   admin: HexString,
   core: HexString,
@@ -561,7 +552,7 @@ export function test_data_set_trade_proc$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_data_set_validate_basic$ (
   admin: HexString,
   core: HexString,
@@ -596,7 +587,7 @@ export function test_data_set_validate_basic$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_data_set_validate_scale$ (
   admin: HexString,
   core: HexString,
@@ -605,7 +596,7 @@ export function test_data_set_validate_scale$ (
   return assert_launch_lq$(admin, core, u64("5000000000"), u64("5000000000"), u64("10000000000"), $c);
 }
 
-// test func
+// #[test]
 export function test_fail_output_less_x$ (
   admin: HexString,
   user: HexString,
@@ -620,9 +611,6 @@ export function test_fail_output_less_x$ (
 
 
 export function buildPayload_test_fail_output_less_x (
-  admin: HexString,
-  user: HexString,
-  core: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -632,7 +620,7 @@ export function buildPayload_test_fail_output_less_x (
   );
 
 }
-// test func
+// #[test]
 export function test_fail_output_less_y$ (
   admin: HexString,
   user: HexString,
@@ -647,9 +635,6 @@ export function test_fail_output_less_y$ (
 
 
 export function buildPayload_test_fail_output_less_y (
-  admin: HexString,
-  user: HexString,
-  core: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -659,7 +644,7 @@ export function buildPayload_test_fail_output_less_y (
   );
 
 }
-// test func
+// #[test]
 export function test_failx$ (
   admin: HexString,
   user: HexString,
@@ -674,9 +659,6 @@ export function test_failx$ (
 
 
 export function buildPayload_test_failx (
-  admin: HexString,
-  user: HexString,
-  core: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -686,7 +668,7 @@ export function buildPayload_test_failx (
   );
 
 }
-// test func
+// #[test]
 export function test_faily$ (
   admin: HexString,
   user: HexString,
@@ -701,9 +683,6 @@ export function test_faily$ (
 
 
 export function buildPayload_test_faily (
-  admin: HexString,
-  user: HexString,
-  core: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -713,7 +692,7 @@ export function buildPayload_test_faily (
   );
 
 }
-// test func
+// #[test]
 export function test_mock_deploy$ (
   admin: HexString,
   core: HexString,
@@ -726,8 +705,6 @@ export function test_mock_deploy$ (
 
 
 export function buildPayload_test_mock_deploy (
-  admin: HexString,
-  core: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -737,7 +714,7 @@ export function buildPayload_test_mock_deploy (
   );
 
 }
-// test func
+// #[test]
 export function test_scripts$ (
   admin: HexString,
   user: HexString,
@@ -754,9 +731,6 @@ export function test_scripts$ (
 
 
 export function buildPayload_test_scripts (
-  admin: HexString,
-  user: HexString,
-  core: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -773,4 +747,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

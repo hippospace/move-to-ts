@@ -112,7 +112,6 @@ export function cancel_ask$ (
 
 
 export function buildPayload_cancel_ask (
-  user: HexString,
   host: HexString,
   id: U128,
   $p: TypeTag[], /* <B, Q, E>*/
@@ -122,13 +121,13 @@ export function buildPayload_cancel_ask (
     "0xc0deb00c::User::cancel_ask",
     typeParamStrings,
     [
-      host,
-      id.toPayloadArg(),
+      $.payloadArg(host),
+      $.payloadArg(id),
     ]
   );
 
 }
-// test func
+// #[test]
 export function cancel_ask_success$ (
   econia: HexString,
   user: HexString,
@@ -179,8 +178,6 @@ export function cancel_ask_success$ (
 
 
 export function buildPayload_cancel_ask_success (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -203,7 +200,6 @@ export function cancel_bid$ (
 
 
 export function buildPayload_cancel_bid (
-  user: HexString,
   host: HexString,
   id: U128,
   $p: TypeTag[], /* <B, Q, E>*/
@@ -213,13 +209,13 @@ export function buildPayload_cancel_bid (
     "0xc0deb00c::User::cancel_bid",
     typeParamStrings,
     [
-      host,
-      id.toPayloadArg(),
+      $.payloadArg(host),
+      $.payloadArg(id),
     ]
   );
 
 }
-// test func
+// #[test]
 export function cancel_bid_success$ (
   econia: HexString,
   user: HexString,
@@ -270,8 +266,6 @@ export function cancel_bid_success$ (
 
 
 export function buildPayload_cancel_bid_success (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -321,7 +315,7 @@ export function cancel_order$ (
   return;
 }
 
-// test func
+// #[test]
 export function cancel_order_failure_no_o_c$ (
   user: HexString,
   $c: AptosDataCache,
@@ -335,7 +329,6 @@ export function cancel_order_failure_no_o_c$ (
 
 
 export function buildPayload_cancel_order_failure_no_o_c (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -385,7 +378,6 @@ export function deposit$ (
 
 
 export function buildPayload_deposit (
-  user: HexString,
   b_val: U64,
   q_val: U64,
   $p: TypeTag[], /* <B, Q, E>*/
@@ -395,13 +387,13 @@ export function buildPayload_deposit (
     "0xc0deb00c::User::deposit",
     typeParamStrings,
     [
-      b_val.toPayloadArg(),
-      q_val.toPayloadArg(),
+      $.payloadArg(b_val),
+      $.payloadArg(q_val),
     ]
   );
 
 }
-// test func
+// #[test]
 export function deposit_failure_no_deposit$ (
   econia: HexString,
   user: HexString,
@@ -414,8 +406,6 @@ export function deposit_failure_no_deposit$ (
 
 
 export function buildPayload_deposit_failure_no_deposit (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -425,7 +415,7 @@ export function buildPayload_deposit_failure_no_deposit (
   );
 
 }
-// test func
+// #[test]
 export function deposit_failure_no_o_c$ (
   user: HexString,
   $c: AptosDataCache,
@@ -436,7 +426,6 @@ export function deposit_failure_no_o_c$ (
 
 
 export function buildPayload_deposit_failure_no_o_c (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -446,7 +435,7 @@ export function buildPayload_deposit_failure_no_o_c (
   );
 
 }
-// test func
+// #[test]
 export function deposit_success$ (
   econia: HexString,
   user: HexString,
@@ -552,8 +541,6 @@ export function deposit_success$ (
 
 
 export function buildPayload_deposit_success (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -594,7 +581,6 @@ export function init_containers$ (
 
 
 export function buildPayload_init_containers (
-  user: HexString,
   $p: TypeTag[], /* <B, Q, E>*/
 ) {
   const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));
@@ -605,7 +591,7 @@ export function buildPayload_init_containers (
   );
 
 }
-// test func
+// #[test]
 export function init_containers_failure_has_o_c$ (
   econia: HexString,
   user: HexString,
@@ -620,8 +606,6 @@ export function init_containers_failure_has_o_c$ (
 
 
 export function buildPayload_init_containers_failure_has_o_c (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -631,7 +615,7 @@ export function buildPayload_init_containers_failure_has_o_c (
   );
 
 }
-// test func
+// #[test]
 export function init_containers_failure_has_o_o$ (
   econia: HexString,
   user: HexString,
@@ -650,8 +634,6 @@ export function init_containers_failure_has_o_o$ (
 
 
 export function buildPayload_init_containers_failure_has_o_o (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -661,7 +643,7 @@ export function buildPayload_init_containers_failure_has_o_o (
   );
 
 }
-// test func
+// #[test]
 export function init_containers_failure_no_market$ (
   user: HexString,
   $c: AptosDataCache,
@@ -672,7 +654,6 @@ export function init_containers_failure_no_market$ (
 
 
 export function buildPayload_init_containers_failure_no_market (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -682,7 +663,7 @@ export function buildPayload_init_containers_failure_no_market (
   );
 
 }
-// test func
+// #[test]
 export function init_containers_success$ (
   econia: HexString,
   user: HexString,
@@ -720,8 +701,6 @@ export function init_containers_success$ (
 
 
 export function buildPayload_init_containers_success (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -731,7 +710,7 @@ export function buildPayload_init_containers_success (
   );
 
 }
-// test func
+// #[test]
 export function init_funded_user$ (
   user: HexString,
   base_coins: U64,
@@ -757,7 +736,6 @@ export function init_funded_user$ (
 
 
 export function buildPayload_init_funded_user (
-  user: HexString,
   base_coins: U64,
   quote_coins: U64,
   $p: TypeTag[], /* <E>*/
@@ -767,8 +745,8 @@ export function buildPayload_init_funded_user (
     "0xc0deb00c::User::init_funded_user",
     typeParamStrings,
     [
-      base_coins.toPayloadArg(),
-      quote_coins.toPayloadArg(),
+      $.payloadArg(base_coins),
+      $.payloadArg(quote_coins),
     ]
   );
 
@@ -794,7 +772,7 @@ export function init_o_c$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_o_c_failure_exists$ (
   econia: HexString,
   user: HexString,
@@ -809,8 +787,6 @@ export function init_o_c_failure_exists$ (
 
 
 export function buildPayload_init_o_c_failure_exists (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -820,7 +796,7 @@ export function buildPayload_init_o_c_failure_exists (
   );
 
 }
-// test func
+// #[test]
 export function init_o_c_failure_no_market$ (
   user: HexString,
   $c: AptosDataCache,
@@ -829,7 +805,7 @@ export function init_o_c_failure_no_market$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_o_c_success$ (
   econia: HexString,
   user: HexString,
@@ -863,8 +839,6 @@ export function init_o_c_success$ (
 
 
 export function buildPayload_init_o_c_success (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -874,7 +848,7 @@ export function buildPayload_init_o_c_success (
   );
 
 }
-// test func
+// #[test]
 export function init_test_market_user$ (
   econia: HexString,
   user: HexString,
@@ -892,8 +866,6 @@ export function init_test_market_user$ (
 
 
 export function buildPayload_init_test_market_user (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -903,7 +875,7 @@ export function buildPayload_init_test_market_user (
   );
 
 }
-// test func
+// #[test]
 export function init_test_scaled_market_funded_user$ (
   econia: HexString,
   user: HexString,
@@ -920,8 +892,6 @@ export function init_test_scaled_market_funded_user$ (
 
 
 export function buildPayload_init_test_scaled_market_funded_user (
-  econia: HexString,
-  user: HexString,
   b_c: U64,
   q_c: U64,
   $p: TypeTag[], /* <E>*/
@@ -931,8 +901,8 @@ export function buildPayload_init_test_scaled_market_funded_user (
     "0xc0deb00c::User::init_test_scaled_market_funded_user",
     typeParamStrings,
     [
-      b_c.toPayloadArg(),
-      q_c.toPayloadArg(),
+      $.payloadArg(b_c),
+      $.payloadArg(q_c),
     ]
   );
 
@@ -952,7 +922,6 @@ export function init_user$ (
 
 
 export function buildPayload_init_user (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -962,7 +931,7 @@ export function buildPayload_init_user (
   );
 
 }
-// test func
+// #[test]
 export function init_user_failure$ (
   user: HexString,
   $c: AptosDataCache,
@@ -975,7 +944,6 @@ export function init_user_failure$ (
 
 
 export function buildPayload_init_user_failure (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -985,7 +953,7 @@ export function buildPayload_init_user_failure (
   );
 
 }
-// test func
+// #[test]
 export function init_user_success$ (
   user: HexString,
   $c: AptosDataCache,
@@ -1002,7 +970,6 @@ export function init_user_success$ (
 
 
 export function buildPayload_init_user_success (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1052,7 +1019,7 @@ export function process_fill$ (
   return;
 }
 
-// test func
+// #[test]
 export function process_fill_ask_complete$ (
   econia: HexString,
   user: HexString,
@@ -1109,8 +1076,6 @@ export function process_fill_ask_complete$ (
 
 
 export function buildPayload_process_fill_ask_complete (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1120,7 +1085,7 @@ export function buildPayload_process_fill_ask_complete (
   );
 
 }
-// test func
+// #[test]
 export function process_fill_ask_partial$ (
   econia: HexString,
   user: HexString,
@@ -1177,8 +1142,6 @@ export function process_fill_ask_partial$ (
 
 
 export function buildPayload_process_fill_ask_partial (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1188,7 +1151,7 @@ export function buildPayload_process_fill_ask_partial (
   );
 
 }
-// test func
+// #[test]
 export function process_fill_bid_complete$ (
   econia: HexString,
   user: HexString,
@@ -1245,8 +1208,6 @@ export function process_fill_bid_complete$ (
 
 
 export function buildPayload_process_fill_bid_complete (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1256,7 +1217,7 @@ export function buildPayload_process_fill_bid_complete (
   );
 
 }
-// test func
+// #[test]
 export function process_fill_bid_partial$ (
   econia: HexString,
   user: HexString,
@@ -1313,8 +1274,6 @@ export function process_fill_bid_partial$ (
 
 
 export function buildPayload_process_fill_bid_partial (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1338,7 +1297,6 @@ export function submit_ask$ (
 
 
 export function buildPayload_submit_ask (
-  user: HexString,
   host: HexString,
   price: U64,
   size: U64,
@@ -1349,14 +1307,14 @@ export function buildPayload_submit_ask (
     "0xc0deb00c::User::submit_ask",
     typeParamStrings,
     [
-      host,
-      price.toPayloadArg(),
-      size.toPayloadArg(),
+      $.payloadArg(host),
+      $.payloadArg(price),
+      $.payloadArg(size),
     ]
   );
 
 }
-// test func
+// #[test]
 export function submit_ask_failure_collateral$ (
   econia: HexString,
   user: HexString,
@@ -1369,8 +1327,6 @@ export function submit_ask_failure_collateral$ (
 
 
 export function buildPayload_submit_ask_failure_collateral (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1380,7 +1336,7 @@ export function buildPayload_submit_ask_failure_collateral (
   );
 
 }
-// test func
+// #[test]
 export function submit_ask_failure_crossed_spread$ (
   econia: HexString,
   user: HexString,
@@ -1400,8 +1356,6 @@ export function submit_ask_failure_crossed_spread$ (
 
 
 export function buildPayload_submit_ask_failure_crossed_spread (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1411,7 +1365,7 @@ export function buildPayload_submit_ask_failure_crossed_spread (
   );
 
 }
-// test func
+// #[test]
 export function submit_ask_success$ (
   econia: HexString,
   user: HexString,
@@ -1465,8 +1419,6 @@ export function submit_ask_success$ (
 
 
 export function buildPayload_submit_ask_success (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1490,7 +1442,6 @@ export function submit_bid$ (
 
 
 export function buildPayload_submit_bid (
-  user: HexString,
   host: HexString,
   price: U64,
   size: U64,
@@ -1501,14 +1452,14 @@ export function buildPayload_submit_bid (
     "0xc0deb00c::User::submit_bid",
     typeParamStrings,
     [
-      host,
-      price.toPayloadArg(),
-      size.toPayloadArg(),
+      $.payloadArg(host),
+      $.payloadArg(price),
+      $.payloadArg(size),
     ]
   );
 
 }
-// test func
+// #[test]
 export function submit_bid_failure_collateral$ (
   econia: HexString,
   user: HexString,
@@ -1521,8 +1472,6 @@ export function submit_bid_failure_collateral$ (
 
 
 export function buildPayload_submit_bid_failure_collateral (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1532,7 +1481,7 @@ export function buildPayload_submit_bid_failure_collateral (
   );
 
 }
-// test func
+// #[test]
 export function submit_bid_failure_crossed_spread$ (
   econia: HexString,
   user: HexString,
@@ -1552,8 +1501,6 @@ export function submit_bid_failure_crossed_spread$ (
 
 
 export function buildPayload_submit_bid_failure_crossed_spread (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1563,7 +1510,7 @@ export function buildPayload_submit_bid_failure_crossed_spread (
   );
 
 }
-// test func
+// #[test]
 export function submit_bid_success$ (
   econia: HexString,
   user: HexString,
@@ -1617,8 +1564,6 @@ export function submit_bid_success$ (
 
 
 export function buildPayload_submit_bid_success (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1694,7 +1639,7 @@ export function submit_limit_order$ (
   return;
 }
 
-// test func
+// #[test]
 export function submit_limit_order_failure_no_market$ (
   user: HexString,
   $c: AptosDataCache,
@@ -1710,7 +1655,6 @@ export function submit_limit_order_failure_no_market$ (
 
 
 export function buildPayload_submit_limit_order_failure_no_market (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1720,7 +1664,7 @@ export function buildPayload_submit_limit_order_failure_no_market (
   );
 
 }
-// test func
+// #[test]
 export function submit_limit_order_failure_no_o_c$ (
   econia: HexString,
   user: HexString,
@@ -1739,8 +1683,6 @@ export function submit_limit_order_failure_no_o_c$ (
 
 
 export function buildPayload_submit_limit_order_failure_no_o_c (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1775,7 +1717,7 @@ export function update_s_c$ (
   return;
 }
 
-// test func
+// #[test]
 export function update_s_c_failure_no_s_c$ (
   user: HexString,
   $c: AptosDataCache,
@@ -1784,7 +1726,7 @@ export function update_s_c_failure_no_s_c$ (
   return;
 }
 
-// test func
+// #[test]
 export function update_s_c_failure_same_s_n$ (
   user: HexString,
   $c: AptosDataCache,
@@ -1799,7 +1741,6 @@ export function update_s_c_failure_same_s_n$ (
 
 
 export function buildPayload_update_s_c_failure_same_s_n (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1809,7 +1750,7 @@ export function buildPayload_update_s_c_failure_same_s_n (
   );
 
 }
-// test func
+// #[test]
 export function update_s_c_success$ (
   user: HexString,
   $c: AptosDataCache,
@@ -1828,7 +1769,6 @@ export function update_s_c_success$ (
 
 
 export function buildPayload_update_s_c_success (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1884,7 +1824,6 @@ export function withdraw$ (
 
 
 export function buildPayload_withdraw (
-  user: HexString,
   b_val: U64,
   q_val: U64,
   $p: TypeTag[], /* <B, Q, E>*/
@@ -1894,13 +1833,13 @@ export function buildPayload_withdraw (
     "0xc0deb00c::User::withdraw",
     typeParamStrings,
     [
-      b_val.toPayloadArg(),
-      q_val.toPayloadArg(),
+      $.payloadArg(b_val),
+      $.payloadArg(q_val),
     ]
   );
 
 }
-// test func
+// #[test]
 export function withdraw_failure_excess_bct$ (
   econia: HexString,
   user: HexString,
@@ -1919,8 +1858,6 @@ export function withdraw_failure_excess_bct$ (
 
 
 export function buildPayload_withdraw_failure_excess_bct (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1930,7 +1867,7 @@ export function buildPayload_withdraw_failure_excess_bct (
   );
 
 }
-// test func
+// #[test]
 export function withdraw_failure_excess_qct$ (
   econia: HexString,
   user: HexString,
@@ -1949,8 +1886,6 @@ export function withdraw_failure_excess_qct$ (
 
 
 export function buildPayload_withdraw_failure_excess_qct (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1960,7 +1895,7 @@ export function buildPayload_withdraw_failure_excess_qct (
   );
 
 }
-// test func
+// #[test]
 export function withdraw_failure_no_o_c$ (
   user: HexString,
   $c: AptosDataCache,
@@ -1971,7 +1906,6 @@ export function withdraw_failure_no_o_c$ (
 
 
 export function buildPayload_withdraw_failure_no_o_c (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1981,7 +1915,7 @@ export function buildPayload_withdraw_failure_no_o_c (
   );
 
 }
-// test func
+// #[test]
 export function withdraw_failure_no_withdraw$ (
   econia: HexString,
   user: HexString,
@@ -1994,8 +1928,6 @@ export function withdraw_failure_no_withdraw$ (
 
 
 export function buildPayload_withdraw_failure_no_withdraw (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -2005,7 +1937,7 @@ export function buildPayload_withdraw_failure_no_withdraw (
   );
 
 }
-// test func
+// #[test]
 export function withdraw_success$ (
   econia: HexString,
   user: HexString,
@@ -2114,8 +2046,6 @@ export function withdraw_success$ (
 
 
 export function buildPayload_withdraw_success (
-  econia: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -2124,5 +2054,9 @@ export function buildPayload_withdraw_success (
     []
   );
 
+}
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xc0deb00c::User::OC", OC.OCParser);
+  repo.addParser("0xc0deb00c::User::SC", SC.SCParser);
 }
 

@@ -22,7 +22,7 @@ export function id_a$ (
   return u128($.copy(p)).shl(FIRST_64).or(u128($.copy(v)));
 }
 
-// test func
+// #[test]
 export function id_a_success$ (
   $c: AptosDataCache,
 ): void {
@@ -43,7 +43,7 @@ export function id_b$ (
   return u128($.copy(p)).shl(FIRST_64).or(u128($.copy(v).xor(HI_64)));
 }
 
-// test func
+// #[test]
 export function id_b_success$ (
   $c: AptosDataCache,
 ): void {
@@ -63,7 +63,7 @@ export function price$ (
   return u64($.copy(id).shr(FIRST_64));
 }
 
-// test func
+// #[test]
 export function price_success$ (
   $c: AptosDataCache,
 ): void {
@@ -89,7 +89,7 @@ export function v_n_a$ (
   return u64($.copy(id).and(u128(HI_64)));
 }
 
-// test func
+// #[test]
 export function v_n_a_success$ (
   $c: AptosDataCache,
 ): void {
@@ -108,7 +108,7 @@ export function v_n_b$ (
   return u64($.copy(id).and(u128(HI_64))).xor(HI_64);
 }
 
-// test func
+// #[test]
 export function v_n_b_success$ (
   $c: AptosDataCache,
 ): void {
@@ -120,4 +120,6 @@ export function v_n_b_success$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

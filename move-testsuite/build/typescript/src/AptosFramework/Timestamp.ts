@@ -99,7 +99,7 @@ export function set_time_has_started$ (
   return;
 }
 
-// test func
+// #[test]
 export function set_time_has_started_for_testing$ (
   root_account: HexString,
   $c: AptosDataCache,
@@ -140,7 +140,7 @@ export function update_global_time$ (
   return;
 }
 
-// test func
+// #[test]
 export function update_global_time_for_test$ (
   timestamp: U64,
   $c: AptosDataCache,
@@ -155,4 +155,7 @@ export function update_global_time_for_test$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Timestamp::CurrentTimeMicroseconds", CurrentTimeMicroseconds.CurrentTimeMicrosecondsParser);
+}
 

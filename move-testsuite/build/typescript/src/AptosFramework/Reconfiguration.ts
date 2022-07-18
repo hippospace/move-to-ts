@@ -160,7 +160,6 @@ export function force_reconfigure$ (
 
 
 export function buildPayload_force_reconfigure (
-  account: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -250,4 +249,9 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Reconfiguration::Configuration", Configuration.ConfigurationParser);
+  repo.addParser("0x1::Reconfiguration::DisableReconfiguration", DisableReconfiguration.DisableReconfigurationParser);
+  repo.addParser("0x1::Reconfiguration::NewEpochEvent", NewEpochEvent.NewEpochEventParser);
+}
 

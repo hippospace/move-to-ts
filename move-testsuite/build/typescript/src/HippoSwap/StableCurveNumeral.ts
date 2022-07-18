@@ -13,7 +13,7 @@ export const moduleName = "StableCurveNumeral";
 export const ERROR_SWAP_INVALID_AMOUNT : U64 = u64("2021");
 export const ERROR_SWAP_INVALID_DERIVIATION : U64 = u64("2020");
 
-// test func
+// #[test]
 export function fail_recur_D$ (
   $c: AptosDataCache,
 ): void {
@@ -114,7 +114,7 @@ export function get_y$ (
   return $.copy(result);
 }
 
-// test func
+// #[test]
 export function mock_curve_params$ (
   $c: AptosDataCache,
 ): [U64, U64, U64, U64] {
@@ -279,7 +279,7 @@ export function recur_y$ (
   }
 }
 
-// test func
+// #[test]
 export function test_curvature$ (
   $c: AptosDataCache,
 ): void {
@@ -307,7 +307,7 @@ export function test_curvature$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_fail_get_y$ (
   $c: AptosDataCache,
 ): void {
@@ -315,7 +315,7 @@ export function test_fail_get_y$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_fail_recur_D_improved$ (
   $c: AptosDataCache,
 ): void {
@@ -323,7 +323,7 @@ export function test_fail_recur_D_improved$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_fail_recur_D_newton$ (
   $c: AptosDataCache,
 ): void {
@@ -331,7 +331,7 @@ export function test_fail_recur_D_newton$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_fail_recur_y$ (
   $c: AptosDataCache,
 ): void {
@@ -339,7 +339,7 @@ export function test_fail_recur_y$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_D$ (
   $c: AptosDataCache,
 ): void {
@@ -351,7 +351,7 @@ export function test_get_D$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_D4$ (
   $c: AptosDataCache,
 ): void {
@@ -363,7 +363,7 @@ export function test_get_D4$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_D_2$ (
   $c: AptosDataCache,
 ): void {
@@ -375,7 +375,7 @@ export function test_get_D_2$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_D_3$ (
   $c: AptosDataCache,
 ): void {
@@ -387,7 +387,7 @@ export function test_get_D_3$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_D_newton_branch_zero$ (
   $c: AptosDataCache,
 ): void {
@@ -406,7 +406,7 @@ export function test_get_D_newton_branch_zero$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_D_origin$ (
   $c: AptosDataCache,
 ): void {
@@ -420,7 +420,7 @@ export function test_get_D_origin$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_y_branch_zero$ (
   $c: AptosDataCache,
 ): void {
@@ -432,7 +432,7 @@ export function test_get_y_branch_zero$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_iter_loop_D$ (
   $c: AptosDataCache,
 ): void {
@@ -444,7 +444,7 @@ export function test_iter_loop_D$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_method_diff$ (
   $c: AptosDataCache,
 ): void {
@@ -472,7 +472,7 @@ export function test_method_diff$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_method_large_a$ (
   $c: AptosDataCache,
 ): void {
@@ -500,7 +500,7 @@ export function test_method_large_a$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_raw_A_branch_A$ (
   $c: AptosDataCache,
 ): void {
@@ -512,7 +512,7 @@ export function test_raw_A_branch_A$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_raw_A_branch_B$ (
   $c: AptosDataCache,
 ): void {
@@ -526,7 +526,7 @@ export function test_raw_A_branch_B$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_raw_A_branch_fa_expire$ (
   $c: AptosDataCache,
 ): void {
@@ -538,7 +538,7 @@ export function test_raw_A_branch_fa_expire$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_recur_D_bad$ (
   $c: AptosDataCache,
 ): void {
@@ -547,7 +547,7 @@ export function test_recur_D_bad$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_recur_D_improve$ (
   $c: AptosDataCache,
 ): void {
@@ -576,7 +576,7 @@ export function test_recur_D_improve$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_recur_D_improve_loop_gt$ (
   $c: AptosDataCache,
 ): void {
@@ -586,7 +586,7 @@ export function test_recur_D_improve_loop_gt$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_recur_D_newton$ (
   $c: AptosDataCache,
 ): void {
@@ -615,7 +615,7 @@ export function test_recur_D_newton$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_recur_D_ok_1$ (
   $c: AptosDataCache,
 ): void {
@@ -637,7 +637,7 @@ export function test_recur_D_ok_1$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_recur_D_ok_2$ (
   $c: AptosDataCache,
 ): void {
@@ -660,7 +660,7 @@ export function test_recur_D_ok_2$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_recur_D_ok_3$ (
   $c: AptosDataCache,
 ): void {
@@ -682,7 +682,7 @@ export function test_recur_D_ok_3$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_y_ok$ (
   $c: AptosDataCache,
 ): void {
@@ -694,7 +694,7 @@ export function test_y_ok$ (
   return;
 }
 
-// test func
+// #[test]
 export function time$ (
   offset_seconds: U64,
   $c: AptosDataCache,
@@ -711,4 +711,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

@@ -339,7 +339,7 @@ export function solve_F_upper_left$ (
   return [$.copy(numerator), $.copy(denominator), $.copy(k2), $.copy(xF).mul($.copy(xF))];
 }
 
-// test func
+// #[test]
 export function test_get_add_liquidity_actual_amount_1$ (
   $c: AptosDataCache,
 ): void {
@@ -358,7 +358,7 @@ export function test_get_add_liquidity_actual_amount_1$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_add_liquidity_actual_amount_2$ (
   $c: AptosDataCache,
 ): void {
@@ -377,7 +377,7 @@ export function test_get_add_liquidity_actual_amount_2$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_add_liquidity_actual_amount_3$ (
   $c: AptosDataCache,
 ): void {
@@ -396,7 +396,7 @@ export function test_get_add_liquidity_actual_amount_3$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_remove_liquidity_amounts_1$ (
   $c: AptosDataCache,
 ): void {
@@ -412,7 +412,7 @@ export function test_get_remove_liquidity_amounts_1$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_remove_liquidity_amounts_2$ (
   $c: AptosDataCache,
 ): void {
@@ -428,7 +428,7 @@ export function test_get_remove_liquidity_amounts_2$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_remove_liquidity_amounts_3$ (
   $c: AptosDataCache,
 ): void {
@@ -444,7 +444,7 @@ export function test_get_remove_liquidity_amounts_3$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_get_swap_x_to_y_out_1$ (
   $c: AptosDataCache,
 ): void {
@@ -491,7 +491,7 @@ export function test_get_swap_x_to_y_out_1$ (
   }return;
 }
 
-// test func
+// #[test]
 export function test_get_swap_x_to_y_out_2$ (
   $c: AptosDataCache,
 ): void {
@@ -522,7 +522,7 @@ export function test_get_swap_x_to_y_out_2$ (
   }return;
 }
 
-// test func
+// #[test]
 export function test_initialization_constants$ (
   $c: AptosDataCache,
 ): void {
@@ -536,7 +536,7 @@ export function test_initialization_constants$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_small_pool_small_amount_precision$ (
   $c: AptosDataCache,
 ): void {
@@ -558,7 +558,7 @@ export function test_small_pool_small_amount_precision$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_swap_large_amount_precision_at_joint$ (
   $c: AptosDataCache,
 ): void {
@@ -577,7 +577,7 @@ export function test_swap_large_amount_precision_at_joint$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_swap_small_amount_precision$ (
   $c: AptosDataCache,
 ): void {
@@ -599,7 +599,7 @@ export function test_swap_small_amount_precision$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_swap_small_amount_precision_at_joint$ (
   $c: AptosDataCache,
 ): void {
@@ -621,7 +621,7 @@ export function test_swap_small_amount_precision_at_joint$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_swap_small_amount_precision_past_joint_a$ (
   $c: AptosDataCache,
 ): void {
@@ -643,7 +643,7 @@ export function test_swap_small_amount_precision_past_joint_a$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_swap_small_amount_precision_past_joint_b$ (
   $c: AptosDataCache,
 ): void {
@@ -665,7 +665,7 @@ export function test_swap_small_amount_precision_past_joint_b$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_swap_smaller_amount_precision_at_joint$ (
   $c: AptosDataCache,
 ): void {
@@ -694,4 +694,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

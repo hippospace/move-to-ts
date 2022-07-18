@@ -209,7 +209,7 @@ export function add_order$ (
   return [u64($.copy(base_subunits)), u64($.copy(quote_subunits))];
 }
 
-// test func
+// #[test]
 export function add_order_failure_no_orders$ (
   $c: AptosDataCache,
 ): void {
@@ -217,7 +217,7 @@ export function add_order_failure_no_orders$ (
   return;
 }
 
-// test func
+// #[test]
 export function add_order_failure_overflow_base$ (
   user: HexString,
   $c: AptosDataCache,
@@ -231,7 +231,7 @@ export function add_order_failure_overflow_base$ (
   return;
 }
 
-// test func
+// #[test]
 export function add_order_failure_overflow_quote$ (
   user: HexString,
   $c: AptosDataCache,
@@ -245,7 +245,7 @@ export function add_order_failure_overflow_quote$ (
   return;
 }
 
-// test func
+// #[test]
 export function add_order_failure_price_0$ (
   $c: AptosDataCache,
 ): void {
@@ -253,7 +253,7 @@ export function add_order_failure_price_0$ (
   return;
 }
 
-// test func
+// #[test]
 export function add_order_failure_size_0$ (
   $c: AptosDataCache,
 ): void {
@@ -261,7 +261,7 @@ export function add_order_failure_size_0$ (
   return;
 }
 
-// test func
+// #[test]
 export function add_orders_success$ (
   user: HexString,
   $c: AptosDataCache,
@@ -345,7 +345,7 @@ export function cancel_order$ (
   }
 }
 
-// test func
+// #[test]
 export function cancel_order_failure_no_orders$ (
   $c: AptosDataCache,
 ): void {
@@ -357,7 +357,7 @@ export function cancel_order_failure_no_orders$ (
   return;
 }
 
-// test func
+// #[test]
 export function cancel_order_failure_no_such_ask$ (
   user: HexString,
   $c: AptosDataCache,
@@ -369,7 +369,7 @@ export function cancel_order_failure_no_such_ask$ (
   return;
 }
 
-// test func
+// #[test]
 export function cancel_order_failure_no_such_bid$ (
   user: HexString,
   $c: AptosDataCache,
@@ -381,7 +381,7 @@ export function cancel_order_failure_no_such_bid$ (
   return;
 }
 
-// test func
+// #[test]
 export function cancel_orders_success$ (
   user: HexString,
   $c: AptosDataCache,
@@ -425,7 +425,7 @@ export function cancel_orders_success$ (
   return;
 }
 
-// test func
+// #[test]
 export function check_ask$ (
   user: HexString,
   id: U128,
@@ -435,7 +435,7 @@ export function check_ask$ (
   return $.copy(CritBit.borrow$($c.borrow_global<OO>(new StructTag(new HexString("0xc0deb00c"), "Orders", "OO", [$p[0], $p[1], $p[2]]), $.copy(user)).a, $.copy(id), $c, [AtomicTypeTag.U64] as TypeTag[]));
 }
 
-// test func
+// #[test]
 export function check_bid$ (
   user: HexString,
   id: U128,
@@ -467,7 +467,7 @@ export function decrement_order_size$ (
   return;
 }
 
-// test func
+// #[test]
 export function decrement_order_size_success$ (
   user: HexString,
   $c: AptosDataCache,
@@ -529,7 +529,7 @@ export function get_friend_cap$ (
   return new FriendCap({  }, new StructTag(new HexString("0xc0deb00c"), "Orders", "FriendCap", []));
 }
 
-// test func
+// #[test]
 export function get_friend_cap_failure$ (
   account: HexString,
   $c: AptosDataCache,
@@ -538,7 +538,7 @@ export function get_friend_cap_failure$ (
   return;
 }
 
-// test func
+// #[test]
 export function get_friend_cap_success$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -547,7 +547,7 @@ export function get_friend_cap_success$ (
   return;
 }
 
-// test func
+// #[test]
 export function has_ask$ (
   user: HexString,
   id: U128,
@@ -557,7 +557,7 @@ export function has_ask$ (
   return CritBit.has_key$($c.borrow_global<OO>(new StructTag(new HexString("0xc0deb00c"), "Orders", "OO", [$p[0], $p[1], $p[2]]), $.copy(user)).a, $.copy(id), $c, [AtomicTypeTag.U64] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function has_bid$ (
   user: HexString,
   id: U128,
@@ -583,7 +583,7 @@ export function init_orders$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_orders_failure_exists$ (
   user: HexString,
   $c: AptosDataCache,
@@ -600,7 +600,7 @@ export function init_orders_failure_exists$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_orders_success$ (
   user: HexString,
   $c: AptosDataCache,
@@ -646,7 +646,7 @@ export function remove_order$ (
   return;
 }
 
-// test func
+// #[test]
 export function remove_order_success$ (
   user: HexString,
   $c: AptosDataCache,
@@ -705,7 +705,7 @@ export function scale_factor$ (
   return $.copy($c.borrow_global<OO>(new StructTag(new HexString("0xc0deb00c"), "Orders", "OO", [$p[0], $p[1], $p[2]]), $.copy(addr)).f);
 }
 
-// test func
+// #[test]
 export function scale_factor_failure$ (
   $c: AptosDataCache,
 ): void {
@@ -720,4 +720,11 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xc0deb00c::Orders::BT", BT.BTParser);
+  repo.addParser("0xc0deb00c::Orders::ET", ET.ETParser);
+  repo.addParser("0xc0deb00c::Orders::FriendCap", FriendCap.FriendCapParser);
+  repo.addParser("0xc0deb00c::Orders::OO", OO.OOParser);
+  repo.addParser("0xc0deb00c::Orders::QT", QT.QTParser);
+}
 

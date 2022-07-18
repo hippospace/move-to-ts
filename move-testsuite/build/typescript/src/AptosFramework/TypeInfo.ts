@@ -62,7 +62,7 @@ export function struct_name$ (
   return $.copy(type_info.struct_name);
 }
 
-// test func
+// #[test]
 export function test$ (
   $c: AptosDataCache,
 ): void {
@@ -94,4 +94,7 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::TypeInfo::TypeInfo", TypeInfo.TypeInfoParser);
+}
 

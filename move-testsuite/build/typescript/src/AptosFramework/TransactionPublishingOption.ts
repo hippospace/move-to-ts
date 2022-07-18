@@ -104,7 +104,6 @@ export function set_module_publishing_allowed$ (
 
 
 export function buildPayload_set_module_publishing_allowed (
-  account: HexString,
   is_allowed: boolean,
 ) {
   const typeParamStrings = [] as string[];
@@ -112,7 +111,7 @@ export function buildPayload_set_module_publishing_allowed (
     "0x1::TransactionPublishingOption::set_module_publishing_allowed",
     typeParamStrings,
     [
-      is_allowed,
+      $.payloadArg(is_allowed),
     ]
   );
 
@@ -124,4 +123,7 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::TransactionPublishingOption::TransactionPublishingOption", TransactionPublishingOption.TransactionPublishingOptionParser);
+}
 

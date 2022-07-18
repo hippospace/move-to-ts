@@ -318,7 +318,7 @@ export function create_proposal$ (
   return $.copy(proposal_id);
 }
 
-// test func
+// #[test]
 export function create_test_proposal$ (
   governance: HexString,
   early_resolution_threshold: Std.Option.Option,
@@ -431,7 +431,7 @@ export function resolve$ (
   return Std.Option.destroy_some$(execution_content, $c, [$p[0]] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function test_voting_failed$ (
   core_resources: HexString,
   governance: HexString,
@@ -456,8 +456,6 @@ export function test_voting_failed$ (
 
 
 export function buildPayload_test_voting_failed (
-  core_resources: HexString,
-  governance: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -467,7 +465,7 @@ export function buildPayload_test_voting_failed (
   );
 
 }
-// test func
+// #[test]
 export function test_voting_failed_early$ (
   core_resources: HexString,
   governance: HexString,
@@ -492,8 +490,6 @@ export function test_voting_failed_early$ (
 
 
 export function buildPayload_test_voting_failed_early (
-  core_resources: HexString,
-  governance: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -503,7 +499,7 @@ export function buildPayload_test_voting_failed_early (
   );
 
 }
-// test func
+// #[test]
 export function test_voting_passed$ (
   core_resources: HexString,
   governance: HexString,
@@ -534,8 +530,6 @@ export function test_voting_passed$ (
 
 
 export function buildPayload_test_voting_passed (
-  core_resources: HexString,
-  governance: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -545,7 +539,7 @@ export function buildPayload_test_voting_passed (
   );
 
 }
-// test func
+// #[test]
 export function test_voting_passed_early$ (
   core_resources: HexString,
   governance: HexString,
@@ -576,8 +570,6 @@ export function test_voting_passed_early$ (
 
 
 export function buildPayload_test_voting_passed_early (
-  core_resources: HexString,
-  governance: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -616,4 +608,14 @@ export function vote$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Voting::CreateProposalEvent", CreateProposalEvent.CreateProposalEventParser);
+  repo.addParser("0x1::Voting::Proposal", Proposal.ProposalParser);
+  repo.addParser("0x1::Voting::RegisterForumEvent", RegisterForumEvent.RegisterForumEventParser);
+  repo.addParser("0x1::Voting::ResolveProposal", ResolveProposal.ResolveProposalParser);
+  repo.addParser("0x1::Voting::TestProposal", TestProposal.TestProposalParser);
+  repo.addParser("0x1::Voting::VoteEvent", VoteEvent.VoteEventParser);
+  repo.addParser("0x1::Voting::VotingEvents", VotingEvents.VotingEventsParser);
+  repo.addParser("0x1::Voting::VotingForum", VotingForum.VotingForumParser);
+}
 

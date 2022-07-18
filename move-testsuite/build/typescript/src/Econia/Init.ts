@@ -30,7 +30,6 @@ export function init_econia$ (
 
 
 export function buildPayload_init_econia (
-  account: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -40,7 +39,7 @@ export function buildPayload_init_econia (
   );
 
 }
-// test func
+// #[test]
 export function init_econia_failure_not_econia$ (
   account: HexString,
   $c: AptosDataCache,
@@ -51,7 +50,6 @@ export function init_econia_failure_not_econia$ (
 
 
 export function buildPayload_init_econia_failure_not_econia (
-  account: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -61,7 +59,7 @@ export function buildPayload_init_econia_failure_not_econia (
   );
 
 }
-// test func
+// #[test]
 export function init_econia_success$ (
   account: HexString,
   $c: AptosDataCache,
@@ -72,7 +70,6 @@ export function init_econia_success$ (
 
 
 export function buildPayload_init_econia_success (
-  account: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -89,4 +86,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

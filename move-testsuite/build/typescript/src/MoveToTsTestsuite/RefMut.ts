@@ -11,7 +11,7 @@ export const moduleAddress = new HexString("0x12345");
 export const moduleName = "RefMut";
 
 
-// test func
+// #[test]
 export function set_by_ref$ (
   dst: any,
   val: any,
@@ -22,7 +22,7 @@ export function set_by_ref$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_set_by_ref$ (
   $c: AptosDataCache,
 ): void {
@@ -42,4 +42,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

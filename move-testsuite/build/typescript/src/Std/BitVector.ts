@@ -189,11 +189,14 @@ export function unset$ (
   return;
 }
 
-// test func
+// #[test]
 export function word_size$ (
   $c: AptosDataCache,
 ): U64 {
   return WORD_SIZE;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::BitVector::BitVector", BitVector.BitVectorParser);
+}
 

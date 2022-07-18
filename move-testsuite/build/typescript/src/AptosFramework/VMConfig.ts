@@ -191,7 +191,6 @@ export function set_gas_constants$ (
 
 
 export function buildPayload_set_gas_constants (
-  account: HexString,
   global_memory_per_byte_cost: U64,
   global_memory_per_byte_write_cost: U64,
   min_transaction_gas_units: U64,
@@ -209,17 +208,17 @@ export function buildPayload_set_gas_constants (
     "0x1::VMConfig::set_gas_constants",
     typeParamStrings,
     [
-      global_memory_per_byte_cost.toPayloadArg(),
-      global_memory_per_byte_write_cost.toPayloadArg(),
-      min_transaction_gas_units.toPayloadArg(),
-      large_transaction_cutoff.toPayloadArg(),
-      intrinsic_gas_per_byte.toPayloadArg(),
-      maximum_number_of_gas_units.toPayloadArg(),
-      min_price_per_gas_unit.toPayloadArg(),
-      max_price_per_gas_unit.toPayloadArg(),
-      max_transaction_size_in_bytes.toPayloadArg(),
-      gas_unit_scaling_factor.toPayloadArg(),
-      default_account_size.toPayloadArg(),
+      $.payloadArg(global_memory_per_byte_cost),
+      $.payloadArg(global_memory_per_byte_write_cost),
+      $.payloadArg(min_transaction_gas_units),
+      $.payloadArg(large_transaction_cutoff),
+      $.payloadArg(intrinsic_gas_per_byte),
+      $.payloadArg(maximum_number_of_gas_units),
+      $.payloadArg(min_price_per_gas_unit),
+      $.payloadArg(max_price_per_gas_unit),
+      $.payloadArg(max_transaction_size_in_bytes),
+      $.payloadArg(gas_unit_scaling_factor),
+      $.payloadArg(default_account_size),
     ]
   );
 
@@ -231,4 +230,9 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::VMConfig::GasConstants", GasConstants.GasConstantsParser);
+  repo.addParser("0x1::VMConfig::GasSchedule", GasSchedule.GasScheduleParser);
+  repo.addParser("0x1::VMConfig::VMConfig", VMConfig.VMConfigParser);
+}
 

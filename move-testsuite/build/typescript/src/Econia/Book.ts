@@ -248,7 +248,7 @@ export function add_position$ (
   return false;
 }
 
-// test func
+// #[test]
 export function add_position_success_crossed_spread_ask$ (
   account: HexString,
   $c: AptosDataCache,
@@ -292,7 +292,7 @@ export function add_position_success_crossed_spread_ask$ (
   return;
 }
 
-// test func
+// #[test]
 export function add_position_success_crossed_spread_bid$ (
   account: HexString,
   $c: AptosDataCache,
@@ -336,7 +336,7 @@ export function add_position_success_crossed_spread_bid$ (
   return;
 }
 
-// test func
+// #[test]
 export function add_position_success_simple_ask$ (
   account: HexString,
   $c: AptosDataCache,
@@ -391,7 +391,7 @@ export function add_position_success_simple_ask$ (
   return;
 }
 
-// test func
+// #[test]
 export function add_position_success_simple_bid$ (
   account: HexString,
   $c: AptosDataCache,
@@ -457,7 +457,7 @@ export function cancel_ask$ (
   return;
 }
 
-// test func
+// #[test]
 export function cancel_ask_success$ (
   account: HexString,
   $c: AptosDataCache,
@@ -551,7 +551,7 @@ export function cancel_bid$ (
   return;
 }
 
-// test func
+// #[test]
 export function cancel_bid_success$ (
   account: HexString,
   $c: AptosDataCache,
@@ -677,7 +677,7 @@ export function cancel_position$ (
   return;
 }
 
-// test func
+// #[test]
 export function check_ask$ (
   host: HexString,
   id: U128,
@@ -690,7 +690,7 @@ export function check_ask$ (
   return [$.copy(ask.s), $.copy(ask.a)];
 }
 
-// test func
+// #[test]
 export function check_ask_min$ (
   host: HexString,
   $c: AptosDataCache,
@@ -699,7 +699,7 @@ export function check_ask_min$ (
   return $.copy($c.borrow_global<OB>(new StructTag(new HexString("0xc0deb00c"), "Book", "OB", [$p[0], $p[1], $p[2]]), $.copy(host)).m_a);
 }
 
-// test func
+// #[test]
 export function check_bid$ (
   host: HexString,
   id: U128,
@@ -712,7 +712,7 @@ export function check_bid$ (
   return [$.copy(bid.s), $.copy(bid.a)];
 }
 
-// test func
+// #[test]
 export function check_bid_max$ (
   host: HexString,
   $c: AptosDataCache,
@@ -739,7 +739,7 @@ export function get_friend_cap$ (
   return new FriendCap({  }, new StructTag(new HexString("0xc0deb00c"), "Book", "FriendCap", []));
 }
 
-// test func
+// #[test]
 export function get_friend_cap_failure$ (
   account: HexString,
   $c: AptosDataCache,
@@ -748,7 +748,7 @@ export function get_friend_cap_failure$ (
   return;
 }
 
-// test func
+// #[test]
 export function get_friend_cap_success$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -757,7 +757,7 @@ export function get_friend_cap_success$ (
   return;
 }
 
-// test func
+// #[test]
 export function has_ask$ (
   host: HexString,
   id: U128,
@@ -767,7 +767,7 @@ export function has_ask$ (
   return CritBit.has_key$($c.borrow_global<OB>(new StructTag(new HexString("0xc0deb00c"), "Book", "OB", [$p[0], $p[1], $p[2]]), $.copy(host)).a, $.copy(id), $c, [new StructTag(new HexString("0xc0deb00c"), "Book", "P", [])] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function has_bid$ (
   host: HexString,
   id: U128,
@@ -795,7 +795,7 @@ export function init_book$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_book_failure_exists$ (
   host: HexString,
   $c: AptosDataCache,
@@ -812,7 +812,7 @@ export function init_book_failure_exists$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_book_success$ (
   host: HexString,
   $c: AptosDataCache,
@@ -873,7 +873,7 @@ export function init_traverse_fill$ (
   return [$.copy(t_id), $.copy(t_addr), $.copy(t_p_f), $.copy(t_c_i), $.copy(filled), perfect];
 }
 
-// test func
+// #[test]
 export function init_traverse_fill_failure_self_match$ (
   host: HexString,
   $c: AptosDataCache,
@@ -901,7 +901,7 @@ export function init_traverse_fill_failure_self_match$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_traverse_fill_success_ask$ (
   host: HexString,
   $c: AptosDataCache,
@@ -1046,7 +1046,7 @@ export function init_traverse_fill_success_ask$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_traverse_fill_success_bid$ (
   host: HexString,
   $c: AptosDataCache,
@@ -1200,7 +1200,7 @@ export function n_asks$ (
   return CritBit.length$($c.borrow_global<OB>(new StructTag(new HexString("0xc0deb00c"), "Book", "OB", [$p[0], $p[1], $p[2]]), $.copy(addr)).a, $c, [new StructTag(new HexString("0xc0deb00c"), "Book", "P", [])] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function n_asks_success$ (
   host: HexString,
   $c: AptosDataCache,
@@ -1242,7 +1242,7 @@ export function n_bids$ (
   return CritBit.length$($c.borrow_global<OB>(new StructTag(new HexString("0xc0deb00c"), "Book", "OB", [$p[0], $p[1], $p[2]]), $.copy(addr)).b, $c, [new StructTag(new HexString("0xc0deb00c"), "Book", "P", [])] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function n_bids_success$ (
   host: HexString,
   $c: AptosDataCache,
@@ -1332,7 +1332,7 @@ export function refresh_extreme_order_id$ (
   return;
 }
 
-// test func
+// #[test]
 export function refresh_extreme_order_id_success$ (
   host: HexString,
   $c: AptosDataCache,
@@ -1430,7 +1430,7 @@ export function traverse_pop_fill$ (
   return [$.copy(t_id), $.copy(t_addr), $.copy(t_p_f), $.copy(t_c_i), $.copy(filled), perfect];
 }
 
-// test func
+// #[test]
 export function traverse_pop_fill_success_ask$ (
   host: HexString,
   $c: AptosDataCache,
@@ -1558,7 +1558,7 @@ export function traverse_pop_fill_success_ask$ (
   return;
 }
 
-// test func
+// #[test]
 export function traverse_pop_fill_success_bid$ (
   host: HexString,
   $c: AptosDataCache,
@@ -1686,4 +1686,12 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xc0deb00c::Book::BT", BT.BTParser);
+  repo.addParser("0xc0deb00c::Book::ET", ET.ETParser);
+  repo.addParser("0xc0deb00c::Book::FriendCap", FriendCap.FriendCapParser);
+  repo.addParser("0xc0deb00c::Book::OB", OB.OBParser);
+  repo.addParser("0xc0deb00c::Book::P", P.PParser);
+  repo.addParser("0xc0deb00c::Book::QT", QT.QTParser);
+}
 

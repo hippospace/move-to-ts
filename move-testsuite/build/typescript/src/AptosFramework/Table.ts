@@ -183,7 +183,7 @@ export function destroy_empty_box$ (
   return $.AptosFramework_Table_destroy_empty_box(table, $c, [$p[0], $p[1], $p[2]]);
 
 }
-// test func
+// #[test]
 export function drop_unchecked$ (
   table: Table,
   $c: AptosDataCache,
@@ -256,4 +256,8 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Table::Box", Box.BoxParser);
+  repo.addParser("0x1::Table::Table", Table.TableParser);
+}
 

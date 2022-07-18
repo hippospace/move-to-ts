@@ -151,7 +151,7 @@ export function is_smaller_than$ (
   return $.copy(result.inner).eq(SMALLER);
 }
 
-// test func
+// #[test]
 export function test_complex$ (
   $c: AptosDataCache,
 ): void {
@@ -200,7 +200,7 @@ export function test_complex$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_strings$ (
   $c: AptosDataCache,
 ): void {
@@ -247,7 +247,7 @@ export function test_strings$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_u128$ (
   $c: AptosDataCache,
 ): void {
@@ -301,4 +301,8 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Comparator::Complex", Complex.ComplexParser);
+  repo.addParser("0x1::Comparator::Result", Result.ResultParser);
+}
 

@@ -132,7 +132,7 @@ export function compare_vec$ (
   return temp$2;
 }
 
-// test func
+// #[test]
 export function compare_vector_works$ (
   $c: AptosDataCache,
 ): void {
@@ -187,7 +187,7 @@ export function is_tokens_sorted$ (
   return $.copy(r).eq(COMPARE_LESS);
 }
 
-// test func
+// #[test]
 export function is_tokens_sorted_works$ (
   $c: AptosDataCache,
 ): void {
@@ -207,4 +207,8 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::Utils::T0", T0.T0Parser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::Utils::T1", T1.T1Parser);
+}
 

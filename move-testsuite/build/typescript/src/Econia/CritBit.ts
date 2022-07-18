@@ -121,7 +121,7 @@ export class O
   }
 
 }
-// test func
+// #[test]
 export function b_lo$ (
   b: U8,
   $c: AptosDataCache,
@@ -129,7 +129,7 @@ export function b_lo$ (
   return u128("1").shl($.copy(b)).xor(HI_128);
 }
 
-// test func
+// #[test]
 export function b_lo_success$ (
   $c: AptosDataCache,
 ): void {
@@ -222,7 +222,7 @@ export function borrow$ (
   return c_o.v;
 }
 
-// test func
+// #[test]
 export function borrow_empty$ (
   $c: AptosDataCache,
 ): void {
@@ -250,7 +250,7 @@ export function borrow_mut$ (
   return c_o.v;
 }
 
-// test func
+// #[test]
 export function borrow_mut_empty$ (
   $c: AptosDataCache,
 ): void {
@@ -261,7 +261,7 @@ export function borrow_mut_empty$ (
   return;
 }
 
-// test func
+// #[test]
 export function borrow_mut_no_match$ (
   $c: AptosDataCache,
 ): CB {
@@ -271,7 +271,7 @@ export function borrow_mut_no_match$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function borrow_mut_success$ (
   $c: AptosDataCache,
 ): CB {
@@ -302,7 +302,7 @@ export function borrow_mut_success$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function borrow_no_match$ (
   $c: AptosDataCache,
 ): CB {
@@ -322,7 +322,7 @@ export function check_len$ (
   return;
 }
 
-// test func
+// #[test]
 export function check_len_failure$ (
   $c: AptosDataCache,
 ): void {
@@ -330,7 +330,7 @@ export function check_len_failure$ (
   return;
 }
 
-// test func
+// #[test]
 export function check_len_success$ (
   $c: AptosDataCache,
 ): void {
@@ -366,7 +366,7 @@ export function crit_bit$ (
   }
 }
 
-// test func
+// #[test]
 export function crit_bit_success$ (
   $c: AptosDataCache,
 ): void {
@@ -397,7 +397,7 @@ export function destroy_empty$ (
   return;
 }
 
-// test func
+// #[test]
 export function destroy_empty_fail$ (
   $c: AptosDataCache,
 ): void {
@@ -405,7 +405,7 @@ export function destroy_empty_fail$ (
   return;
 }
 
-// test func
+// #[test]
 export function destroy_empty_success$ (
   $c: AptosDataCache,
 ): void {
@@ -422,7 +422,7 @@ export function empty$ (
   return new CB({ r: u64("0"), i: Std.Vector.empty$($c, [new StructTag(new HexString("0xc0deb00c"), "CritBit", "I", [])] as TypeTag[]), o: Std.Vector.empty$($c, [new StructTag(new HexString("0xc0deb00c"), "CritBit", "O", [$p[0]])] as TypeTag[]) }, new StructTag(new HexString("0xc0deb00c"), "CritBit", "CB", [$p[0]]));
 }
 
-// test func
+// #[test]
 export function empty_success$ (
   $c: AptosDataCache,
 ): [I[], O[]] {
@@ -453,7 +453,7 @@ export function has_key$ (
   return $.copy(b_s_o$(cb, $.copy(k), $c, [$p[0]] as TypeTag[]).k).eq($.copy(k));
 }
 
-// test func
+// #[test]
 export function has_key_empty_success$ (
   $c: AptosDataCache,
 ): void {
@@ -466,7 +466,7 @@ export function has_key_empty_success$ (
   return;
 }
 
-// test func
+// #[test]
 export function has_key_singleton$ (
   $c: AptosDataCache,
 ): CB {
@@ -481,7 +481,7 @@ export function has_key_singleton$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function has_key_success$ (
   $c: AptosDataCache,
 ): CB {
@@ -679,7 +679,7 @@ export function insert_general$ (
   return;
 }
 
-// test func
+// #[test]
 export function insert_general_failure$ (
   $c: AptosDataCache,
 ): CB {
@@ -709,7 +709,7 @@ export function insert_singleton$ (
   return;
 }
 
-// test func
+// #[test]
 export function insert_singleton_failure$ (
   $c: AptosDataCache,
 ): CB {
@@ -719,7 +719,7 @@ export function insert_singleton_failure$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function insert_singleton_success_l$ (
   $c: AptosDataCache,
 ): CB {
@@ -786,7 +786,7 @@ export function insert_singleton_success_l$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function insert_singleton_success_r$ (
   $c: AptosDataCache,
 ): CB {
@@ -853,7 +853,7 @@ export function insert_singleton_success_r$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function insert_success_1$ (
   $c: AptosDataCache,
 ): CB {
@@ -1038,7 +1038,7 @@ export function insert_success_1$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function insert_success_2$ (
   $c: AptosDataCache,
 ): CB {
@@ -1231,7 +1231,7 @@ export function is_empty$ (
   return Std.Vector.is_empty$(cb.o, $c, [new StructTag(new HexString("0xc0deb00c"), "CritBit", "O", [$p[0]])] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function is_empty_success$ (
   $c: AptosDataCache,
 ): CB {
@@ -1254,7 +1254,7 @@ export function is_out$ (
   return $.copy(i).shr(N_TYPE).and(OUT).eq(OUT);
 }
 
-// test func
+// #[test]
 export function is_out_success$ (
   $c: AptosDataCache,
 ): void {
@@ -1275,7 +1275,7 @@ export function is_set$ (
   return $.copy(k).shr($.copy(b)).and(u128("1")).eq(u128("1"));
 }
 
-// test func
+// #[test]
 export function is_set_success$ (
   $c: AptosDataCache,
 ): void {
@@ -1309,7 +1309,7 @@ export function length$ (
   return Std.Vector.length$(cb.o, $c, [new StructTag(new HexString("0xc0deb00c"), "CritBit", "O", [$p[0]])] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function length_success$ (
   $c: AptosDataCache,
 ): CB {
@@ -1340,7 +1340,7 @@ export function max_key$ (
   return $.copy(Std.Vector.borrow$(cb.o, o_v$(max_node_c_i$(cb, $c, [$p[0]] as TypeTag[]), $c), $c, [new StructTag(new HexString("0xc0deb00c"), "CritBit", "O", [$p[0]])] as TypeTag[]).k);
 }
 
-// test func
+// #[test]
 export function max_key_failure_empty$ (
   $c: AptosDataCache,
 ): void {
@@ -1351,7 +1351,7 @@ export function max_key_failure_empty$ (
   return;
 }
 
-// test func
+// #[test]
 export function max_key_success$ (
   $c: AptosDataCache,
 ): CB {
@@ -1397,7 +1397,7 @@ export function min_key$ (
   return $.copy(Std.Vector.borrow$(cb.o, o_v$(min_node_c_i$(cb, $c, [$p[0]] as TypeTag[]), $c), $c, [new StructTag(new HexString("0xc0deb00c"), "CritBit", "O", [$p[0]])] as TypeTag[]).k);
 }
 
-// test func
+// #[test]
 export function min_key_failure_empty$ (
   $c: AptosDataCache,
 ): void {
@@ -1408,7 +1408,7 @@ export function min_key_failure_empty$ (
   return;
 }
 
-// test func
+// #[test]
 export function min_key_success$ (
   $c: AptosDataCache,
 ): CB {
@@ -1457,7 +1457,7 @@ export function o_v$ (
   return $.copy(c).and(HI_64).xor(OUT.shl(N_TYPE));
 }
 
-// test func
+// #[test]
 export function o_v_success$ (
   $c: AptosDataCache,
 ): void {
@@ -1470,7 +1470,7 @@ export function o_v_success$ (
   return;
 }
 
-// test func
+// #[test]
 export function out_c_success$ (
   $c: AptosDataCache,
 ): void {
@@ -1528,7 +1528,7 @@ export function pop_destroy_nodes$ (
   return v;
 }
 
-// test func
+// #[test]
 export function pop_failure_empty$ (
   $c: AptosDataCache,
 ): void {
@@ -1556,7 +1556,7 @@ export function pop_general$ (
   return pop_destroy_nodes$(cb, $.copy(i_s_p), $.copy(i_s_o), $.copy(n_o), $c, [$p[0]] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function pop_general_failure_no_key$ (
   $c: AptosDataCache,
 ): CB {
@@ -1567,7 +1567,7 @@ export function pop_general_failure_no_key$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function pop_general_success_1$ (
   $c: AptosDataCache,
 ): CB {
@@ -1641,7 +1641,7 @@ export function pop_general_success_1$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function pop_general_success_2$ (
   $c: AptosDataCache,
 ): void {
@@ -1857,7 +1857,7 @@ export function pop_singleton$ (
   return v;
 }
 
-// test func
+// #[test]
 export function pop_singleton_failure$ (
   $c: AptosDataCache,
 ): CB {
@@ -1867,7 +1867,7 @@ export function pop_singleton_failure$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function pop_singleton_success$ (
   $c: AptosDataCache,
 ): void {
@@ -1988,7 +1988,7 @@ export function singleton$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function singleton_success$ (
   $c: AptosDataCache,
 ): [I[], O[]] {
@@ -2092,7 +2092,7 @@ export function stitch_swap_remove$ (
   return;
 }
 
-// test func
+// #[test]
 export function stitch_swap_remove_i_l$ (
   $c: AptosDataCache,
 ): CB {
@@ -2119,7 +2119,7 @@ export function stitch_swap_remove_i_l$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function stitch_swap_remove_i_r$ (
   $c: AptosDataCache,
 ): CB {
@@ -2146,7 +2146,7 @@ export function stitch_swap_remove_i_r$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function stitch_swap_remove_o_l$ (
   $c: AptosDataCache,
 ): CB {
@@ -2167,7 +2167,7 @@ export function stitch_swap_remove_o_l$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function stitch_swap_remove_o_r$ (
   $c: AptosDataCache,
 ): CB {
@@ -2188,7 +2188,7 @@ export function stitch_swap_remove_o_r$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function stitch_swap_remove_r_i$ (
   $c: AptosDataCache,
 ): CB {
@@ -2215,7 +2215,7 @@ export function stitch_swap_remove_r_i$ (
   return cb;
 }
 
-// test func
+// #[test]
 export function stitch_swap_remove_r_o$ (
   $c: AptosDataCache,
 ): CB {
@@ -2284,7 +2284,7 @@ export function traverse_c_i$ (
   }return $.copy(c_f);
 }
 
-// test func
+// #[test]
 export function traverse_demo$ (
   $c: AptosDataCache,
 ): void {
@@ -2443,7 +2443,7 @@ export function traverse_end_pop$ (
   return temp$1;
 }
 
-// test func
+// #[test]
 export function traverse_end_pop_success$ (
   $c: AptosDataCache,
 ): void {
@@ -2661,7 +2661,7 @@ export function traverse_pop_mut$ (
   return [$.copy(t.k), t.v, $.copy(t.p), $.copy(i_t), s_v];
 }
 
-// test func
+// #[test]
 export function traverse_pop_success$ (
   $c: AptosDataCache,
 ): CB {
@@ -2898,7 +2898,7 @@ export function traverse_s_pop_mut$ (
   return traverse_pop_mut$(cb, $.copy(k), $.copy(p_f), $.copy(c_i), $.copy(n_o), R, $c, [$p[0]] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function u$ (
   s: U8[],
   $c: AptosDataCache,
@@ -2924,7 +2924,7 @@ export function u$ (
   }return $.copy(r);
 }
 
-// test func
+// #[test]
 export function u_failure$ (
   $c: AptosDataCache,
 ): void {
@@ -2932,7 +2932,7 @@ export function u_failure$ (
   return;
 }
 
-// test func
+// #[test]
 export function u_long$ (
   a: U8[],
   b: U8[],
@@ -2944,7 +2944,7 @@ export function u_long$ (
   return u$($.copy(a), $c);
 }
 
-// test func
+// #[test]
 export function u_success$ (
   $c: AptosDataCache,
 ): void {
@@ -2991,4 +2991,9 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xc0deb00c::CritBit::CB", CB.CBParser);
+  repo.addParser("0xc0deb00c::CritBit::I", I.IParser);
+  repo.addParser("0xc0deb00c::CritBit::O", O.OParser);
+}
 

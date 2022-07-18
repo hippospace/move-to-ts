@@ -1,16 +1,13 @@
 import { HexString } from "aptos";
 import { AptosDataCache, IBox, ITable } from "./aptosDataCache";
-import { U128, U64, U8, UnsignedInt } from "./builtinTypes";
-import { AtomicTypeTag, getTypeParamsString, getTypeTagFullname, StructTag, substituteTypeParams, TypeParamIdx, TypeTag, VectorTag } from "./typeTag";
+import { U128, U64, U8 } from "./builtinTypes";
+import { AtomicTypeTag, getTypeParamsString, StructTag, substituteTypeParams, TypeParamIdx, TypeTag, VectorTag } from "./typeTag";
 import * as sha from "sha.js";
 import { SHA3 } from "sha3";
 import bigInt from "big-integer";
 import * as elliptic from "elliptic";
 import { BCS } from "aptos";
 import { FieldDeclType, StructInfoType, TypeParamDeclType } from "./parserRepo";
-import { Bls12381G1KeyPair } from "@mattrglobal/bls12381-key-pair";
-import { u8str } from "./builtinFuncs";
-import base from "base-x";
 
 
 /*

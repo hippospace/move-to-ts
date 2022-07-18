@@ -85,7 +85,6 @@ export function burn$ (
 
 
 export function buildPayload_burn (
-  account: HexString,
   amount: U64,
   $p: TypeTag[], /* <CoinType>*/
 ) {
@@ -94,12 +93,12 @@ export function buildPayload_burn (
     "0x1::ManagedCoin::burn",
     typeParamStrings,
     [
-      amount.toPayloadArg(),
+      $.payloadArg(amount),
     ]
   );
 
 }
-// test func
+// #[test]
 export function fail_burn$ (
   source: HexString,
   destination: HexString,
@@ -117,8 +116,6 @@ export function fail_burn$ (
 
 
 export function buildPayload_fail_burn (
-  source: HexString,
-  destination: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -128,7 +125,7 @@ export function buildPayload_fail_burn (
   );
 
 }
-// test func
+// #[test]
 export function fail_mint$ (
   source: HexString,
   destination: HexString,
@@ -145,8 +142,6 @@ export function fail_mint$ (
 
 
 export function buildPayload_fail_mint (
-  source: HexString,
-  destination: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -173,7 +168,6 @@ export function initialize$ (
 
 
 export function buildPayload_initialize (
-  account: HexString,
   name: U8[],
   symbol: U8[],
   decimals: U64,
@@ -185,10 +179,10 @@ export function buildPayload_initialize (
     "0x1::ManagedCoin::initialize",
     typeParamStrings,
     [
-      name.map(u => u.toPayloadArg()),
-      symbol.map(u => u.toPayloadArg()),
-      decimals.toPayloadArg(),
-      monitor_supply,
+      $.u8ArrayArg(name),
+      $.u8ArrayArg(symbol),
+      $.payloadArg(decimals),
+      $.payloadArg(monitor_supply),
     ]
   );
 
@@ -213,7 +207,6 @@ export function mint$ (
 
 
 export function buildPayload_mint (
-  account: HexString,
   dst_addr: HexString,
   amount: U64,
   $p: TypeTag[], /* <CoinType>*/
@@ -223,8 +216,8 @@ export function buildPayload_mint (
     "0x1::ManagedCoin::mint",
     typeParamStrings,
     [
-      dst_addr,
-      amount.toPayloadArg(),
+      $.payloadArg(dst_addr),
+      $.payloadArg(amount),
     ]
   );
 
@@ -240,7 +233,6 @@ export function register$ (
 
 
 export function buildPayload_register (
-  account: HexString,
   $p: TypeTag[], /* <CoinType>*/
 ) {
   const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));
@@ -251,7 +243,7 @@ export function buildPayload_register (
   );
 
 }
-// test func
+// #[test]
 export function test_end_to_end$ (
   source: HexString,
   destination: HexString,
@@ -301,8 +293,6 @@ export function test_end_to_end$ (
 
 
 export function buildPayload_test_end_to_end (
-  source: HexString,
-  destination: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -319,4 +309,8 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::ManagedCoin::Capabilities", Capabilities.CapabilitiesParser);
+  repo.addParser("0x1::ManagedCoin::FakeMoney", FakeMoney.FakeMoneyParser);
+}
 

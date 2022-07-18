@@ -196,7 +196,7 @@ export function buildPayload_create_account (
     "0x1::Account::create_account",
     typeParamStrings,
     [
-      auth_key,
+      $.payloadArg(auth_key),
     ]
   );
 
@@ -238,7 +238,7 @@ export function create_address$ (
   return $.AptosFramework_Account_create_address(bytes, $c);
 
 }
-// test func
+// #[test]
 export function create_address_for_test$ (
   bytes: U8[],
   $c: AptosDataCache,
@@ -350,7 +350,7 @@ export function get_sequence_number$ (
   return $.copy($c.borrow_global<Account>(new StructTag(new HexString("0x1"), "Account", "Account", []), $.copy(addr)).sequence_number);
 }
 
-// test func
+// #[test]
 export function increment_sequence_number$ (
   addr: HexString,
   $c: AptosDataCache,
@@ -381,7 +381,7 @@ export function initialize$ (
   return;
 }
 
-// test func
+// #[test]
 export function mock_sequence_numbers$ (
   $c: AptosDataCache,
 ): void {
@@ -521,7 +521,6 @@ export function rotate_authentication_key$ (
 
 
 export function buildPayload_rotate_authentication_key (
-  account: HexString,
   new_auth_key: U8[],
 ) {
   const typeParamStrings = [] as string[];
@@ -529,7 +528,7 @@ export function buildPayload_rotate_authentication_key (
     "0x1::Account::rotate_authentication_key",
     typeParamStrings,
     [
-      new_auth_key.map(u => u.toPayloadArg()),
+      $.u8ArrayArg(new_auth_key),
     ]
   );
 
@@ -569,7 +568,7 @@ export function script_prologue$ (
   return prologue_common$(sender, $.copy(txn_sequence_number), $.copy(txn_public_key), $.copy(txn_gas_price), $.copy(txn_max_gas_units), $.copy(txn_expiration_time), $.copy(chain_id), $c);
 }
 
-// test func
+// #[test]
 export function set_sequence_number$ (
   addr: HexString,
   s: U64,
@@ -579,7 +578,7 @@ export function set_sequence_number$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_create_resource_account$ (
   user: HexString,
   $c: AptosDataCache,
@@ -595,7 +594,6 @@ export function test_create_resource_account$ (
 
 
 export function buildPayload_test_create_resource_account (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -605,7 +603,7 @@ export function buildPayload_test_create_resource_account (
   );
 
 }
-// test func
+// #[test]
 export function test_module_capability$ (
   user: HexString,
   $c: AptosDataCache,
@@ -627,7 +625,6 @@ export function test_module_capability$ (
 
 
 export function buildPayload_test_module_capability (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -670,4 +667,10 @@ export function writeset_prologue$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Account::Account", Account.AccountParser);
+  repo.addParser("0x1::Account::ChainSpecificAccountInfo", ChainSpecificAccountInfo.ChainSpecificAccountInfoParser);
+  repo.addParser("0x1::Account::DummyResource", DummyResource.DummyResourceParser);
+  repo.addParser("0x1::Account::SignerCapability", SignerCapability.SignerCapabilityParser);
+}
 

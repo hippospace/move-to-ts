@@ -26,7 +26,6 @@ export function create_and_fund_account$ (
 
 
 export function buildPayload_create_and_fund_account (
-  funder: HexString,
   account: HexString,
   amount: U64,
 ) {
@@ -35,8 +34,8 @@ export function buildPayload_create_and_fund_account (
     "0x1::AccountUtils::create_and_fund_account",
     typeParamStrings,
     [
-      account,
-      amount.toPayloadArg(),
+      $.payloadArg(account),
+      $.payloadArg(amount),
     ]
   );
 
@@ -48,4 +47,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

@@ -661,7 +661,6 @@ export function add_stake$ (
 
 
 export function buildPayload_add_stake (
-  account: HexString,
   amount: U64,
 ) {
   const typeParamStrings = [] as string[];
@@ -669,7 +668,7 @@ export function buildPayload_add_stake (
     "0x1::Stake::add_stake",
     typeParamStrings,
     [
-      amount.toPayloadArg(),
+      $.payloadArg(amount),
     ]
   );
 
@@ -716,7 +715,7 @@ export function append$ (
   }return;
 }
 
-// test func
+// #[test]
 export function assert_validator_state$ (
   pool_address: HexString,
   active_stake: U64,
@@ -751,7 +750,7 @@ export function assert_validator_state$ (
   return;
 }
 
-// test func
+// #[test]
 export function create_stake_pool$ (
   account: HexString,
   active: Coin.Coin,
@@ -765,7 +764,7 @@ export function create_stake_pool$ (
   return;
 }
 
-// test func
+// #[test]
 export function create_validator_set$ (
   core_resources: HexString,
   active_validator_addresses: HexString[],
@@ -890,7 +889,6 @@ export function increase_lockup$ (
 
 
 export function buildPayload_increase_lockup (
-  account: HexString,
   new_locked_until_secs: U64,
 ) {
   const typeParamStrings = [] as string[];
@@ -898,7 +896,7 @@ export function buildPayload_increase_lockup (
     "0x1::Stake::increase_lockup",
     typeParamStrings,
     [
-      new_locked_until_secs.toPayloadArg(),
+      $.payloadArg(new_locked_until_secs),
     ]
   );
 
@@ -1012,7 +1010,6 @@ export function join_validator_set$ (
 
 
 export function buildPayload_join_validator_set (
-  account: HexString,
   pool_address: HexString,
 ) {
   const typeParamStrings = [] as string[];
@@ -1020,7 +1017,7 @@ export function buildPayload_join_validator_set (
     "0x1::Stake::join_validator_set",
     typeParamStrings,
     [
-      pool_address,
+      $.payloadArg(pool_address),
     ]
   );
 
@@ -1087,7 +1084,6 @@ export function leave_validator_set$ (
 
 
 export function buildPayload_leave_validator_set (
-  account: HexString,
   pool_address: HexString,
 ) {
   const typeParamStrings = [] as string[];
@@ -1095,7 +1091,7 @@ export function buildPayload_leave_validator_set (
     "0x1::Stake::leave_validator_set",
     typeParamStrings,
     [
-      pool_address,
+      $.payloadArg(pool_address),
     ]
   );
 
@@ -1172,7 +1168,7 @@ export function on_new_epoch$ (
   return;
 }
 
-// test func
+// #[test]
 export function register_mint_stake$ (
   account: HexString,
   mint_cap: Coin.MintCapability,
@@ -1222,7 +1218,6 @@ export function register_validator_candidate$ (
 
 
 export function buildPayload_register_validator_candidate (
-  account: HexString,
   consensus_pubkey: U8[],
   proof_of_possession: U8[],
   network_addresses: U8[],
@@ -1233,10 +1228,10 @@ export function buildPayload_register_validator_candidate (
     "0x1::Stake::register_validator_candidate",
     typeParamStrings,
     [
-      consensus_pubkey.map(u => u.toPayloadArg()),
-      proof_of_possession.map(u => u.toPayloadArg()),
-      network_addresses.map(u => u.toPayloadArg()),
-      fullnode_addresses.map(u => u.toPayloadArg()),
+      $.u8ArrayArg(consensus_pubkey),
+      $.u8ArrayArg(proof_of_possession),
+      $.u8ArrayArg(network_addresses),
+      $.u8ArrayArg(fullnode_addresses),
     ]
   );
 
@@ -1269,7 +1264,6 @@ export function rotate_consensus_key$ (
 
 
 export function buildPayload_rotate_consensus_key (
-  account: HexString,
   pool_address: HexString,
   new_consensus_pubkey: U8[],
   proof_of_possession: U8[],
@@ -1279,9 +1273,9 @@ export function buildPayload_rotate_consensus_key (
     "0x1::Stake::rotate_consensus_key",
     typeParamStrings,
     [
-      pool_address,
-      new_consensus_pubkey.map(u => u.toPayloadArg()),
-      proof_of_possession.map(u => u.toPayloadArg()),
+      $.payloadArg(pool_address),
+      $.u8ArrayArg(new_consensus_pubkey),
+      $.u8ArrayArg(proof_of_possession),
     ]
   );
 
@@ -1300,7 +1294,6 @@ export function set_delegated_voter$ (
 
 
 export function buildPayload_set_delegated_voter (
-  account: HexString,
   new_delegated_voter: HexString,
 ) {
   const typeParamStrings = [] as string[];
@@ -1308,7 +1301,7 @@ export function buildPayload_set_delegated_voter (
     "0x1::Stake::set_delegated_voter",
     typeParamStrings,
     [
-      new_delegated_voter,
+      $.payloadArg(new_delegated_voter),
     ]
   );
 
@@ -1342,7 +1335,6 @@ export function set_operator$ (
 
 
 export function buildPayload_set_operator (
-  account: HexString,
   new_operator: HexString,
 ) {
   const typeParamStrings = [] as string[];
@@ -1350,7 +1342,7 @@ export function buildPayload_set_operator (
     "0x1::Stake::set_operator",
     typeParamStrings,
     [
-      new_operator,
+      $.payloadArg(new_operator),
     ]
   );
 
@@ -1419,7 +1411,7 @@ export function store_test_coin_mint_cap$ (
   return $c.move_to(new StructTag(new HexString("0x1"), "Stake", "TestCoinCapabilities", []), core_resources, new TestCoinCapabilities({ mint_cap: $.copy(mint_cap) }, new StructTag(new HexString("0x1"), "Stake", "TestCoinCapabilities", [])));
 }
 
-// test func
+// #[test]
 export function test_basic_staking$ (
   core_framework: HexString,
   core_resources: HexString,
@@ -1460,9 +1452,6 @@ export function test_basic_staking$ (
 
 
 export function buildPayload_test_basic_staking (
-  core_framework: HexString,
-  core_resources: HexString,
-  validator: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1472,7 +1461,7 @@ export function buildPayload_test_basic_staking (
   );
 
 }
-// test func
+// #[test]
 export function test_change_validator_set_configs$ (
   core_resources: HexString,
   $c: AptosDataCache,
@@ -1506,7 +1495,6 @@ export function test_change_validator_set_configs$ (
 
 
 export function buildPayload_test_change_validator_set_configs (
-  core_resources: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1516,7 +1504,7 @@ export function buildPayload_test_change_validator_set_configs (
   );
 
 }
-// test func
+// #[test]
 export function test_delegated_staking_with_owner_cap$ (
   core_framework: HexString,
   core_resources: HexString,
@@ -1558,9 +1546,6 @@ export function test_delegated_staking_with_owner_cap$ (
 
 
 export function buildPayload_test_delegated_staking_with_owner_cap (
-  core_framework: HexString,
-  core_resources: HexString,
-  validator: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1570,7 +1555,7 @@ export function buildPayload_test_delegated_staking_with_owner_cap (
   );
 
 }
-// test func
+// #[test]
 export function test_validator_cannot_join_leave_post_genesis$ (
   core_framework: HexString,
   core_resources: HexString,
@@ -1588,9 +1573,6 @@ export function test_validator_cannot_join_leave_post_genesis$ (
 
 
 export function buildPayload_test_validator_cannot_join_leave_post_genesis (
-  core_framework: HexString,
-  core_resources: HexString,
-  validator: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1600,7 +1582,7 @@ export function buildPayload_test_validator_cannot_join_leave_post_genesis (
   );
 
 }
-// test func
+// #[test]
 export function test_validator_join_leave$ (
   core_framework: HexString,
   core_resources: HexString,
@@ -1692,11 +1674,6 @@ export function test_validator_join_leave$ (
 
 
 export function buildPayload_test_validator_join_leave (
-  core_framework: HexString,
-  core_resources: HexString,
-  validator_1: HexString,
-  validator_2: HexString,
-  validator_3: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1706,7 +1683,7 @@ export function buildPayload_test_validator_join_leave (
   );
 
 }
-// test func
+// #[test]
 export function test_validator_order$ (
   core_framework: HexString,
   core_resources: HexString,
@@ -1793,13 +1770,6 @@ export function test_validator_order$ (
 
 
 export function buildPayload_test_validator_order (
-  core_framework: HexString,
-  core_resources: HexString,
-  validator_1: HexString,
-  validator_2: HexString,
-  validator_3: HexString,
-  validator_4: HexString,
-  validator_5: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1830,7 +1800,6 @@ export function unlock$ (
 
 
 export function buildPayload_unlock (
-  account: HexString,
   amount: U64,
 ) {
   const typeParamStrings = [] as string[];
@@ -1838,7 +1807,7 @@ export function buildPayload_unlock (
     "0x1::Stake::unlock",
     typeParamStrings,
     [
-      amount.toPayloadArg(),
+      $.payloadArg(amount),
     ]
   );
 
@@ -1975,7 +1944,7 @@ export function validate_lockup_time$ (
   return;
 }
 
-// test func
+// #[test]
 export function validator_index$ (
   addr: HexString,
   $c: AptosDataCache,
@@ -2000,7 +1969,6 @@ export function withdraw$ (
 
 
 export function buildPayload_withdraw (
-  account: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -2029,4 +1997,25 @@ export function withdraw_with_cap$ (
   return Coin.extract$(stake_pool.inactive, $.copy(withdraw_amount), $c, [new StructTag(new HexString("0x1"), "TestCoin", "TestCoin", [])] as TypeTag[]);
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Stake::AddStakeEvent", AddStakeEvent.AddStakeEventParser);
+  repo.addParser("0x1::Stake::DistributeRewardsEvent", DistributeRewardsEvent.DistributeRewardsEventParser);
+  repo.addParser("0x1::Stake::IncreaseLockupEvent", IncreaseLockupEvent.IncreaseLockupEventParser);
+  repo.addParser("0x1::Stake::JoinValidatorSetEvent", JoinValidatorSetEvent.JoinValidatorSetEventParser);
+  repo.addParser("0x1::Stake::LeaveValidatorSetEvent", LeaveValidatorSetEvent.LeaveValidatorSetEventParser);
+  repo.addParser("0x1::Stake::OwnerCapability", OwnerCapability.OwnerCapabilityParser);
+  repo.addParser("0x1::Stake::RegisterValidatorCandidateEvent", RegisterValidatorCandidateEvent.RegisterValidatorCandidateEventParser);
+  repo.addParser("0x1::Stake::RotateConsensusKeyEvent", RotateConsensusKeyEvent.RotateConsensusKeyEventParser);
+  repo.addParser("0x1::Stake::SetOperatorEvent", SetOperatorEvent.SetOperatorEventParser);
+  repo.addParser("0x1::Stake::StakePool", StakePool.StakePoolParser);
+  repo.addParser("0x1::Stake::StakePoolEvents", StakePoolEvents.StakePoolEventsParser);
+  repo.addParser("0x1::Stake::TestCoinCapabilities", TestCoinCapabilities.TestCoinCapabilitiesParser);
+  repo.addParser("0x1::Stake::UnlockStakeEvent", UnlockStakeEvent.UnlockStakeEventParser);
+  repo.addParser("0x1::Stake::ValidatorConfig", ValidatorConfig.ValidatorConfigParser);
+  repo.addParser("0x1::Stake::ValidatorInfo", ValidatorInfo.ValidatorInfoParser);
+  repo.addParser("0x1::Stake::ValidatorPerformance", ValidatorPerformance.ValidatorPerformanceParser);
+  repo.addParser("0x1::Stake::ValidatorSet", ValidatorSet.ValidatorSetParser);
+  repo.addParser("0x1::Stake::ValidatorSetConfiguration", ValidatorSetConfiguration.ValidatorSetConfigurationParser);
+  repo.addParser("0x1::Stake::WithdrawStakeEvent", WithdrawStakeEvent.WithdrawStakeEventParser);
+}
 

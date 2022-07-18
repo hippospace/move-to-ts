@@ -38,7 +38,6 @@ export function add_liquidity_script$ (
 
 
 export function buildPayload_add_liquidity_script (
-  sender: HexString,
   amount_x: U64,
   amount_y: U64,
   $p: TypeTag[], /* <X, Y>*/
@@ -48,8 +47,8 @@ export function buildPayload_add_liquidity_script (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::PieceSwapScript::add_liquidity_script",
     typeParamStrings,
     [
-      amount_x.toPayloadArg(),
-      amount_y.toPayloadArg(),
+      $.payloadArg(amount_x),
+      $.payloadArg(amount_y),
     ]
   );
 
@@ -114,7 +113,6 @@ export function create_new_pool_script$ (
 
 
 export function buildPayload_create_new_pool_script (
-  admin: HexString,
   lp_name: U8[],
   lp_symbol: U8[],
   k: U128,
@@ -131,15 +129,15 @@ export function buildPayload_create_new_pool_script (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::PieceSwapScript::create_new_pool_script",
     typeParamStrings,
     [
-      lp_name.map(u => u.toPayloadArg()),
-      lp_symbol.map(u => u.toPayloadArg()),
-      k.toPayloadArg(),
-      w1_numerator.toPayloadArg(),
-      w1_denominator.toPayloadArg(),
-      w2_numerator.toPayloadArg(),
-      w2_denominator.toPayloadArg(),
-      swap_fee_per_million.toPayloadArg(),
-      protocol_fee_share_per_thousand.toPayloadArg(),
+      $.u8ArrayArg(lp_name),
+      $.u8ArrayArg(lp_symbol),
+      $.payloadArg(k),
+      $.payloadArg(w1_numerator),
+      $.payloadArg(w1_denominator),
+      $.payloadArg(w2_numerator),
+      $.payloadArg(w2_denominator),
+      $.payloadArg(swap_fee_per_million),
+      $.payloadArg(protocol_fee_share_per_thousand),
     ]
   );
 
@@ -173,7 +171,6 @@ export function mock_deploy_script$ (
 
 
 export function buildPayload_mock_deploy_script (
-  admin: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -195,7 +192,6 @@ export function remove_liquidity_script$ (
 
 
 export function buildPayload_remove_liquidity_script (
-  sender: HexString,
   liquidity: U64,
   $p: TypeTag[], /* <X, Y>*/
 ) {
@@ -204,12 +200,12 @@ export function buildPayload_remove_liquidity_script (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::PieceSwapScript::remove_liquidity_script",
     typeParamStrings,
     [
-      liquidity.toPayloadArg(),
+      $.payloadArg(liquidity),
     ]
   );
 
 }
-// test func
+// #[test]
 export function swap$ (
   sender: HexString,
   x_in: U64,
@@ -312,7 +308,6 @@ export function swap_script$ (
 
 
 export function buildPayload_swap_script (
-  sender: HexString,
   x_in: U64,
   y_in: U64,
   x_min_out: U64,
@@ -324,15 +319,15 @@ export function buildPayload_swap_script (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::PieceSwapScript::swap_script",
     typeParamStrings,
     [
-      x_in.toPayloadArg(),
-      y_in.toPayloadArg(),
-      x_min_out.toPayloadArg(),
-      y_min_out.toPayloadArg(),
+      $.payloadArg(x_in),
+      $.payloadArg(y_in),
+      $.payloadArg(x_min_out),
+      $.payloadArg(y_min_out),
     ]
   );
 
 }
-// test func
+// #[test]
 export function test_mock_deploy$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -343,7 +338,6 @@ export function test_mock_deploy$ (
 
 
 export function buildPayload_test_mock_deploy (
-  admin: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -353,7 +347,7 @@ export function buildPayload_test_mock_deploy (
   );
 
 }
-// test func
+// #[test]
 export function test_remove_liquidity$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -377,7 +371,6 @@ export function test_remove_liquidity$ (
 
 
 export function buildPayload_test_remove_liquidity (
-  admin: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -387,7 +380,7 @@ export function buildPayload_test_remove_liquidity (
   );
 
 }
-// test func
+// #[test]
 export function test_swap$ (
   admin: HexString,
   user: HexString,
@@ -414,8 +407,6 @@ export function test_swap$ (
 
 
 export function buildPayload_test_swap (
-  admin: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -432,4 +423,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

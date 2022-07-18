@@ -76,4 +76,7 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::ConsensusConfig::ConsensusConfig", ConsensusConfig.ConsensusConfigParser);
+}
 

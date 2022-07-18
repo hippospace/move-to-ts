@@ -21,7 +21,6 @@ export function add_validator$ (
 
 
 export function buildPayload_add_validator (
-  _account: HexString,
   _validator_addr: HexString,
 ) {
   const typeParamStrings = [] as string[];
@@ -29,7 +28,7 @@ export function buildPayload_add_validator (
     "0x1::ValidatorSetScript::add_validator",
     typeParamStrings,
     [
-      _validator_addr,
+      $.payloadArg(_validator_addr),
     ]
   );
 
@@ -45,7 +44,6 @@ export function create_validator_account$ (
 
 
 export function buildPayload_create_validator_account (
-  _core_resource: HexString,
   _new_account_address: HexString,
   _human_name: U8[],
 ) {
@@ -54,8 +52,8 @@ export function buildPayload_create_validator_account (
     "0x1::ValidatorSetScript::create_validator_account",
     typeParamStrings,
     [
-      _new_account_address,
-      _human_name.map(u => u.toPayloadArg()),
+      $.payloadArg(_new_account_address),
+      $.u8ArrayArg(_human_name),
     ]
   );
 
@@ -71,7 +69,6 @@ export function create_validator_operator_account$ (
 
 
 export function buildPayload_create_validator_operator_account (
-  _core_resource: HexString,
   _new_account_address: HexString,
   _human_name: U8[],
 ) {
@@ -80,8 +77,8 @@ export function buildPayload_create_validator_operator_account (
     "0x1::ValidatorSetScript::create_validator_operator_account",
     typeParamStrings,
     [
-      _new_account_address,
-      _human_name.map(u => u.toPayloadArg()),
+      $.payloadArg(_new_account_address),
+      $.u8ArrayArg(_human_name),
     ]
   );
 
@@ -99,7 +96,6 @@ export function register_validator_config$ (
 
 
 export function buildPayload_register_validator_config (
-  _validator_operator_account: HexString,
   _validator_address: HexString,
   _consensus_pubkey: U8[],
   _validator_network_addresses: U8[],
@@ -110,10 +106,10 @@ export function buildPayload_register_validator_config (
     "0x1::ValidatorSetScript::register_validator_config",
     typeParamStrings,
     [
-      _validator_address,
-      _consensus_pubkey.map(u => u.toPayloadArg()),
-      _validator_network_addresses.map(u => u.toPayloadArg()),
-      _fullnode_network_addresses.map(u => u.toPayloadArg()),
+      $.payloadArg(_validator_address),
+      $.u8ArrayArg(_consensus_pubkey),
+      $.u8ArrayArg(_validator_network_addresses),
+      $.u8ArrayArg(_fullnode_network_addresses),
     ]
   );
 
@@ -128,7 +124,6 @@ export function remove_validator$ (
 
 
 export function buildPayload_remove_validator (
-  _account: HexString,
   _validator_addr: HexString,
 ) {
   const typeParamStrings = [] as string[];
@@ -136,7 +131,7 @@ export function buildPayload_remove_validator (
     "0x1::ValidatorSetScript::remove_validator",
     typeParamStrings,
     [
-      _validator_addr,
+      $.payloadArg(_validator_addr),
     ]
   );
 
@@ -154,7 +149,6 @@ export function set_validator_config_and_reconfigure$ (
 
 
 export function buildPayload_set_validator_config_and_reconfigure (
-  _validator_operator_account: HexString,
   _validator_account: HexString,
   _consensus_pubkey: U8[],
   _validator_network_addresses: U8[],
@@ -165,10 +159,10 @@ export function buildPayload_set_validator_config_and_reconfigure (
     "0x1::ValidatorSetScript::set_validator_config_and_reconfigure",
     typeParamStrings,
     [
-      _validator_account,
-      _consensus_pubkey.map(u => u.toPayloadArg()),
-      _validator_network_addresses.map(u => u.toPayloadArg()),
-      _fullnode_network_addresses.map(u => u.toPayloadArg()),
+      $.payloadArg(_validator_account),
+      $.u8ArrayArg(_consensus_pubkey),
+      $.u8ArrayArg(_validator_network_addresses),
+      $.u8ArrayArg(_fullnode_network_addresses),
     ]
   );
 
@@ -184,7 +178,6 @@ export function set_validator_operator$ (
 
 
 export function buildPayload_set_validator_operator (
-  _account: HexString,
   _operator_name: U8[],
   _operator_account: HexString,
 ) {
@@ -193,8 +186,8 @@ export function buildPayload_set_validator_operator (
     "0x1::ValidatorSetScript::set_validator_operator",
     typeParamStrings,
     [
-      _operator_name.map(u => u.toPayloadArg()),
-      _operator_account,
+      $.u8ArrayArg(_operator_name),
+      $.payloadArg(_operator_account),
     ]
   );
 
@@ -206,4 +199,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

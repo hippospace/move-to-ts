@@ -1,6 +1,7 @@
 import { AtomicTypeTag, getTypeTagParamlessName, StructTag, TypeTag, TypeParamIdx, VectorTag, getTypeTagFullname, parseTypeTagOrThrow, substituteTypeParams } from "./typeTag";
 import { AptosClient, HexString } from "aptos";
 import bigInt from "big-integer";
+import { U128, U64, U8 } from "./builtinTypes";
 
 export type TypeParamDeclType = {
   name: string;
@@ -68,7 +69,7 @@ export function parseStructProto(data: any, typeTag: TypeTag, repo: AptosParserR
 
 export type ParserFunc = (data: any, typeTag: TypeTag, repo: AptosParserRepo) => any;
 
-export function U8Parser(data: any, typeTag: TypeTag, _repo: AptosParserRepo):number {
+export function U8Parser(data: any, typeTag: TypeTag, _repo: AptosParserRepo):U8 {
   if(typeTag !== AtomicTypeTag.U8) {
     throw new Error(`U8Parser cannot parse type: ${getTypeTagParamlessName(typeTag)}`);
   }
@@ -81,27 +82,27 @@ export function U8Parser(data: any, typeTag: TypeTag, _repo: AptosParserRepo):nu
   if(!Number.isInteger(data)) {
     throw new Error(`U8Parser expects an integer but received: ${data}`);
   }
-  return data as number;
+  return new U8(bigInt(data));
 }
 
-export function U64Parser(data: any, typeTag: TypeTag, _repo: AptosParserRepo): bigInt.BigInteger {
+export function U64Parser(data: any, typeTag: TypeTag, _repo: AptosParserRepo): U64 {
   if(typeTag !== AtomicTypeTag.U64) {
     throw new Error(`U64Parser cannot parse type: ${getTypeTagParamlessName(typeTag)}`);
   }
   if(typeof data !== "string") {
     throw new Error(`U64Parser expects string type as data but received: ${typeof data}`);
   }
-  return bigInt(data);
+  return new U64(bigInt(data));
 }
 
-export function U128Parser(data: any, typeTag: TypeTag, _repo: AptosParserRepo): bigInt.BigInteger {
+export function U128Parser(data: any, typeTag: TypeTag, _repo: AptosParserRepo): U128 {
   if(typeTag !== AtomicTypeTag.U128) {
     throw new Error(`U128Parser cannot parse type: ${getTypeTagParamlessName(typeTag)}`);
   }
   if(typeof data !== "string") {
     throw new Error(`U128Parser expects string type as data but received: ${typeof data}`);
   }
-  return bigInt(data);
+  return new U128(bigInt(data));
 }
 
 export function BoolParser(data: any, typeTag: TypeTag, _repo: AptosParserRepo): boolean {
@@ -123,26 +124,6 @@ export function AddressParser(data: any, typeTag: TypeTag, _repo: AptosParserRep
   }
   return new HexString(data);
 }
-
-export function parseVectorU8(data: any): AptosVectorU8 {
-  if(typeof data !== "string") {
-    throw new Error(`VectorU8 parser expects string data but received: ${typeof data}`);
-  }
-  if(!data.startsWith('0x')) {
-    throw new Error(`VectorU8 value is supposed to start with 0x but instead got: ${data}`);
-  }
-  const hexString = new HexString(data);
-  return new AptosVectorU8(hexString.toUint8Array());
-}
-
-export function AsciiParser(data: any, typeTag: TypeTag, _repo: AptosParserRepo): string {
-  const tagName = getTypeTagFullname(typeTag);
-  if (tagName !== '0x1::ASCII::String') {
-    throw new Error(`AsciiParser only supports 0x1::ASCII::String but received: ${tagName}`);
-  }
-  return data as string;
-}
-
 export class AptosVectorU8 {
   u8Array: Uint8Array;
   constructor(input: number[] | string | Uint8Array) {
@@ -192,11 +173,6 @@ export function VectorParser(data: any, typeTag: TypeTag, repo: AptosParserRepo)
     throw new Error(`VectorParser cannot parse type: ${getTypeTagParamlessName(typeTag)}`);
   }
   const elementType = typeTag.elementType;
-  if (elementType === AtomicTypeTag.U8) {
-    // vector<u8> data comes in hex string form
-    const u8array = parseVectorU8(data);
-    return u8array;
-  }
   if(!(data instanceof Array)) {
     throw new Error(`VectorParser expects Array type as data but received: ${typeof data}`);
   }
@@ -274,6 +250,5 @@ export class AptosParserRepo {
     this.addParser('u128', U128Parser);
     this.addParser('address', AddressParser);
     this.addParser('vector', VectorParser);
-    this.addParser('0x1::ASCII::String', AsciiParser);
   }
 }

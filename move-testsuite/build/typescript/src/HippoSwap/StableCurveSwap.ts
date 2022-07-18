@@ -314,7 +314,7 @@ export function create_pool_info$ (
   return new StableCurvePoolInfo({ disabled: false, reserve_x: AptosFramework.Coin.zero$($c, [$p[0]] as TypeTag[]), reserve_y: AptosFramework.Coin.zero$($c, [$p[1]] as TypeTag[]), fee_x: AptosFramework.Coin.zero$($c, [$p[0]] as TypeTag[]), fee_y: AptosFramework.Coin.zero$($c, [$p[1]] as TypeTag[]), lp_precision: $.copy(lp_precision), multiplier_x: $.copy(multiplier_x), multiplier_y: $.copy(multiplier_y), fee: $.copy(fee), admin_fee: $.copy(admin_fee), initial_A: $.copy(initial_A), future_A: $.copy(future_A), initial_A_time: $.copy(initial_A_time), future_A_time: $.copy(future_A_time) }, new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "StableCurveSwap", "StableCurvePoolInfo", [$p[0], $p[1]]));
 }
 
-// test func
+// #[test]
 export function fail_add_liquidity$ (
   admin: HexString,
   core: HexString,
@@ -332,7 +332,7 @@ export function fail_add_liquidity$ (
   return AptosFramework.Coin.deposit$(Std.Signer.address_of$(admin, $c), y_remain, $c, [new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "MockCoin", "WDAI", [])] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function fail_add_liquidity_d1$ (
   admin: HexString,
   core: HexString,
@@ -356,7 +356,7 @@ export function fail_add_liquidity_d1$ (
   return AptosFramework.Coin.deposit$(Std.Signer.address_of$(admin, $c), y_remain, $c, [new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "MockCoin", "WDAI", [])] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function fail_add_liquidity_y$ (
   admin: HexString,
   core: HexString,
@@ -374,7 +374,7 @@ export function fail_add_liquidity_y$ (
   return AptosFramework.Coin.deposit$(Std.Signer.address_of$(admin, $c), y_remain, $c, [new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "MockCoin", "WDAI", [])] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function fail_assert_admin$ (
   core: HexString,
   $c: AptosDataCache,
@@ -383,7 +383,7 @@ export function fail_assert_admin$ (
   return;
 }
 
-// test func
+// #[test]
 export function fail_x$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -392,7 +392,7 @@ export function fail_x$ (
   return;
 }
 
-// test func
+// #[test]
 export function fail_y$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -402,7 +402,7 @@ export function fail_y$ (
   return;
 }
 
-// test func
+// #[test]
 export function genesis$ (
   core: HexString,
   vm: HexString,
@@ -436,7 +436,7 @@ export function get_current_A$ (
   return StableCurveNumeral.get_A$($.copy(initial_A), $.copy(future_A), $.copy(initial_A_time), $.copy(future_A_time), $.copy(block_timestamp), $c);
 }
 
-// test func
+// #[test]
 export function get_fee_amounts$ (
   $c: AptosDataCache,
   $p: TypeTag[], /* <X, Y>*/
@@ -446,7 +446,7 @@ export function get_fee_amounts$ (
   return [AptosFramework.Coin.value$(i.fee_x, $c, [$p[0]] as TypeTag[]), AptosFramework.Coin.value$(i.fee_y, $c, [$p[1]] as TypeTag[])];
 }
 
-// test func
+// #[test]
 export function get_pool_info$ (
   $c: AptosDataCache,
   $p: TypeTag[], /* <X, Y>*/
@@ -456,7 +456,7 @@ export function get_pool_info$ (
   return [$.copy(i.disabled), AptosFramework.Coin.value$(i.reserve_x, $c, [$p[0]] as TypeTag[]), AptosFramework.Coin.value$(i.reserve_y, $c, [$p[1]] as TypeTag[]), AptosFramework.Coin.value$(i.fee_x, $c, [$p[0]] as TypeTag[]), AptosFramework.Coin.value$(i.fee_y, $c, [$p[1]] as TypeTag[]), $.copy(i.lp_precision), $.copy(i.multiplier_x), $.copy(i.multiplier_y), $.copy(i.fee), $.copy(i.admin_fee), $.copy(i.initial_A), $.copy(i.future_A), $.copy(i.initial_A_time), $.copy(i.future_A_time)];
 }
 
-// test func
+// #[test]
 export function get_reserve_amounts$ (
   $c: AptosDataCache,
   $p: TypeTag[], /* <X, Y>*/
@@ -500,7 +500,7 @@ export function get_y$ (
   return u64(StableCurveNumeral.get_y$($.copy(x), $.copy(amp), $.copy(d), $c));
 }
 
-// test func
+// #[test]
 export function init_lp_token$ (
   admin: HexString,
   core: HexString,
@@ -517,7 +517,7 @@ export function init_lp_token$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_mock_coin$ (
   creator: HexString,
   $c: AptosDataCache,
@@ -527,7 +527,7 @@ export function init_mock_coin$ (
   return MockCoin.mint$(u64("20"), $c, [$p[0]] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function init_with_liquidity$ (
   admin: HexString,
   core: HexString,
@@ -616,7 +616,7 @@ export function mint$ (
   return mint_token;
 }
 
-// test func
+// #[test]
 export function mint_lptoken_coin$ (
   admin: HexString,
   core: HexString,
@@ -638,7 +638,7 @@ export function mint_lptoken_coin$ (
   return;
 }
 
-// test func
+// #[test]
 export function mint_mock_coin$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -652,7 +652,7 @@ export function mint_mock_coin$ (
   return burn$(coin, $c, [new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "MockCoin", "WETH", []), new StructTag(new HexString("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8"), "MockCoin", "WDAI", [])] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function mock_add_liquidity$ (
   admin: HexString,
   core: HexString,
@@ -683,7 +683,7 @@ export function mock_add_liquidity$ (
   return;
 }
 
-// test func
+// #[test]
 export function mock_curve_params$ (
   $c: AptosDataCache,
 ): [U64, U64, U64, U64] {
@@ -862,7 +862,7 @@ export function swap_y_to_exact_x_direct$ (
   return [AptosFramework.Coin.zero$($c, [$p[1]] as TypeTag[]), coin_dx, AptosFramework.Coin.zero$($c, [$p[1]] as TypeTag[])];
 }
 
-// test func
+// #[test]
 export function test_exchange_coin$ (
   admin: HexString,
   core: HexString,
@@ -887,7 +887,7 @@ export function test_exchange_coin$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_fail_ramp_A_future_A_value$ (
   admin: HexString,
   core: HexString,
@@ -900,7 +900,7 @@ export function test_fail_ramp_A_future_A_value$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_fail_ramp_A_future_A_value_b$ (
   admin: HexString,
   core: HexString,
@@ -913,7 +913,7 @@ export function test_fail_ramp_A_future_A_value_b$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_fail_ramp_A_future_A_value_c$ (
   admin: HexString,
   core: HexString,
@@ -926,7 +926,7 @@ export function test_fail_ramp_A_future_A_value_c$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_fail_ramp_A_future_time$ (
   admin: HexString,
   core: HexString,
@@ -939,7 +939,7 @@ export function test_fail_ramp_A_future_time$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_fail_ramp_A_timestamp$ (
   admin: HexString,
   core: HexString,
@@ -953,7 +953,7 @@ export function test_fail_ramp_A_timestamp$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_fail_remove_liquidity_amount_x$ (
   admin: HexString,
   core: HexString,
@@ -966,7 +966,7 @@ export function test_fail_remove_liquidity_amount_x$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_fail_remove_liquidity_amount_y$ (
   admin: HexString,
   core: HexString,
@@ -979,7 +979,7 @@ export function test_fail_remove_liquidity_amount_y$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_ramp_A_stop_ramp_A$ (
   admin: HexString,
   core: HexString,
@@ -994,7 +994,7 @@ export function test_ramp_A_stop_ramp_A$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_swap_pair_case_A$ (
   admin: HexString,
   core: HexString,
@@ -1014,7 +1014,7 @@ export function test_swap_pair_case_A$ (
   return Std.Debug.print$(k, $c, [AtomicTypeTag.U64] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function test_swap_pair_case_B$ (
   admin: HexString,
   core: HexString,
@@ -1035,7 +1035,7 @@ export function test_swap_pair_case_B$ (
   return;
 }
 
-// test func
+// #[test]
 export function time$ (
   offset_seconds: U64,
   $c: AptosDataCache,
@@ -1052,7 +1052,7 @@ export function unit_test_poison$ (
   return;
 }
 
-// test func
+// #[test]
 export function update_time$ (
   account: HexString,
   time: U64,
@@ -1082,4 +1082,9 @@ export function withdraw_liquidity$ (
   return [coin_x, coin_y];
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::StableCurveSwap::LPCapability", LPCapability.LPCapabilityParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::StableCurveSwap::LPToken", LPToken.LPTokenParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::StableCurveSwap::StableCurvePoolInfo", StableCurvePoolInfo.StableCurvePoolInfoParser);
+}
 

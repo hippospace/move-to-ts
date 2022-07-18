@@ -240,7 +240,6 @@ export function faucet_mint_to_script$ (
 
 
 export function buildPayload_faucet_mint_to_script (
-  to: HexString,
   amount: U64,
   $p: TypeTag[], /* <TokenType>*/
 ) {
@@ -249,7 +248,7 @@ export function buildPayload_faucet_mint_to_script (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::MockCoin::faucet_mint_to_script",
     typeParamStrings,
     [
-      amount.toPayloadArg(),
+      $.payloadArg(amount),
     ]
   );
 
@@ -281,7 +280,7 @@ export function mint$ (
   return AptosFramework.Coin.mint$($.copy(amount), cap.mint, $c, [$p[0]] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function test_mint_script$ (
   admin: HexString,
   user: HexString,
@@ -294,8 +293,6 @@ export function test_mint_script$ (
 
 
 export function buildPayload_test_mint_script (
-  admin: HexString,
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -312,4 +309,14 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::MockCoin::TokenSharedCapability", TokenSharedCapability.TokenSharedCapabilityParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::MockCoin::WBTC", WBTC.WBTCParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::MockCoin::WDAI", WDAI.WDAIParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::MockCoin::WDOT", WDOT.WDOTParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::MockCoin::WETH", WETH.WETHParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::MockCoin::WSOL", WSOL.WSOLParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::MockCoin::WUSDC", WUSDC.WUSDCParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::MockCoin::WUSDT", WUSDT.WUSDTParser);
+}
 

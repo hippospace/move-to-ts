@@ -6,8 +6,25 @@ interface IntInterface<T> {
 }
 
 
+export function takeBigInt(from: UnsignedInt<any> | bigInt.BigInteger | string | number): bigInt.BigInteger {
+  if (typeof from === 'string') {
+    return bigInt(from);
+  }
+  else if (typeof from === 'number') {
+    return bigInt(from);
+  }
+  else if (from instanceof UnsignedInt) {
+    return from.value;
+  }
+  else {
+    return from;
+  }
+}
+
 export class UnsignedInt<T extends IntInterface<T>> {
-  constructor(public value: bigInt.BigInteger) {
+  public value: bigInt.BigInteger;
+  constructor(value: bigInt.BigInteger | UnsignedInt<any> | string | number) {
+    this.value = takeBigInt(value);
     this.checkBounds();
   }
 

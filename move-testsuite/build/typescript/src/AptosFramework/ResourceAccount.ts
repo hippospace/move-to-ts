@@ -72,7 +72,6 @@ export function create_resource_account$ (
 
 
 export function buildPayload_create_resource_account (
-  origin: HexString,
   seed: U8[],
   optional_auth_key: U8[],
 ) {
@@ -81,13 +80,13 @@ export function buildPayload_create_resource_account (
     "0x1::ResourceAccount::create_resource_account",
     typeParamStrings,
     [
-      seed.map(u => u.toPayloadArg()),
-      optional_auth_key.map(u => u.toPayloadArg()),
+      $.u8ArrayArg(seed),
+      $.u8ArrayArg(optional_auth_key),
     ]
   );
 
 }
-// test func
+// #[test]
 export function end_to_end$ (
   user: HexString,
   $c: AptosDataCache,
@@ -109,7 +108,6 @@ export function end_to_end$ (
 
 
 export function buildPayload_end_to_end (
-  user: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -152,4 +150,7 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::ResourceAccount::Container", Container.ContainerParser);
+}
 

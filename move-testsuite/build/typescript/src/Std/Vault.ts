@@ -820,4 +820,19 @@ export function validate_cap$ (
   return [temp$1, temp$2];
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Vault::CapType", CapType.CapTypeParser);
+  repo.addParser("0x1::Vault::DelegateCap", DelegateCap.DelegateCapParser);
+  repo.addParser("0x1::Vault::ModifyAccessor", ModifyAccessor.ModifyAccessorParser);
+  repo.addParser("0x1::Vault::ModifyCap", ModifyCap.ModifyCapParser);
+  repo.addParser("0x1::Vault::ReadAccessor", ReadAccessor.ReadAccessorParser);
+  repo.addParser("0x1::Vault::ReadCap", ReadCap.ReadCapParser);
+  repo.addParser("0x1::Vault::TransferCap", TransferCap.TransferCapParser);
+  repo.addParser("0x1::Vault::Vault", Vault.VaultParser);
+  repo.addParser("0x1::Vault::VaultDelegate", VaultDelegate.VaultDelegateParser);
+  repo.addParser("0x1::Vault::VaultDelegateEvent", VaultDelegateEvent.VaultDelegateEventParser);
+  repo.addParser("0x1::Vault::VaultDelegates", VaultDelegates.VaultDelegatesParser);
+  repo.addParser("0x1::Vault::VaultEvents", VaultEvents.VaultEventsParser);
+  repo.addParser("0x1::Vault::VaultTransferEvent", VaultTransferEvent.VaultTransferEventParser);
+}
 

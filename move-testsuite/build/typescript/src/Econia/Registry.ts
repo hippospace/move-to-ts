@@ -676,7 +676,7 @@ export class QCT
   }
 
 }
-// test func
+// #[test]
 export function init_coin_types$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -708,7 +708,7 @@ export function init_registry$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_registry_failure_exists$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -720,7 +720,6 @@ export function init_registry_failure_exists$ (
 
 
 export function buildPayload_init_registry_failure_exists (
-  econia: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -730,7 +729,7 @@ export function buildPayload_init_registry_failure_exists (
   );
 
 }
-// test func
+// #[test]
 export function init_registry_failure_not_econia$ (
   account: HexString,
   $c: AptosDataCache,
@@ -741,7 +740,6 @@ export function init_registry_failure_not_econia$ (
 
 
 export function buildPayload_init_registry_failure_not_econia (
-  account: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -751,7 +749,7 @@ export function buildPayload_init_registry_failure_not_econia (
   );
 
 }
-// test func
+// #[test]
 export function init_registry_success$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -765,7 +763,6 @@ export function init_registry_success$ (
 
 
 export function buildPayload_init_registry_success (
-  econia: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -789,7 +786,7 @@ export function is_registered$ (
   return AptosFramework.IterableTable.contains$($c.borrow_global<MR>(new StructTag(new HexString("0xc0deb00c"), "Registry", "MR", []), new HexString("0xc0deb00c")).t, $.copy(m_i), $c, [new StructTag(new HexString("0xc0deb00c"), "Registry", "MI", []), AtomicTypeTag.Address] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function is_registered_false_no_mr$ (
   $c: AptosDataCache,
 ): void {
@@ -799,7 +796,7 @@ export function is_registered_false_no_mr$ (
   return;
 }
 
-// test func
+// #[test]
 export function is_registered_false_not_registered$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -813,7 +810,6 @@ export function is_registered_false_not_registered$ (
 
 
 export function buildPayload_is_registered_false_not_registered (
-  econia: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -823,7 +819,7 @@ export function buildPayload_is_registered_false_not_registered (
   );
 
 }
-// test func
+// #[test]
 export function is_registered_true$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -839,7 +835,6 @@ export function is_registered_true$ (
 
 
 export function buildPayload_is_registered_true (
-  econia: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -849,7 +844,7 @@ export function buildPayload_is_registered_true (
   );
 
 }
-// test func
+// #[test]
 export function mint_bct_to$ (
   user: HexString,
   amount: U64,
@@ -859,7 +854,7 @@ export function mint_bct_to$ (
   return;
 }
 
-// test func
+// #[test]
 export function mint_qct_to$ (
   user: HexString,
   amount: U64,
@@ -869,7 +864,7 @@ export function mint_qct_to$ (
   return;
 }
 
-// test func
+// #[test]
 export function pack_market_info$ (
   $c: AptosDataCache,
 ): void {
@@ -913,7 +908,6 @@ export function register_market$ (
 
 
 export function buildPayload_register_market (
-  host: HexString,
   $p: TypeTag[], /* <B, Q, E>*/
 ) {
   const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));
@@ -924,7 +918,7 @@ export function buildPayload_register_market (
   );
 
 }
-// test func
+// #[test]
 export function register_market_failure_no_registry$ (
   econia: HexString,
   host: HexString,
@@ -937,8 +931,6 @@ export function register_market_failure_no_registry$ (
 
 
 export function buildPayload_register_market_failure_no_registry (
-  econia: HexString,
-  host: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -948,7 +940,7 @@ export function buildPayload_register_market_failure_no_registry (
   );
 
 }
-// test func
+// #[test]
 export function register_market_failure_registered$ (
   econia: HexString,
   host: HexString,
@@ -964,8 +956,6 @@ export function register_market_failure_registered$ (
 
 
 export function buildPayload_register_market_failure_registered (
-  econia: HexString,
-  host: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -975,7 +965,7 @@ export function buildPayload_register_market_failure_registered (
   );
 
 }
-// test func
+// #[test]
 export function register_market_success$ (
   econia: HexString,
   host: HexString,
@@ -1001,8 +991,6 @@ export function register_market_success$ (
 
 
 export function buildPayload_register_market_success (
-  econia: HexString,
-  host: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1012,7 +1000,7 @@ export function buildPayload_register_market_success (
   );
 
 }
-// test func
+// #[test]
 export function register_scaled_test_market$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -1025,7 +1013,6 @@ export function register_scaled_test_market$ (
 
 
 export function buildPayload_register_scaled_test_market (
-  econia: HexString,
   $p: TypeTag[], /* <E>*/
 ) {
   const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));
@@ -1036,7 +1023,7 @@ export function buildPayload_register_scaled_test_market (
   );
 
 }
-// test func
+// #[test]
 export function register_test_market$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -1048,7 +1035,6 @@ export function register_test_market$ (
 
 
 export function buildPayload_register_test_market (
-  econia: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1190,7 +1176,7 @@ export function scale_factor$ (
   throw $.abortCode(E_WRONG_EXPONENT_T);
 }
 
-// test func
+// #[test]
 export function scale_factor_failure$ (
   $c: AptosDataCache,
 ): void {
@@ -1198,7 +1184,7 @@ export function scale_factor_failure$ (
   return;
 }
 
-// test func
+// #[test]
 export function scale_factor_success$ (
   $c: AptosDataCache,
 ): void {
@@ -1284,7 +1270,7 @@ export function verify_address$ (
   return;
 }
 
-// test func
+// #[test]
 export function verify_address_failure$ (
   $c: AptosDataCache,
 ): void {
@@ -1292,7 +1278,7 @@ export function verify_address_failure$ (
   return;
 }
 
-// test func
+// #[test]
 export function verify_address_success$ (
   $c: AptosDataCache,
 ): void {
@@ -1312,7 +1298,7 @@ export function verify_bytestring$ (
   return;
 }
 
-// test func
+// #[test]
 export function verify_bytestring_failure$ (
   $c: AptosDataCache,
 ): void {
@@ -1320,7 +1306,7 @@ export function verify_bytestring_failure$ (
   return;
 }
 
-// test func
+// #[test]
 export function verify_bytestring_success$ (
   $c: AptosDataCache,
 ): void {
@@ -1342,7 +1328,7 @@ export function verify_market_types$ (
   return;
 }
 
-// test func
+// #[test]
 export function verify_market_types_failure_b$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -1352,7 +1338,7 @@ export function verify_market_types_failure_b$ (
   return;
 }
 
-// test func
+// #[test]
 export function verify_market_types_failure_q$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -1362,7 +1348,7 @@ export function verify_market_types_failure_q$ (
   return;
 }
 
-// test func
+// #[test]
 export function verify_market_types_success$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -1384,4 +1370,33 @@ export function verify_t_i$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xc0deb00c::Registry::BCC", BCC.BCCParser);
+  repo.addParser("0xc0deb00c::Registry::BCT", BCT.BCTParser);
+  repo.addParser("0xc0deb00c::Registry::E0", E0.E0Parser);
+  repo.addParser("0xc0deb00c::Registry::E1", E1.E1Parser);
+  repo.addParser("0xc0deb00c::Registry::E10", E10.E10Parser);
+  repo.addParser("0xc0deb00c::Registry::E11", E11.E11Parser);
+  repo.addParser("0xc0deb00c::Registry::E12", E12.E12Parser);
+  repo.addParser("0xc0deb00c::Registry::E13", E13.E13Parser);
+  repo.addParser("0xc0deb00c::Registry::E14", E14.E14Parser);
+  repo.addParser("0xc0deb00c::Registry::E15", E15.E15Parser);
+  repo.addParser("0xc0deb00c::Registry::E16", E16.E16Parser);
+  repo.addParser("0xc0deb00c::Registry::E17", E17.E17Parser);
+  repo.addParser("0xc0deb00c::Registry::E18", E18.E18Parser);
+  repo.addParser("0xc0deb00c::Registry::E19", E19.E19Parser);
+  repo.addParser("0xc0deb00c::Registry::E2", E2.E2Parser);
+  repo.addParser("0xc0deb00c::Registry::E20", E20.E20Parser);
+  repo.addParser("0xc0deb00c::Registry::E3", E3.E3Parser);
+  repo.addParser("0xc0deb00c::Registry::E4", E4.E4Parser);
+  repo.addParser("0xc0deb00c::Registry::E5", E5.E5Parser);
+  repo.addParser("0xc0deb00c::Registry::E6", E6.E6Parser);
+  repo.addParser("0xc0deb00c::Registry::E7", E7.E7Parser);
+  repo.addParser("0xc0deb00c::Registry::E8", E8.E8Parser);
+  repo.addParser("0xc0deb00c::Registry::E9", E9.E9Parser);
+  repo.addParser("0xc0deb00c::Registry::MI", MI.MIParser);
+  repo.addParser("0xc0deb00c::Registry::MR", MR.MRParser);
+  repo.addParser("0xc0deb00c::Registry::QCC", QCC.QCCParser);
+  repo.addParser("0xc0deb00c::Registry::QCT", QCT.QCTParser);
+}
 

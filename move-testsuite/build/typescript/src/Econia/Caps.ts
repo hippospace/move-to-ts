@@ -56,7 +56,7 @@ export function book_f_c$ (
   return $.copy($c.borrow_global<FC>(new StructTag(new HexString("0xc0deb00c"), "Caps", "FC", []), new HexString("0xc0deb00c")).b);
 }
 
-// test func
+// #[test]
 export function book_f_c_failure$ (
   $c: AptosDataCache,
 ): void {
@@ -70,7 +70,7 @@ export function has_f_c$ (
   return $c.exists(new StructTag(new HexString("0xc0deb00c"), "Caps", "FC", []), new HexString("0xc0deb00c"));
 }
 
-// test func
+// #[test]
 export function has_f_c_success$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -101,7 +101,7 @@ export function init_caps$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_caps_failure_exists$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -111,7 +111,7 @@ export function init_caps_failure_exists$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_caps_failure_not_econia$ (
   account: HexString,
   $c: AptosDataCache,
@@ -120,7 +120,7 @@ export function init_caps_failure_not_econia$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_caps_success$ (
   econia: HexString,
   $c: AptosDataCache,
@@ -147,7 +147,7 @@ export function orders_f_c$ (
   return $.copy($c.borrow_global<FC>(new StructTag(new HexString("0xc0deb00c"), "Caps", "FC", []), new HexString("0xc0deb00c")).o);
 }
 
-// test func
+// #[test]
 export function orders_f_c_failure$ (
   $c: AptosDataCache,
 ): void {
@@ -162,4 +162,7 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xc0deb00c::Caps::FC", FC.FCParser);
+}
 

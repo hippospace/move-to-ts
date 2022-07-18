@@ -62,7 +62,7 @@ export function quote$ (
   return u64(SafeMath.div$(SafeMath.mul$(u128($.copy(amount_x)), u128($.copy(reserve_y)), $c), u128($.copy(reserve_x)), $c));
 }
 
-// test func
+// #[test]
 export function test_get_amount_out$ (
   $c: AptosDataCache,
 ): void {
@@ -82,4 +82,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

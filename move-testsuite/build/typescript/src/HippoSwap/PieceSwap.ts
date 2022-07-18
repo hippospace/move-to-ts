@@ -271,7 +271,7 @@ export function create_new_pool$ (
   return;
 }
 
-// test func
+// #[test]
 export function get_fee_amounts$ (
   $c: AptosDataCache,
   $p: TypeTag[], /* <X, Y>*/
@@ -281,7 +281,7 @@ export function get_fee_amounts$ (
   return [AptosFramework.Coin.value$(i.protocol_fee_x, $c, [$p[0]] as TypeTag[]), AptosFramework.Coin.value$(i.protocol_fee_y, $c, [$p[1]] as TypeTag[])];
 }
 
-// test func
+// #[test]
 export function get_reserve_amounts$ (
   $c: AptosDataCache,
   $p: TypeTag[], /* <X, Y>*/
@@ -316,7 +316,7 @@ export function mint_to$ (
   return;
 }
 
-// test func
+// #[test]
 export function mock_add_liquidity_direct_equal$ (
   amount: U64,
   $c: AptosDataCache,
@@ -328,7 +328,7 @@ export function mock_add_liquidity_direct_equal$ (
   return add_liquidity_direct$(coin_x, coin_y, $c, [$p[0], $p[1]] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function mock_init_pool$ (
   admin: HexString,
   lp_name: U8[],
@@ -352,7 +352,7 @@ export function mock_init_pool$ (
   return;
 }
 
-// test func
+// #[test]
 export function mock_init_pool_and_add_liquidity$ (
   admin: HexString,
   user: HexString,
@@ -368,7 +368,7 @@ export function mock_init_pool_and_add_liquidity$ (
   return add_liquidity$(user, $.copy(initial_amt), $.copy(initial_amt), $c, [$p[0], $p[1]] as TypeTag[]);
 }
 
-// test func
+// #[test]
 export function mock_init_pool_and_add_liquidity_direct$ (
   admin: HexString,
   lp_name: U8[],
@@ -508,7 +508,7 @@ export function swap_y_to_x_direct$ (
   return coin_x;
 }
 
-// test func
+// #[test]
 export function test_add_initial_liquidity_unequal$ (
   admin: HexString,
   user: HexString,
@@ -525,7 +525,7 @@ export function test_add_initial_liquidity_unequal$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_add_liquidity$ (
   admin: HexString,
   user: HexString,
@@ -546,7 +546,7 @@ export function test_add_liquidity$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_create_pool_with_liquidity$ (
   admin: HexString,
   user: HexString,
@@ -558,7 +558,7 @@ export function test_create_pool_with_liquidity$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_create_pool_with_liquidity_then_remove$ (
   admin: HexString,
   user: HexString,
@@ -579,7 +579,7 @@ export function test_create_pool_with_liquidity_then_remove$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_remove_liquidity$ (
   admin: HexString,
   user: HexString,
@@ -609,7 +609,7 @@ export function test_remove_liquidity$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_swap_x_to_y$ (
   admin: HexString,
   user: HexString,
@@ -634,7 +634,7 @@ export function test_swap_x_to_y$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_swap_x_to_y_parameterized$ (
   admin: HexString,
   user: HexString,
@@ -666,7 +666,7 @@ export function test_swap_x_to_y_parameterized$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_swap_y_to_x$ (
   admin: HexString,
   user: HexString,
@@ -691,7 +691,7 @@ export function test_swap_y_to_x$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_swap_y_to_x_parameterized$ (
   admin: HexString,
   user: HexString,
@@ -730,4 +730,8 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::PieceSwap::LPToken", LPToken.LPTokenParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::PieceSwap::PieceSwapPoolInfo", PieceSwapPoolInfo.PieceSwapPoolInfoParser);
+}
 

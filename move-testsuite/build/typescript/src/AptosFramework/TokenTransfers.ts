@@ -77,7 +77,6 @@ export function cancel_offer_script$ (
 
 
 export function buildPayload_cancel_offer_script (
-  sender: HexString,
   receiver: HexString,
   creator: HexString,
   collection: U8[],
@@ -88,10 +87,10 @@ export function buildPayload_cancel_offer_script (
     "0x1::TokenTransfers::cancel_offer_script",
     typeParamStrings,
     [
-      receiver,
-      creator,
-      collection.map(u => u.toPayloadArg()),
-      name.map(u => u.toPayloadArg()),
+      $.payloadArg(receiver),
+      $.payloadArg(creator),
+      $.u8ArrayArg(collection),
+      $.u8ArrayArg(name),
     ]
   );
 
@@ -132,7 +131,6 @@ export function claim_script$ (
 
 
 export function buildPayload_claim_script (
-  receiver: HexString,
   sender: HexString,
   creator: HexString,
   collection: U8[],
@@ -143,10 +141,10 @@ export function buildPayload_claim_script (
     "0x1::TokenTransfers::claim_script",
     typeParamStrings,
     [
-      sender,
-      creator,
-      collection.map(u => u.toPayloadArg()),
-      name.map(u => u.toPayloadArg()),
+      $.payloadArg(sender),
+      $.payloadArg(creator),
+      $.u8ArrayArg(collection),
+      $.u8ArrayArg(name),
     ]
   );
 
@@ -221,7 +219,6 @@ export function offer_script$ (
 
 
 export function buildPayload_offer_script (
-  sender: HexString,
   receiver: HexString,
   creator: HexString,
   collection: U8[],
@@ -233,16 +230,16 @@ export function buildPayload_offer_script (
     "0x1::TokenTransfers::offer_script",
     typeParamStrings,
     [
-      receiver,
-      creator,
-      collection.map(u => u.toPayloadArg()),
-      name.map(u => u.toPayloadArg()),
-      amount.toPayloadArg(),
+      $.payloadArg(receiver),
+      $.payloadArg(creator),
+      $.u8ArrayArg(collection),
+      $.u8ArrayArg(name),
+      $.payloadArg(amount),
     ]
   );
 
 }
-// test func
+// #[test]
 export function test_editions$ (
   creator: HexString,
   owner0: HexString,
@@ -278,7 +275,7 @@ export function test_editions$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_nft$ (
   creator: HexString,
   owner: HexString,
@@ -302,4 +299,7 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::TokenTransfers::TokenTransfers", TokenTransfers.TokenTransfersParser);
+}
 

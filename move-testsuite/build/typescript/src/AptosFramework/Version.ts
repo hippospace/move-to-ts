@@ -80,7 +80,6 @@ export function set_version$ (
 
 
 export function buildPayload_set_version (
-  account: HexString,
   major: U64,
 ) {
   const typeParamStrings = [] as string[];
@@ -88,7 +87,7 @@ export function buildPayload_set_version (
     "0x1::Version::set_version",
     typeParamStrings,
     [
-      major.toPayloadArg(),
+      $.payloadArg(major),
     ]
   );
 
@@ -100,4 +99,7 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Version::Version", Version.VersionParser);
+}
 

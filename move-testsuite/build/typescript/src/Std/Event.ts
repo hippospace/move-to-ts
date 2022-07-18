@@ -98,7 +98,7 @@ export class GUIDWrapper
   }
 
 }
-// test func
+// #[test]
 export function create_guid_wrapper_for_test$ (
   s: HexString,
   $c: AptosDataCache,
@@ -128,7 +128,7 @@ export function emit_event$ (
   return;
 }
 
-// test func
+// #[test]
 export function get_event_handle_counter$ (
   handle: EventHandle,
   $c: AptosDataCache,
@@ -173,5 +173,10 @@ export function write_to_event_store$ (
 ): void {
   return $.Std_Event_write_to_event_store(guid, count, msg, $c, [$p[0]]);
 
+}
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Event::EventHandle", EventHandle.EventHandleParser);
+  repo.addParser("0x1::Event::EventHandleGenerator", EventHandleGenerator.EventHandleGeneratorParser);
+  repo.addParser("0x1::Event::GUIDWrapper", GUIDWrapper.GUIDWrapperParser);
 }
 

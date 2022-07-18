@@ -11,7 +11,7 @@ export const moduleAddress = new HexString("0xf70ac33c984f8b7bead655ad239d246f1c
 export const moduleName = "HippoConfig";
 
 
-// test func
+// #[test]
 export function addresses$ (
   $c: AptosDataCache,
 ): void {
@@ -32,4 +32,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

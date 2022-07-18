@@ -392,7 +392,7 @@ export function deposit$ (
   return;
 }
 
-// test func
+// #[test]
 export function destroy_burn_cap$ (
   burn_cap: BurnCapability,
   $c: AptosDataCache,
@@ -402,7 +402,7 @@ export function destroy_burn_cap$ (
   return;
 }
 
-// test func
+// #[test]
 export function destroy_mint_cap$ (
   mint_cap: MintCapability,
   $c: AptosDataCache,
@@ -424,7 +424,7 @@ export function destroy_zero$ (
   return;
 }
 
-// test func
+// #[test]
 export function end_to_end$ (
   source: HexString,
   destination: HexString,
@@ -479,8 +479,6 @@ export function end_to_end$ (
 
 
 export function buildPayload_end_to_end (
-  source: HexString,
-  destination: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -490,7 +488,7 @@ export function buildPayload_end_to_end (
   );
 
 }
-// test func
+// #[test]
 export function end_to_end_no_supply$ (
   source: HexString,
   destination: HexString,
@@ -531,8 +529,6 @@ export function end_to_end_no_supply$ (
 
 
 export function buildPayload_end_to_end_no_supply (
-  source: HexString,
-  destination: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -566,7 +562,7 @@ export function extract_all$ (
   return new Coin({ value: $.copy(total_value) }, new StructTag(new HexString("0x1"), "Coin", "Coin", [$p[0]]));
 }
 
-// test func
+// #[test]
 export function fail_initialize$ (
   source: HexString,
   $c: AptosDataCache,
@@ -577,7 +573,7 @@ export function fail_initialize$ (
   return;
 }
 
-// test func
+// #[test]
 export function fail_transfer$ (
   source: HexString,
   destination: HexString,
@@ -601,8 +597,6 @@ export function fail_transfer$ (
 
 
 export function buildPayload_fail_transfer (
-  source: HexString,
-  destination: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -717,7 +711,6 @@ export function register$ (
 
 
 export function buildPayload_register (
-  account: HexString,
   $p: TypeTag[], /* <CoinType>*/
 ) {
   const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));
@@ -770,7 +763,7 @@ export function symbol$ (
   return $.copy($c.borrow_global<CoinInfo>(new StructTag(new HexString("0x1"), "Coin", "CoinInfo", [$p[0]]), $.copy(coin_address)).symbol);
 }
 
-// test func
+// #[test]
 export function test_burn_from_with_capability$ (
   source: HexString,
   $c: AptosDataCache,
@@ -802,7 +795,6 @@ export function test_burn_from_with_capability$ (
 
 
 export function buildPayload_test_burn_from_with_capability (
-  source: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -812,7 +804,7 @@ export function buildPayload_test_burn_from_with_capability (
   );
 
 }
-// test func
+// #[test]
 export function test_destroy_non_zero$ (
   source: HexString,
   $c: AptosDataCache,
@@ -825,7 +817,7 @@ export function test_destroy_non_zero$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_extract$ (
   source: HexString,
   $c: AptosDataCache,
@@ -853,7 +845,6 @@ export function test_extract$ (
 
 
 export function buildPayload_test_extract (
-  source: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -863,7 +854,7 @@ export function buildPayload_test_extract (
   );
 
 }
-// test func
+// #[test]
 export function test_is_coin_initialized$ (
   source: HexString,
   $c: AptosDataCache,
@@ -880,7 +871,7 @@ export function test_is_coin_initialized$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_zero$ (
   $c: AptosDataCache,
 ): void {
@@ -908,7 +899,6 @@ export function transfer$ (
 
 
 export function buildPayload_transfer (
-  from: HexString,
   to: HexString,
   amount: U64,
   $p: TypeTag[], /* <CoinType>*/
@@ -918,8 +908,8 @@ export function buildPayload_transfer (
     "0x1::Coin::transfer",
     typeParamStrings,
     [
-      to,
-      amount.toPayloadArg(),
+      $.payloadArg(to),
+      $.payloadArg(amount),
     ]
   );
 
@@ -962,4 +952,17 @@ export function zero$ (
   return new Coin({ value: u64("0") }, new StructTag(new HexString("0x1"), "Coin", "Coin", [$p[0]]));
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Coin::BurnCapability", BurnCapability.BurnCapabilityParser);
+  repo.addParser("0x1::Coin::Coin", Coin.CoinParser);
+  repo.addParser("0x1::Coin::CoinEvents", CoinEvents.CoinEventsParser);
+  repo.addParser("0x1::Coin::CoinInfo", CoinInfo.CoinInfoParser);
+  repo.addParser("0x1::Coin::CoinStore", CoinStore.CoinStoreParser);
+  repo.addParser("0x1::Coin::DepositEvent", DepositEvent.DepositEventParser);
+  repo.addParser("0x1::Coin::FakeMoney", FakeMoney.FakeMoneyParser);
+  repo.addParser("0x1::Coin::FakeMoneyCapabilities", FakeMoneyCapabilities.FakeMoneyCapabilitiesParser);
+  repo.addParser("0x1::Coin::MintCapability", MintCapability.MintCapabilityParser);
+  repo.addParser("0x1::Coin::RegisterEvent", RegisterEvent.RegisterEventParser);
+  repo.addParser("0x1::Coin::WithdrawEvent", WithdrawEvent.WithdrawEventParser);
+}
 

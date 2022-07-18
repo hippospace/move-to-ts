@@ -70,7 +70,6 @@ export function create_initialize_validators$ (
 
 
 export function buildPayload_create_initialize_validators (
-  core_resource_account: HexString,
   owners: HexString[],
   consensus_pubkeys: U8[][],
   proof_of_possession: U8[][],
@@ -83,12 +82,12 @@ export function buildPayload_create_initialize_validators (
     "0x1::Genesis::create_initialize_validators",
     typeParamStrings,
     [
-      owners,
-      consensus_pubkeys.map(array => array.map(u => u.toPayloadArg())),
-      proof_of_possession.map(array => array.map(u => u.toPayloadArg())),
-      validator_network_addresses.map(array => array.map(u => u.toPayloadArg())),
-      full_node_network_addresses.map(array => array.map(u => u.toPayloadArg())),
-      staking_distribution.map(u => u.toPayloadArg()),
+      owners.map(element => $.payloadArg(element)),
+      consensus_pubkeys.map(array => $.u8ArrayArg(array)),
+      proof_of_possession.map(array => $.u8ArrayArg(array)),
+      validator_network_addresses.map(array => $.u8ArrayArg(array)),
+      full_node_network_addresses.map(array => $.u8ArrayArg(array)),
+      staking_distribution.map(element => $.payloadArg(element)),
     ]
   );
 
@@ -161,7 +160,7 @@ export function initialize_internal$ (
   return;
 }
 
-// test func
+// #[test]
 export function setup$ (
   core_resource_account: HexString,
   $c: AptosDataCache,
@@ -169,7 +168,7 @@ export function setup$ (
   return initialize_internal$(core_resource_account, [u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0"), u8("0")], Std.Vector.empty$($c, [new VectorTag(AtomicTypeTag.U8)] as TypeTag[]), true, [], [], u8("4"), u64("0"), [], u64("1"), u64("0"), u64("0"), u64("0"), u64("0"), u64("0"), true, u64("0"), u64("1"), $c);
 }
 
-// test func
+// #[test]
 export function test_setup$ (
   account: HexString,
   $c: AptosDataCache,
@@ -191,4 +190,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

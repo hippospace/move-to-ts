@@ -197,7 +197,7 @@ export function head_key$ (
   return $.copy(table.head);
 }
 
-// test func
+// #[test]
 export function iterable_table_test$ (
   $c: AptosDataCache,
 ): void {
@@ -332,4 +332,8 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::IterableTable::IterableTable", IterableTable.IterableTableParser);
+  repo.addParser("0x1::IterableTable::IterableValue", IterableValue.IterableValueParser);
+}
 

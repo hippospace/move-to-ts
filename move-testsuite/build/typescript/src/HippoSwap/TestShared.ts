@@ -185,7 +185,7 @@ export class WalletBalanceSavePoint
     return result as unknown as WalletBalanceSavePoint;
   }
 }
-// test func
+// #[test]
 export function assert_delta$ (
   sign: U8,
   delta: U64,
@@ -207,7 +207,7 @@ export function assert_delta$ (
   return;
 }
 
-// test func
+// #[test]
 export function assert_pool_delta$ (
   pool_type: U8,
   with_sync: boolean,
@@ -257,7 +257,7 @@ export function assert_pool_delta$ (
   return;
 }
 
-// test func
+// #[test]
 export function assert_pool_delta_content$ (
   sp: PoolSavePoint,
   sign_reserve_x: U8,
@@ -290,7 +290,7 @@ export function assert_pool_delta_content$ (
   return;
 }
 
-// test func
+// #[test]
 export function assert_pool_fee$ (
   pool_type: U8,
   predict_x: U64,
@@ -313,7 +313,7 @@ export function assert_pool_fee$ (
   return;
 }
 
-// test func
+// #[test]
 export function assert_pool_lp_supply$ (
   pool_type: U8,
   predict_lp: U64,
@@ -328,7 +328,7 @@ export function assert_pool_lp_supply$ (
   return;
 }
 
-// test func
+// #[test]
 export function assert_pool_reserve$ (
   pool_type: U8,
   predict_x: U64,
@@ -347,7 +347,7 @@ export function assert_pool_reserve$ (
   return;
 }
 
-// test func
+// #[test]
 export function assert_wallet_delta$ (
   sender: HexString,
   pool_type: U8,
@@ -372,7 +372,7 @@ export function assert_wallet_delta$ (
   return;
 }
 
-// test func
+// #[test]
 export function assert_wallet_delta_content$ (
   sender: HexString,
   sign_coin_x: U8,
@@ -396,7 +396,7 @@ export function assert_wallet_delta_content$ (
   return;
 }
 
-// test func
+// #[test]
 export function create_pool$ (
   signer: HexString,
   pool_type: U8,
@@ -436,7 +436,7 @@ export function create_pool$ (
   return;
 }
 
-// test func
+// #[test]
 export function create_save_point$ (
   signer: HexString,
   $c: AptosDataCache,
@@ -446,7 +446,7 @@ export function create_save_point$ (
   return;
 }
 
-// test func
+// #[test]
 export function debug_print_balance$ (
   sender: HexString,
   pool_type: U8,
@@ -460,7 +460,7 @@ export function debug_print_balance$ (
   return;
 }
 
-// test func
+// #[test]
 export function debug_print_comparision$ (
   pool_type: U8,
   $c: AptosDataCache,
@@ -474,7 +474,7 @@ export function debug_print_comparision$ (
   return;
 }
 
-// test func
+// #[test]
 export function debug_print_pool$ (
   pool_type: U8,
   $c: AptosDataCache,
@@ -489,7 +489,7 @@ export function debug_print_pool$ (
   return;
 }
 
-// test func
+// #[test]
 export function debug_print_pool_fee$ (
   pool_type: U8,
   $c: AptosDataCache,
@@ -505,7 +505,7 @@ export function debug_print_pool_fee$ (
   return;
 }
 
-// test func
+// #[test]
 export function debug_print_pool_lp_supply$ (
   pool_type: U8,
   $c: AptosDataCache,
@@ -519,7 +519,7 @@ export function debug_print_pool_lp_supply$ (
   return;
 }
 
-// test func
+// #[test]
 export function debug_print_pool_reserve_xy$ (
   pool_type: U8,
   $c: AptosDataCache,
@@ -534,7 +534,7 @@ export function debug_print_pool_reserve_xy$ (
   return;
 }
 
-// test func
+// #[test]
 export function debug_print_save_point$ (
   pool_type: U8,
   $c: AptosDataCache,
@@ -563,7 +563,7 @@ export function debug_print_save_point$ (
   return;
 }
 
-// test func
+// #[test]
 export function debug_print_save_point_info$ (
   sp: PoolSavePoint,
   $c: AptosDataCache,
@@ -575,7 +575,7 @@ export function debug_print_save_point_info$ (
   return;
 }
 
-// test func
+// #[test]
 export function debug_print_wallet_comparision$ (
   sender: HexString,
   pool_type: U8,
@@ -587,7 +587,7 @@ export function debug_print_wallet_comparision$ (
   return;
 }
 
-// test func
+// #[test]
 export function debug_print_wallet_sp$ (
   sender: HexString,
   $c: AptosDataCache,
@@ -601,7 +601,7 @@ export function debug_print_wallet_sp$ (
   return;
 }
 
-// test func
+// #[test]
 export function difference$ (
   a: U64,
   b: U64,
@@ -617,7 +617,7 @@ export function difference$ (
   return temp$1;
 }
 
-// test func
+// #[test]
 export function fund_for_participants$ (
   signer: HexString,
   amount_x: U64,
@@ -630,7 +630,7 @@ export function fund_for_participants$ (
   return;
 }
 
-// test func
+// #[test]
 export function get_balance$ (
   sender: HexString,
   pool_type: U8,
@@ -660,7 +660,7 @@ export function get_balance$ (
   return [$.copy(balance_x), $.copy(balance_y), $.copy(balance_lp)];
 }
 
-// test func
+// #[test]
 export function get_pool_fee_route$ (
   pool_type: U8,
   $c: AptosDataCache,
@@ -691,7 +691,7 @@ export function get_pool_fee_route$ (
   return [temp$9, temp$10, temp$11];
 }
 
-// test func
+// #[test]
 export function get_pool_lp_supply_route$ (
   pool_type: U8,
   $c: AptosDataCache,
@@ -722,7 +722,7 @@ export function get_pool_lp_supply_route$ (
   return temp$6;
 }
 
-// test func
+// #[test]
 export function get_pool_reserve_route$ (
   pool_type: U8,
   $c: AptosDataCache,
@@ -750,7 +750,7 @@ export function get_pool_reserve_route$ (
   return [temp$5, temp$6];
 }
 
-// test func
+// #[test]
 export function init_debug_utils_for_user$ (
   signer: HexString,
   pool_type: U8,
@@ -778,7 +778,7 @@ export function init_debug_utils_for_user$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_mock_coin_pair$ (
   admin: HexString,
   decimal_x: U64,
@@ -792,7 +792,7 @@ export function init_mock_coin_pair$ (
   return;
 }
 
-// test func
+// #[test]
 export function init_registry_and_mock_coins$ (
   admin: HexString,
   $c: AptosDataCache,
@@ -808,7 +808,7 @@ export function init_registry_and_mock_coins$ (
   return;
 }
 
-// test func
+// #[test]
 export function prepare_for_test$ (
   admin: HexString,
   investor: HexString,
@@ -835,7 +835,7 @@ export function prepare_for_test$ (
   return;
 }
 
-// test func
+// #[test]
 export function sync_save_point$ (
   pool_type: U8,
   $c: AptosDataCache,
@@ -867,7 +867,7 @@ export function sync_save_point$ (
   return;
 }
 
-// test func
+// #[test]
 export function sync_save_point_with_data$ (
   p: PoolSavePoint,
   reserve_x: U64,
@@ -890,7 +890,7 @@ export function sync_save_point_with_data$ (
   return;
 }
 
-// test func
+// #[test]
 export function sync_wallet_save_point$ (
   sender: HexString,
   pool_type: U8,
@@ -905,7 +905,7 @@ export function sync_wallet_save_point$ (
   return;
 }
 
-// test func
+// #[test]
 export function sync_wallet_save_point_with_data$ (
   p: WalletBalanceSavePoint,
   balance_x: U64,
@@ -921,7 +921,7 @@ export function sync_wallet_save_point_with_data$ (
   return;
 }
 
-// test func
+// #[test]
 export function time_start$ (
   core: HexString,
   $c: AptosDataCache,
@@ -937,4 +937,9 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::TestShared::PoolSavePoint", PoolSavePoint.PoolSavePointParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::TestShared::PoolValue", PoolValue.PoolValueParser);
+  repo.addParser("0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::TestShared::WalletBalanceSavePoint", WalletBalanceSavePoint.WalletBalanceSavePointParser);
+}
 

@@ -92,7 +92,7 @@ export function add$ (
   }return;
 }
 
-// test func
+// #[test]
 export function add_remove_many$ (
   $c: AptosDataCache,
 ): void {
@@ -191,7 +191,7 @@ export function add_remove_many$ (
   return;
 }
 
-// test func
+// #[test]
 export function add_twice$ (
   $c: AptosDataCache,
 ): void {
@@ -340,7 +340,7 @@ export function remove$ (
   return [key__3, value];
 }
 
-// test func
+// #[test]
 export function remove_twice$ (
   $c: AptosDataCache,
 ): void {
@@ -357,7 +357,7 @@ export function remove_twice$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_several$ (
   $c: AptosDataCache,
 ): void {
@@ -415,4 +415,8 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::SimpleMap::Element", Element.ElementParser);
+  repo.addParser("0x1::SimpleMap::SimpleMap", SimpleMap.SimpleMapParser);
+}
 

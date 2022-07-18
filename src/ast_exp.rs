@@ -124,25 +124,6 @@ impl AstTsPrinter for Exp {
     }
 }
 
-pub fn exp_ty_needs_refmut(ty: &Type) -> bool {
-    match &ty.value {
-        Type_::Unit => unreachable!(),
-        Type_::Multiple(_) => true,
-        Type_::Single(s_ty) => match &s_ty.value {
-            SingleType_::Ref(_, _) => false,
-            SingleType_::Base(base_ty) => match &base_ty.value {
-                BaseType_::UnresolvedError => unreachable!(),
-                BaseType_::Unreachable => unreachable!(),
-                BaseType_::Param(_) => true,
-                BaseType_::Apply(_, typename, _) => match &typename.value {
-                    TypeName_::Builtin(_) => true,
-                    TypeName_::ModuleType(_, _) => false,
-                },
-            },
-        },
-    }
-}
-
 pub fn format_type_args_at_instantiation(type_args: &Vec<BaseType>, c: &mut Context) -> TermResult {
     if type_args.is_empty() {
         return Ok("".to_string());
@@ -387,16 +368,6 @@ pub fn is_empty_lvalue_list(lvalues: &Vec<LValue>) -> bool {
     }
 }
 
-pub fn is_lvalue_ref_mut(lvalue: &LValue) -> bool {
-    match &lvalue.value {
-        LValue_::Var(_, ty) => match &ty.value {
-            SingleType_::Ref(is_mut, _) => *is_mut,
-            _ => false,
-        },
-        _ => false,
-    }
-}
-
 pub fn is_empty_lvalue(lvalue: &LValue) -> bool {
     use LValue_ as L;
     match &lvalue.value {
@@ -407,35 +378,6 @@ pub fn is_empty_lvalue(lvalue: &LValue) -> bool {
         _ => false,
     }
 }
-
-/*
-pub fn is_lvalue_new_decl(lval: &LValue, c: &mut Context) -> Result<bool, Diagnostic> {
-    use LValue_ as L;
-    match &lval.value {
-        L::Ignore => Ok(false),
-        L::Var(v, _) => Ok(c.declare_local(rename(v))),
-        L::Unpack(_, _, fields) => {
-            let mut has_new = false;
-            for (_, lvalue) in fields.iter() {
-                if lvalue.value == LValue_::Ignore {
-                    continue;
-                }
-                let as_name = rename(&lvalue.term(c)?);
-                let is_new = if as_name.is_empty() {
-                    false
-                } else {
-                    is_lvalue_new_decl(lvalue, c)?
-                };
-                if has_new && !is_new {
-                    return derr!((lvalue.loc, "already declared variable name"));
-                }
-                has_new = has_new | is_new;
-            }
-            Ok(has_new)
-        }
-    }
-}
- */
 
 impl AstTsPrinter for LValue {
     const CTOR_NAME: &'static str = "LValue";

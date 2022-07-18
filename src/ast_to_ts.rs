@@ -116,8 +116,39 @@ impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
             (fname, fdef).write_ts(w, c)?;
         }
 
+        // loadParsers
+        write_load_parsers(name, module, w, c)?;
+
         Ok(())
     }
+}
+
+pub fn write_load_parsers(
+    mident: &ModuleIdent,
+    module: &ModuleDefinition,
+    w: &mut TsgenWriter,
+    _c: &mut Context,
+) -> WriteResult {
+    w.writeln("export function loadParsers(repo: AptosParserRepo) {");
+
+    for (sname, _) in module.structs.key_cloned_iter() {
+        let paramless_name = format!(
+            "{}::{}::{}",
+            format_address_hex(mident.value.address),
+            mident.value.module,
+            sname
+        );
+        w.writeln(format!(
+            "  repo.addParser({}, {}.{}Parser);",
+            quote(&paramless_name),
+            sname,
+            sname
+        ));
+    }
+
+    w.writeln("}");
+
+    Ok(())
 }
 
 impl AstTsPrinter for ConstantName {
@@ -195,6 +226,23 @@ impl AstTsPrinter for StructTypeParameter {
         let name = rename(&quote(&param.user_specified_name));
         Ok(format!("{{ name: {}, isPhantom: {} }}", name, is_phantom))
     }
+}
+
+pub fn handle_special_structs(
+    name: &StructName,
+    w: &mut TsgenWriter,
+    c: &mut Context,
+) -> WriteResult {
+    if c.current_module.is_none() {
+        return Ok(());
+    }
+    let mident = c.current_module.unwrap();
+    if format_address(mident.value.address) == "Std" {
+        if mident.value.module.to_string() == "ASCII" && name.to_string() == "String" {
+            w.writeln("str(): string { return $.u8str(this.bytes); }");
+        }
+    }
+    Ok(())
 }
 
 impl AstTsPrinter for (StructName, &StructDefinition) {
@@ -283,6 +331,9 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                         w.writeln(format!("  return result as unknown as {};", name));
                         w.write("}");
                     }
+
+                    // 6. additional util funcs
+                    handle_special_structs(&name, w, c)?;
                 }
             };
             Ok(())
@@ -297,9 +348,13 @@ pub fn write_parameters(
     sig: &FunctionSignature,
     w: &mut TsgenWriter,
     c: &mut Context,
+    skip_signer: bool,
 ) -> WriteResult {
     w.increase_indent();
     for (name, ty) in &sig.parameters {
+        if skip_signer && is_type_signer(ty) {
+            continue;
+        }
         w.writeln(format!(
             "{}: {},",
             rename(name),
@@ -319,13 +374,13 @@ impl AstTsPrinter for (FunctionName, &Function) {
         if c.config.test {
             let is_test = check_test(name, func, c)?;
             if is_test {
-                w.writeln("// test func");
+                w.writeln("// #[test]");
             }
         }
         // yep, regardless of visibility, we always export it
         w.writeln(format!("export function {}$ (", rename(name)));
         // write parameters
-        write_parameters(&func.signature, w, c)?;
+        write_parameters(&func.signature, w, c, false)?;
         // cache & typeTags
         w.writeln("  $c: AptosDataCache,");
         let num_tparams = func.signature.type_parameters.len();
@@ -349,8 +404,6 @@ impl AstTsPrinter for (FunctionName, &Function) {
 
         // set current_function_signature as we enter body
         c.current_function_signature = Some(func.signature.clone());
-        //assert!(c.local_decl_stack.len() == 0);
-        //c.push_new_local_frame();
         // add parameters to local frame
         let mut param_names = BTreeSet::new();
         for (name, _) in func.signature.parameters.iter() {
@@ -401,8 +454,6 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 write_func_body(body, &new_vars, w, c)?;
             }
         }
-        //c.pop_local_frame();
-        //assert!(c.local_decl_stack.len() == 0);
         w.new_line();
 
         if is_entry && script_function_has_valid_parameter(&func.signature) {
@@ -413,7 +464,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
             // yep, regardless of visibility, we always export it
             w.writeln(format!("export function buildPayload_{} (", name));
             // write parameters
-            write_parameters(&func.signature, w, c)?;
+            write_parameters(&func.signature, w, c, true)?;
             // typeTags
             if num_tparams > 0 {
                 w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
@@ -504,10 +555,11 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
     let name = rename(name);
     if let Ok((builtin, ty_args)) = extract_builtin_type(ty) {
         match builtin {
-            BuiltinTypeName_::Bool | BuiltinTypeName_::Address => Ok(name),
-            BuiltinTypeName_::U8 | BuiltinTypeName_::U64 | BuiltinTypeName_::U128 => {
-                Ok(format!("{}.toPayloadArg()", name))
-            }
+            BuiltinTypeName_::Bool
+            | BuiltinTypeName_::Address
+            | BuiltinTypeName_::U8
+            | BuiltinTypeName_::U64
+            | BuiltinTypeName_::U128 => Ok(format!("$.payloadArg({})", name)),
             BuiltinTypeName_::Signer => unreachable!(),
             BuiltinTypeName_::Vector => {
                 // handle vector
@@ -516,9 +568,12 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
                     extract_builtin_from_base_type(&ty_args[0])
                 {
                     match inner_builtin {
-                        BuiltinTypeName_::Bool | BuiltinTypeName_::Address => Ok(name),
-                        BuiltinTypeName_::U8 | BuiltinTypeName_::U64 | BuiltinTypeName_::U128 => {
-                            Ok(format!("{}.map(u => u.toPayloadArg())", name))
+                        BuiltinTypeName_::U8 => Ok(format!("$.u8ArrayArg({})", name)),
+                        BuiltinTypeName_::Bool
+                        | BuiltinTypeName_::Address
+                        | BuiltinTypeName_::U64
+                        | BuiltinTypeName_::U128 => {
+                            Ok(format!("{}.map(element => $.payloadArg(element))", name))
                         }
                         BuiltinTypeName_::Signer => unreachable!(),
                         BuiltinTypeName_::Vector => {
@@ -546,11 +601,12 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
 pub fn get_ts_handler_for_vector_in_vector(inner_ty: &BaseType) -> TermResult {
     if let Ok((builtin, inner_ty_args)) = extract_builtin_from_base_type(inner_ty) {
         match builtin {
-            BuiltinTypeName_::Bool | BuiltinTypeName_::Address => {
-                Ok("array => return array".to_string())
-            }
-            BuiltinTypeName_::U8 | BuiltinTypeName_::U64 | BuiltinTypeName_::U128 => {
-                Ok("array => array.map(u => u.toPayloadArg())".to_string())
+            BuiltinTypeName_::U8 => Ok(format!("array => $.u8ArrayArg(array)")),
+            BuiltinTypeName_::Bool
+            | BuiltinTypeName_::Address
+            | BuiltinTypeName_::U64
+            | BuiltinTypeName_::U128 => {
+                Ok("array => array.map(ele => $.payloadArg(ele))".to_string())
             }
             BuiltinTypeName_::Signer => unreachable!(),
             BuiltinTypeName_::Vector => {
@@ -699,11 +755,6 @@ pub fn write_func_body(
                 .map(|v| rename(&v.to_string()))
                 .join(", ")
         ));
-        /*
-        for v in new_vars.iter() {
-            c.declare_local(v.to_string());
-        }
-         */
     }
 
     for stmt in block.iter() {
@@ -722,11 +773,9 @@ impl AstTsPrinter for Block {
         w.writeln("{");
         w.increase_indent();
 
-        //c.push_new_local_frame();
         for stmt in self.iter() {
             stmt.write_ts(w, c)?;
         }
-        //c.pop_local_frame();
 
         w.decrease_indent();
         w.writeln("}");
@@ -797,27 +846,6 @@ impl AstTsPrinter for Statement {
     }
 }
 
-/*
-// returns true if this is a new variable to be declared
-fn lvalues_has_new_decl(lvalues: &Vec<LValue>, c: &mut Context) -> Result<bool, Diagnostic> {
-    let mut has_new = false;
-    for lvalue in lvalues.iter() {
-        if lvalue.value == LValue_::Ignore {
-            continue;
-        }
-        let is_new = is_lvalue_new_decl(lvalue, c)?;
-        if has_new && !is_new {
-            return derr!((
-                lvalue.loc,
-                "Cannot redeclare existing variables with new variables"
-            ));
-        }
-        has_new = has_new | is_new;
-    }
-    Ok(has_new)
-}
- */
-
 pub fn is_exp_unit(exp: &Exp) -> bool {
     matches!(exp.exp.value, UnannotatedExp_::Unit { case: _ })
 }
@@ -832,19 +860,9 @@ impl AstTsPrinter for Command {
                 if is_empty_lvalue_list(lvalues) {
                     w.writeln(format!("{};", rhs.term(c)?));
                 } else {
-                    /*
-                    if lvalues_has_new_decl(lvalues, c)? {
-                        w.write("let ");
-                    }
-                     */
                     if lvalues.len() == 1 && matches!(lvalues[0].value, LValue_::Unpack(_, _, _)) {
                         w.write("let ");
                     }
-                    /*
-                    if *is_new_decl {
-                        w.write("let ");
-                    }
-                     */
                     // using write_ts instead of term to allow prettier printing in case we ever
                     // want to do that
                     lvalues.write_ts(w, c)?;
@@ -861,33 +879,6 @@ impl AstTsPrinter for Command {
                 UnannotatedExp_::Dereference(_) => {
                     return derr!((lhs.exp.loc, "Dereference in Mutate not implemented yet"));
                 }
-                /*
-                UnannotatedExp_::Copy {
-                    from_user: _,
-                    var: _,
-                } => match &lhs.ty.value {
-                    Type_::Unit => unreachable!(),
-                    Type_::Multiple(_) => {
-                        w.writeln(format!("$.set({}, {})", lhs.term(c)?, rhs.term(c)?));
-                    }
-                    Type_::Single(s_ty) => match &s_ty.value {
-                        SingleType_::Base(base_ty) => {
-                            unreachable!("Cannot DerefAssign on non-ref type");
-                        }
-                        SingleType_::Ref(mutable, base_ty) => match &base_ty.value {
-                            BaseType_::Apply(_, typename, ss) => {}
-                            BaseType_::Param(_) => {
-                                let lhs_str = lhs.term(c)?;
-                                let rhs_str = lhs.term(c)?;
-                                w.writeln(format!("$.set({}, {})" lhs_str, lhs_str));
-                            }
-                            BaseType_::Unreachable | BaseType_::UnresolvedError => {
-                                unreachable!();
-                            }
-                        },
-                    },
-                },
-                 */
                 _ => {
                     w.writeln(format!("$.set({}, {});", lhs.term(c)?, rhs.term(c)?));
                 }

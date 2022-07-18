@@ -143,7 +143,7 @@ export function remove_liquidity_route$ (
   return [temp$5, temp$6];
 }
 
-// test func
+// #[test]
 export function test_three_step$ (
   admin: HexString,
   user: HexString,
@@ -178,9 +178,6 @@ export function test_three_step$ (
 
 
 export function buildPayload_test_three_step (
-  admin: HexString,
-  user: HexString,
-  core: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -190,7 +187,7 @@ export function buildPayload_test_three_step (
   );
 
 }
-// test func
+// #[test]
 export function test_two_step$ (
   admin: HexString,
   user: HexString,
@@ -222,9 +219,6 @@ export function test_two_step$ (
 
 
 export function buildPayload_test_two_step (
-  admin: HexString,
-  user: HexString,
-  core: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -283,7 +277,6 @@ export function three_step_route_script$ (
 
 
 export function buildPayload_three_step_route_script (
-  sender: HexString,
   first_pool_type: U8,
   first_is_x_to_y: boolean,
   second_pool_type: U8,
@@ -299,14 +292,14 @@ export function buildPayload_three_step_route_script (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::Router::three_step_route_script",
     typeParamStrings,
     [
-      first_pool_type.toPayloadArg(),
-      first_is_x_to_y,
-      second_pool_type.toPayloadArg(),
-      second_is_x_to_y,
-      third_pool_type.toPayloadArg(),
-      third_is_x_to_y,
-      x_in.toPayloadArg(),
-      a_min_out.toPayloadArg(),
+      $.payloadArg(first_pool_type),
+      $.payloadArg(first_is_x_to_y),
+      $.payloadArg(second_pool_type),
+      $.payloadArg(second_is_x_to_y),
+      $.payloadArg(third_pool_type),
+      $.payloadArg(third_is_x_to_y),
+      $.payloadArg(x_in),
+      $.payloadArg(a_min_out),
     ]
   );
 
@@ -357,7 +350,6 @@ export function two_step_route_script$ (
 
 
 export function buildPayload_two_step_route_script (
-  sender: HexString,
   first_pool_type: U8,
   first_is_x_to_y: boolean,
   second_pool_type: U8,
@@ -371,12 +363,12 @@ export function buildPayload_two_step_route_script (
     "0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8::Router::two_step_route_script",
     typeParamStrings,
     [
-      first_pool_type.toPayloadArg(),
-      first_is_x_to_y,
-      second_pool_type.toPayloadArg(),
-      second_is_x_to_y,
-      x_in.toPayloadArg(),
-      z_min_out.toPayloadArg(),
+      $.payloadArg(first_pool_type),
+      $.payloadArg(first_is_x_to_y),
+      $.payloadArg(second_pool_type),
+      $.payloadArg(second_is_x_to_y),
+      $.payloadArg(x_in),
+      $.payloadArg(z_min_out),
     ]
   );
 
@@ -388,4 +380,6 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+}
 

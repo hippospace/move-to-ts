@@ -273,4 +273,10 @@ export function validate_acquire$ (
   return temp$1;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Capability::Cap", Cap.CapParser);
+  repo.addParser("0x1::Capability::CapDelegateState", CapDelegateState.CapDelegateStateParser);
+  repo.addParser("0x1::Capability::CapState", CapState.CapStateParser);
+  repo.addParser("0x1::Capability::LinearCap", LinearCap.LinearCapParser);
+}
 

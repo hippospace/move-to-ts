@@ -75,7 +75,7 @@ export class BigVectorIndex
   }
 
 }
-// test func
+// #[test]
 export function big_vector_need_grow$ (
   $c: AptosDataCache,
 ): void {
@@ -92,7 +92,7 @@ export function big_vector_need_grow$ (
   return;
 }
 
-// test func
+// #[test]
 export function big_vector_reserve_and_shrink$ (
   $c: AptosDataCache,
 ): void {
@@ -149,7 +149,7 @@ export function big_vector_reserve_and_shrink$ (
   return;
 }
 
-// test func
+// #[test]
 export function big_vector_test$ (
   $c: AptosDataCache,
 ): void {
@@ -503,4 +503,8 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::BigVector::BigVector", BigVector.BigVectorParser);
+  repo.addParser("0x1::BigVector::BigVectorIndex", BigVectorIndex.BigVectorIndexParser);
+}
 

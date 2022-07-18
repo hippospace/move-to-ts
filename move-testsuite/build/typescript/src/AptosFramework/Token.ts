@@ -537,7 +537,7 @@ export function create_collection$ (
   return;
 }
 
-// test func
+// #[test]
 export function create_collection_and_token$ (
   creator: HexString,
   amount: U64,
@@ -565,7 +565,6 @@ export function create_limited_collection_script$ (
 
 
 export function buildPayload_create_limited_collection_script (
-  creator: HexString,
   name: U8[],
   description: U8[],
   uri: U8[],
@@ -576,10 +575,10 @@ export function buildPayload_create_limited_collection_script (
     "0x1::Token::create_limited_collection_script",
     typeParamStrings,
     [
-      name.map(u => u.toPayloadArg()),
-      description.map(u => u.toPayloadArg()),
-      uri.map(u => u.toPayloadArg()),
-      maximum.toPayloadArg(),
+      $.u8ArrayArg(name),
+      $.u8ArrayArg(description),
+      $.u8ArrayArg(uri),
+      $.payloadArg(maximum),
     ]
   );
 
@@ -602,7 +601,6 @@ export function create_limited_token_script$ (
 
 
 export function buildPayload_create_limited_token_script (
-  creator: HexString,
   collection: U8[],
   name: U8[],
   description: U8[],
@@ -617,14 +615,14 @@ export function buildPayload_create_limited_token_script (
     "0x1::Token::create_limited_token_script",
     typeParamStrings,
     [
-      collection.map(u => u.toPayloadArg()),
-      name.map(u => u.toPayloadArg()),
-      description.map(u => u.toPayloadArg()),
-      monitor_supply,
-      initial_balance.toPayloadArg(),
-      maximum.toPayloadArg(),
-      uri.map(u => u.toPayloadArg()),
-      royalty_points_per_million.toPayloadArg(),
+      $.u8ArrayArg(collection),
+      $.u8ArrayArg(name),
+      $.u8ArrayArg(description),
+      $.payloadArg(monitor_supply),
+      $.payloadArg(initial_balance),
+      $.payloadArg(maximum),
+      $.u8ArrayArg(uri),
+      $.payloadArg(royalty_points_per_million),
     ]
   );
 
@@ -717,7 +715,6 @@ export function create_unlimited_collection_script$ (
 
 
 export function buildPayload_create_unlimited_collection_script (
-  creator: HexString,
   name: U8[],
   description: U8[],
   uri: U8[],
@@ -727,9 +724,9 @@ export function buildPayload_create_unlimited_collection_script (
     "0x1::Token::create_unlimited_collection_script",
     typeParamStrings,
     [
-      name.map(u => u.toPayloadArg()),
-      description.map(u => u.toPayloadArg()),
-      uri.map(u => u.toPayloadArg()),
+      $.u8ArrayArg(name),
+      $.u8ArrayArg(description),
+      $.u8ArrayArg(uri),
     ]
   );
 
@@ -751,7 +748,6 @@ export function create_unlimited_token_script$ (
 
 
 export function buildPayload_create_unlimited_token_script (
-  creator: HexString,
   collection: U8[],
   name: U8[],
   description: U8[],
@@ -765,18 +761,18 @@ export function buildPayload_create_unlimited_token_script (
     "0x1::Token::create_unlimited_token_script",
     typeParamStrings,
     [
-      collection.map(u => u.toPayloadArg()),
-      name.map(u => u.toPayloadArg()),
-      description.map(u => u.toPayloadArg()),
-      monitor_supply,
-      initial_balance.toPayloadArg(),
-      uri.map(u => u.toPayloadArg()),
-      royalty_points_per_million.toPayloadArg(),
+      $.u8ArrayArg(collection),
+      $.u8ArrayArg(name),
+      $.u8ArrayArg(description),
+      $.payloadArg(monitor_supply),
+      $.payloadArg(initial_balance),
+      $.u8ArrayArg(uri),
+      $.payloadArg(royalty_points_per_million),
     ]
   );
 
 }
-// test func
+// #[test]
 export function create_withdraw_deposit_editions$ (
   creator: HexString,
   owner: HexString,
@@ -793,7 +789,7 @@ export function create_withdraw_deposit_editions$ (
   return;
 }
 
-// test func
+// #[test]
 export function create_withdraw_deposit_token$ (
   creator: HexString,
   owner: HexString,
@@ -883,8 +879,6 @@ export function direct_transfer_script$ (
 
 
 export function buildPayload_direct_transfer_script (
-  sender: HexString,
-  receiver: HexString,
   creators_address: HexString,
   collection: U8[],
   name: U8[],
@@ -895,15 +889,15 @@ export function buildPayload_direct_transfer_script (
     "0x1::Token::direct_transfer_script",
     typeParamStrings,
     [
-      creators_address,
-      collection.map(u => u.toPayloadArg()),
-      name.map(u => u.toPayloadArg()),
-      amount.toPayloadArg(),
+      $.payloadArg(creators_address),
+      $.u8ArrayArg(collection),
+      $.u8ArrayArg(name),
+      $.payloadArg(amount),
     ]
   );
 
 }
-// test func
+// #[test]
 export function direct_transfer_test$ (
   creator: HexString,
   owner: HexString,
@@ -919,8 +913,6 @@ export function direct_transfer_test$ (
 
 
 export function buildPayload_direct_transfer_test (
-  creator: HexString,
-  owner: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -968,7 +960,6 @@ export function initialize_token_for_id$ (
 
 
 export function buildPayload_initialize_token_for_id (
-  account: HexString,
   creators_address: HexString,
   collection: U8[],
   name: U8[],
@@ -978,9 +969,9 @@ export function buildPayload_initialize_token_for_id (
     "0x1::Token::initialize_token_for_id",
     typeParamStrings,
     [
-      creators_address,
-      collection.map(u => u.toPayloadArg()),
-      name.map(u => u.toPayloadArg()),
+      $.payloadArg(creators_address),
+      $.u8ArrayArg(collection),
+      $.u8ArrayArg(name),
     ]
   );
 
@@ -995,7 +986,6 @@ export function initialize_token_script$ (
 
 
 export function buildPayload_initialize_token_script (
-  account: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -1072,7 +1062,7 @@ export function mint$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_collection_maximum$ (
   creator: HexString,
   $c: AptosDataCache,
@@ -1083,7 +1073,7 @@ export function test_collection_maximum$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_create_events_generation$ (
   creator: HexString,
   $c: AptosDataCache,
@@ -1100,7 +1090,7 @@ export function test_create_events_generation$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_token_maximum$ (
   creator: HexString,
   $c: AptosDataCache,
@@ -1171,4 +1161,20 @@ export function withdraw_without_event_internal$ (
   return new Token({ id: $.copy(id), value: $.copy(amount) }, new StructTag(new HexString("0x1"), "Token", "Token", []));
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::Token::BurnCapability", BurnCapability.BurnCapabilityParser);
+  repo.addParser("0x1::Token::Collection", Collection.CollectionParser);
+  repo.addParser("0x1::Token::Collections", Collections.CollectionsParser);
+  repo.addParser("0x1::Token::CreateCollectionEvent", CreateCollectionEvent.CreateCollectionEventParser);
+  repo.addParser("0x1::Token::CreateTokenEvent", CreateTokenEvent.CreateTokenEventParser);
+  repo.addParser("0x1::Token::DepositEvent", DepositEvent.DepositEventParser);
+  repo.addParser("0x1::Token::MintCapability", MintCapability.MintCapabilityParser);
+  repo.addParser("0x1::Token::MintTokenEvent", MintTokenEvent.MintTokenEventParser);
+  repo.addParser("0x1::Token::Royalty", Royalty.RoyaltyParser);
+  repo.addParser("0x1::Token::Token", Token.TokenParser);
+  repo.addParser("0x1::Token::TokenData", TokenData.TokenDataParser);
+  repo.addParser("0x1::Token::TokenId", TokenId.TokenIdParser);
+  repo.addParser("0x1::Token::TokenStore", TokenStore.TokenStoreParser);
+  repo.addParser("0x1::Token::WithdrawEvent", WithdrawEvent.WithdrawEventParser);
+}
 

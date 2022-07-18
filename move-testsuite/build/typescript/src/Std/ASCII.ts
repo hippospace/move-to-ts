@@ -61,6 +61,7 @@ export class String
     const proto = $.parseStructProto(data, typeTag, repo, String);
     return new String(proto, typeTag);
   }
+  str(): string { return $.u8str(this.bytes); }
 
 }
 export function all_characters_printable$ (
@@ -211,4 +212,8 @@ export function unit_test_poison$ (
   return;
 }
 
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::ASCII::Char", Char.CharParser);
+  repo.addParser("0x1::ASCII::String", String.StringParser);
+}
 

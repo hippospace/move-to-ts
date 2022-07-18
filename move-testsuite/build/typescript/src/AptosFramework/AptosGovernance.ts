@@ -287,7 +287,6 @@ export function create_proposal$ (
 
 
 export function buildPayload_create_proposal (
-  proposer: HexString,
   stake_pool: HexString,
   execution_hash: U8[],
 ) {
@@ -296,8 +295,8 @@ export function buildPayload_create_proposal (
     "0x1::AptosGovernance::create_proposal",
     typeParamStrings,
     [
-      stake_pool,
-      execution_hash.map(u => u.toPayloadArg()),
+      $.payloadArg(stake_pool),
+      $.u8ArrayArg(execution_hash),
     ]
   );
 
@@ -322,7 +321,7 @@ export function initialize$ (
   return;
 }
 
-// test func
+// #[test]
 export function setup_voting$ (
   core_resources: HexString,
   core_framework: HexString,
@@ -351,7 +350,7 @@ export function setup_voting$ (
   return;
 }
 
-// test func
+// #[test]
 export function test_cannot_double_vote$ (
   core_resources: HexString,
   core_framework: HexString,
@@ -369,11 +368,6 @@ export function test_cannot_double_vote$ (
 
 
 export function buildPayload_test_cannot_double_vote (
-  core_resources: HexString,
-  core_framework: HexString,
-  proposer: HexString,
-  voter_1: HexString,
-  voter_2: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -383,7 +377,7 @@ export function buildPayload_test_cannot_double_vote (
   );
 
 }
-// test func
+// #[test]
 export function test_cannot_double_vote_with_different_voter_addresses$ (
   core_resources: HexString,
   core_framework: HexString,
@@ -402,11 +396,6 @@ export function test_cannot_double_vote_with_different_voter_addresses$ (
 
 
 export function buildPayload_test_cannot_double_vote_with_different_voter_addresses (
-  core_resources: HexString,
-  core_framework: HexString,
-  proposer: HexString,
-  voter_1: HexString,
-  voter_2: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -416,7 +405,7 @@ export function buildPayload_test_cannot_double_vote_with_different_voter_addres
   );
 
 }
-// test func
+// #[test]
 export function test_voting$ (
   core_resources: HexString,
   core_framework: HexString,
@@ -440,11 +429,6 @@ export function test_voting$ (
 
 
 export function buildPayload_test_voting (
-  core_resources: HexString,
-  core_framework: HexString,
-  proposer: HexString,
-  yes_voter: HexString,
-  no_voter: HexString,
 ) {
   const typeParamStrings = [] as string[];
   return $.buildPayload(
@@ -510,7 +494,6 @@ export function vote$ (
 
 
 export function buildPayload_vote (
-  voter: HexString,
   stake_pool: HexString,
   proposal_id: U64,
   should_pass: boolean,
@@ -520,11 +503,20 @@ export function buildPayload_vote (
     "0x1::AptosGovernance::vote",
     typeParamStrings,
     [
-      stake_pool,
-      proposal_id.toPayloadArg(),
-      should_pass,
+      $.payloadArg(stake_pool),
+      $.payloadArg(proposal_id),
+      $.payloadArg(should_pass),
     ]
   );
 
+}
+export function loadParsers(repo: AptosParserRepo) {
+  repo.addParser("0x1::AptosGovernance::CreateProposalEvent", CreateProposalEvent.CreateProposalEventParser);
+  repo.addParser("0x1::AptosGovernance::GovernanceConfig", GovernanceConfig.GovernanceConfigParser);
+  repo.addParser("0x1::AptosGovernance::GovernanceEvents", GovernanceEvents.GovernanceEventsParser);
+  repo.addParser("0x1::AptosGovernance::RecordKey", RecordKey.RecordKeyParser);
+  repo.addParser("0x1::AptosGovernance::UpdateConfigEvent", UpdateConfigEvent.UpdateConfigEventParser);
+  repo.addParser("0x1::AptosGovernance::VoteEvent", VoteEvent.VoteEventParser);
+  repo.addParser("0x1::AptosGovernance::VotingRecords", VotingRecords.VotingRecordsParser);
 }
 
