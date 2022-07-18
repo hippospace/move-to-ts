@@ -2,6 +2,7 @@ import { AtomicTypeTag, getTypeTagParamlessName, StructTag, TypeTag, TypeParamId
 import { AptosClient, HexString } from "aptos";
 import bigInt from "big-integer";
 import { U128, U64, U8 } from "./builtinTypes";
+import { strToU8, u8 } from "./builtinFuncs";
 
 export type TypeParamDeclType = {
   name: string;
@@ -37,8 +38,10 @@ export function parseStructProto(data: any, typeTag: TypeTag, repo: AptosParserR
   if(typeof data !== "object") {
     // could be 0x1::ASCII::String
     if (typeTag.address.toShortString() === '0x1' && typeTag.module === 'ASCII' && typeTag.name === 'String') {
-      // return the raw string
-      return data;
+      // return the proto object directly
+      const bytes = strToU8(data);
+      const proto = { bytes };
+      return proto;
     }
     throw new Error(`${struct.structName} expects data to be an object, but instead got: ${typeof data}`);
   }
@@ -173,6 +176,13 @@ export function VectorParser(data: any, typeTag: TypeTag, repo: AptosParserRepo)
     throw new Error(`VectorParser cannot parse type: ${getTypeTagParamlessName(typeTag)}`);
   }
   const elementType = typeTag.elementType;
+  if(elementType === AtomicTypeTag.U8) {
+    if(typeof data !== 'string') {
+      throw new Error(`Expected string type for U8[] but received: ${typeof data}`);
+    }
+    const hex = new HexString(data);
+    return Array.from(hex.toUint8Array()).map(u => u8(u));
+  }
   if(!(data instanceof Array)) {
     throw new Error(`VectorParser expects Array type as data but received: ${typeof data}`);
   }
