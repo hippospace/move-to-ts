@@ -61,4 +61,4 @@ Turn this into a development framework similar to Truffle/Anchor, and provide di
 
 # Example
 
-Check [this file](https://github.com/hippospace/move-to-ts/blob/main/move-testsuite/build/typescript/src/AptosFramework/Coin.ts) to see what `Coin.move` is transpiled to.
+Check [this file](https://github.com/hippospace/move-to-ts/blob/730fb2013e3b2fca2e4f90874c8e4f569c482c57/move-testsuite/build/typescript/src/AptosFramework/Coin.ts) to see what `Coin.move` is transpiled to.
