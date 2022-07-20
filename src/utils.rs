@@ -1,6 +1,6 @@
+use itertools::Itertools;
 use move_compiler::expansion::ast::ModuleIdent;
 use std::fmt;
-use itertools::Itertools;
 
 pub fn generate_package_json(package_name: String) -> (String, String) {
     let content = format!(
@@ -31,7 +31,7 @@ pub fn generate_package_json(package_name: String) -> (String, String) {
   "dependencies": {{
     "aptos": "^1.2.0",
     "big-integer": "^1.6.51",
-    "@manahippo/move-to-ts": "^0.0.40"
+    "@manahippo/move-to-ts": "^0.0.45"
   }}
 }}
 "###,
@@ -121,8 +121,10 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         .collect::<Vec<_>>()
         .join("");
 
-    let loads = modules.iter().map(|mi| format!("  {}.loadParsers(repo);", mi.value.module)).join
-    ("\n");
+    let loads = modules
+        .iter()
+        .map(|mi| format!("  {}.loadParsers(repo);", mi.value.module))
+        .join("\n");
 
     let content = format!(
         r###"
@@ -161,9 +163,13 @@ pub fn generate_topmost_index(packages: &Vec<&String>) -> (String, String) {
         .collect::<Vec<_>>()
         .join("");
 
-    let loads = packages.iter().map(|p| format!("  {}.loadParsers(repo);", p)).join("\n");
+    let loads = packages
+        .iter()
+        .map(|p| format!("  {}.loadParsers(repo);", p))
+        .join("\n");
 
-    let content = format!(r###"
+    let content = format!(
+        r###"
 import {{ AptosParserRepo }} from "@manahippo/move-to-ts";
 {}
 {}
@@ -175,7 +181,108 @@ export function getProjectRepo(): AptosParserRepo {{
   return repo;
 }}
 "###,
-        imports, exports, loads);
+        imports, exports, loads
+    );
 
     (filename, content)
+}
+
+pub fn get_table_helper_decl() -> String {
+    r###"
+export class TypedTable<K, V> {
+  static buildFromField<K, V>(table: Table, field: FieldDeclType): TypedTable<K, V> {
+    const tag = field.typeTag;
+    if (!(tag instanceof StructTag)) {
+      throw new Error();
+    }
+    if (tag.getParamlessName() !== '0x1::Table::Table') {
+      throw new Error();
+    }
+    if (tag.typeParams.length !== 2) {
+      throw new Error();
+    }
+    const [keyTag, valueTag] = tag.typeParams;
+    return new TypedTable<K, V>(table, keyTag, valueTag);
+  }
+
+  constructor(
+    public table: Table,
+    public keyTag: TypeTag,
+    public valueTag: TypeTag
+  ) {
+  }
+
+  async loadEntryRaw(client: AptosClient, key: K): Promise<any> {
+    return await client.getTableItem(this.table.handle.value.toString(), {
+      key_type: $.getTypeTagFullname(this.keyTag),
+      value_type: $.getTypeTagFullname(this.valueTag),
+      key: $.moveValueToOpenApiObject(key, this.keyTag),
+    });
+  }
+
+  async loadEntry(client: AptosClient, repo: AptosParserRepo, key: K): Promise<V> {
+    const rawVal = await this.loadEntryRaw(client, key);
+    return repo.parse(rawVal.data, this.valueTag);
+  }
+}
+"###
+    .to_string()
+}
+
+pub fn get_iterable_table_helper_decl() -> String {
+    r###"
+export class TypedIterableTable<K, V> {
+  static buildFromField<K, V>(table: IterableTable, field: FieldDeclType): TypedIterableTable<K, V> {
+    const tag = field.typeTag;
+    if (!(tag instanceof StructTag)) {
+      throw new Error();
+    }
+    if (tag.getParamlessName() !== '0x1::IterableTable::IterableTable') {
+      throw new Error();
+    }
+    if (tag.typeParams.length !== 2) {
+      throw new Error();
+    }
+    const [keyTag, valueTag] = tag.typeParams;
+    return new TypedIterableTable<K, V>(table, keyTag, valueTag);
+  }
+
+  iterValueTag: StructTag;
+  constructor(
+    public table: IterableTable,
+    public keyTag: TypeTag,
+    public valueTag: TypeTag
+  ) {
+    this.iterValueTag = new StructTag(moduleAddress, moduleName, "IterableValue", [keyTag, valueTag])
+  }
+
+  async loadEntryRaw(client: AptosClient, key: K): Promise<any> {
+    return await client.getTableItem(this.table.inner.handle.value.toString(), {
+      key_type: $.getTypeTagFullname(this.keyTag),
+      value_type: $.getTypeTagFullname(this.iterValueTag),
+      key: $.moveValueToOpenApiObject(key, this.keyTag),
+    });
+  }
+
+  async loadEntry(client: AptosClient, repo: AptosParserRepo, key: K): Promise<IterableValue> {
+    const rawVal = await this.loadEntryRaw(client, key);
+    return repo.parse(rawVal.data, this.iterValueTag) as IterableValue;
+  }
+
+  async fetchAll(client: AptosClient, repo: AptosParserRepo): Promise<[K, V][]> {
+    const result: [K, V][] = [];
+    const cache = new $.DummyCache();
+    let next = this.table.head;
+    while(next && Std.Option.is_some$(next, cache, [this.keyTag])) {
+      const key = Std.Option.borrow$(next, cache, [this.keyTag]) as K;
+      const iterVal = await this.loadEntry(client, repo, key);
+      const value = iterVal.val as V;
+      result.push([key, value]);
+      next = iterVal.next;
+    }
+    return result;
+  }
+}
+"###
+        .to_string()
 }

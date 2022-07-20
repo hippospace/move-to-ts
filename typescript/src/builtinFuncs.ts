@@ -1,4 +1,4 @@
-import { TypeTag, StructTag } from "./typeTag";
+import { TypeTag, StructTag, VectorTag, AtomicTypeTag, substituteTypeParams } from "./typeTag";
 import bigInt, { isInstance } from "big-integer";
 import { U8, U64, U128, UnsignedInt, takeBigInt } from "./builtinTypes";
 import { HexString } from "aptos";
@@ -202,7 +202,7 @@ export function payloadArg(val: any) {
     }
   }
   else if (val instanceof HexString) {
-    return val;
+    return val.toShortString();
   }
   else if (typeof val === 'boolean') {
     return val
@@ -215,4 +215,49 @@ export function payloadArg(val: any) {
 export function u8ArrayArg(val: U8[]): string {
   const uint8array = new Uint8Array(Array.from(val.map(u => u.toJsNumber())));
   return HexString.fromUint8Array(uint8array).hex();
+}
+
+export function moveValueToOpenApiObject(val: any, typeTag: TypeTag): any {
+  if (val instanceof U8) {
+    return val.toJsNumber();
+  }
+  else if (val instanceof U64 || val instanceof U128)  {
+    return val.value.toString();
+  }
+  else if (val instanceof HexString) {
+    return val.hex();
+  }
+  // vector
+  else if (val instanceof Array) {
+    if (!(typeTag instanceof VectorTag)) {
+      throw new Error("Expected a vector value");
+    }
+    // special handler for U8[]
+    if (typeTag.elementType === AtomicTypeTag.U8) {
+      return u8ArrayArg(val);
+    }
+    return val.map(ele => moveValueToOpenApiObject(ele, typeTag.elementType));
+  }
+  // object / struct
+  else if (typeof val === 'object') {
+    if (!(typeTag instanceof StructTag)) {
+      throw new Error("Expected a struct value");
+    }
+    // special handler for ASCII
+    if (typeTag.getFullname() === '0x1::ASCII::String') {
+      const bytes = val.bytes as U8[];
+      return u8str(bytes);
+    }
+    const result: any = new Object();
+    const structInfo = val.constructor as StructInfoType;
+    for (const field of structInfo.fields) {
+      const name = field.name;
+      const fieldTag = substituteTypeParams(field.typeTag, typeTag.typeParams);
+      result[name] = moveValueToOpenApiObject(val[field.name], fieldTag);
+    }
+    return result;
+  }
+  else {
+    throw new Error("Unreachable");
+  }
 }

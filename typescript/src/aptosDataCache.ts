@@ -220,46 +220,7 @@ export class AptosLocalCache implements AptosDataCache {
 }
 
 // caches data locally, and attempts to fetch from chain when needed
-export class AptosSyncedCache implements AptosDataCache {
-  exists(_tag: TypeTag, _address: HexString): boolean {
-    throw new Error("DummyCache does not support 'exists'");
-  }
-  move_to(_tag: TypeTag, _address: HexString, _resource: any): void {
-    throw new Error("DummyCache does not support 'move_to'");
-  }
-  move_from<T>(_tag: TypeTag, _address: HexString): T {
-    throw new Error("DummyCache does not support 'move_from'");
-  }
-  borrow_global<T>(_tag: TypeTag, _address: HexString): T {
-    throw new Error("DummyCache does not support 'borrow_global'");
-  }
-  borrow_global_mut<T>(_tag: TypeTag, _address: HexString): T {
-    throw new Error("DummyCache does not support 'borrow_global_mut'");
-  }
-  table_new_handle(): U128 {
-    throw new Error("DummyCache does not support table_new_handle");
-  }
-  table_add_box(table: ITable, key: any, value: IBox) {
-    throw new Error("DummyCache does not support table_add_box");
-  }
-  table_borrow_box(table: ITable, key: any): IBox {
-    throw new Error("Not implemented");
-  }
-  table_borrow_box_mut(table: ITable, key: any): IBox {
-    throw new Error("Not implemented");
-  }
-  table_contains_box(table: ITable, key: any): boolean {
-    throw new Error("Not implemented");
-  }
-  table_remove_box(table: ITable, key: any): IBox {
-    throw new Error("Not implemented");
-  }
-  table_destroy_empty_box(table: ITable) {
-    throw new Error("Not implemented");
-  }
-  table_drop_unchecked_box(table: ITable) {
-    throw new Error("Not implemented");
-  }
+export class AptosSyncedCache extends AptosLocalCache {
 }
 
 

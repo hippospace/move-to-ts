@@ -2,7 +2,7 @@ use crate::ast_exp::*;
 use crate::ast_tests::check_test;
 use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
-use crate::utils::rename;
+use crate::utils::{get_table_helper_decl, rename, get_iterable_table_helper_decl};
 use itertools::Itertools;
 use move_compiler::{
     diagnostics::{Diagnostic, Diagnostics},
@@ -65,6 +65,23 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
     Ok(lines.join("\n"))
 }
 
+pub fn handle_special_module(
+    mi: &ModuleIdent,
+    _module: &ModuleDefinition,
+    w: &mut TsgenWriter,
+    _c: &mut Context,
+) -> WriteResult {
+    if format_address_hex(mi.value.address) == "0x1" {
+        if mi.value.module.to_string() == "Table" {
+            w.writeln(get_table_helper_decl());
+        }
+        else if mi.value.module.to_string() == "IterableTable" {
+            w.writeln(get_iterable_table_helper_decl());
+        }
+    }
+    Ok(())
+}
+
 impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
     const CTOR_NAME: &'static str = "ModuleDefinition";
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
@@ -118,6 +135,9 @@ impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
 
         // loadParsers
         write_load_parsers(name, module, w, c)?;
+
+        // for things like Table, IterableTable
+        handle_special_module(name, module, w, c)?;
 
         Ok(())
     }
