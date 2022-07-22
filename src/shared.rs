@@ -275,12 +275,12 @@ pub fn format_qualified_name(
     } else if c.is_current_package(mident) {
         // name exists in same package, just add module name as qualifier
         c.add_same_package_import(mident.value.module.to_string());
-        format!("{}.{}", mident.value.module, name)
+        format!("{}$_.{}", mident.value.module, name)
     } else {
         // name exists in a different package, use fully qualified name
         let package_name = format_address(mident.value.address);
         c.add_package_import(package_name.clone());
-        format!("{}.{}.{}", package_name, mident.value.module, name)
+        format!("{}$_.{}$_.{}", package_name, mident.value.module, name)
     }
 }
 

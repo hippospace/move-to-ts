@@ -9,11 +9,11 @@ edition = "2021"
 itertools = "0.10.3"
 clap = { version = "3.1.8", features = ["derive"] }
 
-move-core-types = { git = "https://github.com/move-language/move", rev = "ece13ae276e3925111bf48cd85b73af4287210e7" }
-move-compiler = { git = "https://github.com/move-language/move", rev = "ece13ae276e3925111bf48cd85b73af4287210e7" }
-move-ir-types = { git = "https://github.com/move-language/move", rev = "ece13ae276e3925111bf48cd85b73af4287210e7" }
-move-package = { git = "https://github.com/move-language/move", rev = "ece13ae276e3925111bf48cd85b73af4287210e7" }
-move-command-line-common = { git = "https://github.com/move-language/move", rev = "ece13ae276e3925111bf48cd85b73af4287210e7" }
+move-core-types = { git = "https://github.com/move-language/move", rev = "f3c921433758340cb95075ae9918095878686d3c" }
+move-compiler = { git = "https://github.com/move-language/move", rev = "f3c921433758340cb95075ae9918095878686d3c" }
+move-ir-types = { git = "https://github.com/move-language/move", rev = "f3c921433758340cb95075ae9918095878686d3c" }
+move-package = { git = "https://github.com/move-language/move", rev = "f3c921433758340cb95075ae9918095878686d3c" }
+move-command-line-common = { git = "https://github.com/move-language/move", rev = "f3c921433758340cb95075ae9918095878686d3c" }
 
 [features]
 default = ["move-core-types/address32"]

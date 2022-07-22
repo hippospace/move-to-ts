@@ -9,7 +9,7 @@ use move_compiler::{
     expansion::ast::ModuleIdent,
     hlir::ast::*,
     naming::ast::{BuiltinTypeName_, StructTypeParameter},
-    parser::ast::{Ability_, ConstantName, FunctionName, StructName, Var, Visibility},
+    parser::ast::{Ability_, ConstantName, FunctionName, StructName, Var},
 };
 use move_ir_types::location::Loc;
 use std::collections::BTreeSet;
@@ -51,13 +51,13 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
     ];
     for package_name in c.package_imports.iter() {
         lines.push(format!(
-            "import * as {} from \"../{}\";",
+            "import * as {}$_ from \"../{}\";",
             package_name, package_name
         ));
     }
     for module_name in c.same_package_imports.iter() {
         lines.push(format!(
-            "import * as {} from \"./{}\";",
+            "import * as {}$_ from \"./{}\";",
             module_name, module_name
         ));
     }
@@ -390,7 +390,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
     const CTOR_NAME: &'static str = "FunctionDef";
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
         let (name, func) = self;
-        let is_entry = matches!(func.visibility, Visibility::Script(_));
+        let is_entry = func.entry.is_some();
         if c.config.test {
             let is_test = check_test(name, func, c)?;
             if is_test {

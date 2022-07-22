@@ -8,6 +8,7 @@ import bigInt from "big-integer";
 import * as elliptic from "elliptic";
 import { BCS } from "aptos";
 import { FieldDeclType, StructInfoType, TypeParamDeclType } from "./parserRepo";
+import { u64 } from "./builtinFuncs";
 
 
 /*
@@ -98,7 +99,7 @@ export function serializeMoveValue(serializer: BCS.Serializer, v: any, tag: Type
 /*
 native functions from Std
 */
-export function Std_BCS_to_bytes(v: any, $c: AptosDataCache, tags: TypeTag[]): U8[] {
+export function std_bcs_to_bytes(v: any, $c: AptosDataCache, tags: TypeTag[]): U8[] {
   if (tags.length !== 1) {
     throw new Error(`Expected 1 TypeTag in tags but received: ${tags.length}`);
   }
@@ -108,40 +109,83 @@ export function Std_BCS_to_bytes(v: any, $c: AptosDataCache, tags: TypeTag[]): U
   return array.map(u => new U8(bigInt(u)));
 }
 
-export function Std_Debug_print(v: any, $c: AptosDataCache, _: TypeTag[]) {
+export function std_debug_print(v: any, $c: AptosDataCache, _: TypeTag[]) {
   console.log(JSON.stringify(v, null, 2));
 }
 
-export function Std_Debug_print_stack_trace($c: AptosDataCache) {
+export function std_debug_print_stack_trace($c: AptosDataCache) {
   // NOP
 }
 
-export function Std_Event_write_to_event_store(guid: U8[], count: U64, msg: any, $c: AptosDataCache, _tags: TypeTag[]) {
+export function std_event_write_to_event_store(guid: U8[], count: U64, msg: any, $c: AptosDataCache, _tags: TypeTag[]) {
   // FIXME: should probably allow some callback/prints??
   // NOP
 }
 
-export function Std_Hash_sip_hash(v: any, $c: AptosDataCache, _tags: TypeTag[]): U64 {
+export function std_hash_sip_hash(v: any, $c: AptosDataCache, _tags: TypeTag[]): U64 {
   throw new Error("Not implemented");
 }
 
-export function Std_Hash_sha2_256(data: U8[], $c: AptosDataCache): U8[] {
+export function std_hash_sha2_256(data: U8[], $c: AptosDataCache): U8[] {
   const dataBuffer = Buffer.from(data.map(u => u.value.toJSNumber()));
   const outputBuffer = new sha.sha256().update(dataBuffer).digest();
   return Array.from(outputBuffer).map(u => new U8(bigInt(u)));
 }
 
-export function Std_Hash_sha3_256(data: U8[], $c: AptosDataCache): U8[] {
+export function std_hash_sha3_256(data: U8[], $c: AptosDataCache): U8[] {
   const dataBuffer = Buffer.from(data.map(u => u.value.toJSNumber()));
   const outputBuffer = new SHA3(256).update(dataBuffer).digest();
   return Array.from(outputBuffer).map(u => new U8(bigInt(u)));
 }
 
-export function Std_Signer_borrow_address(s: HexString, $c: AptosDataCache) {
+export function std_signer_borrow_address(s: HexString, $c: AptosDataCache) {
   return s;
 }
 
-export function Std_UnitTest_create_signers_for_testing(numSigners: U64, $c: AptosDataCache) : HexString[] {
+export function std_string_internal_check_utf8(v: U8[], $c: AptosDataCache): boolean {
+  const bytes = new Uint8Array(v.map(u => u.toJsNumber()));
+  const decoder = new TextDecoder('utf-8', {fatal: true});
+  try{
+    decoder.decode(bytes);
+    return true;
+  }
+  catch(e) {
+    return false;
+  }
+}
+
+export function std_string_internal_is_char_boundary(v: U8[], i: U64, $c: AptosDataCache): boolean {
+  if (i.toJsNumber() > v.length) {
+    return false;
+  }
+  return std_string_internal_check_utf8(v.slice(0, i.toJsNumber()), $c);
+}
+
+export function std_string_internal_sub_string(v: U8[], i: U64, j: U64, $c: AptosDataCache): U8[] {
+  const [ii, jj] = [i.toJsNumber(), j.toJsNumber()];
+  if (!std_string_internal_is_char_boundary(v, i, $c)) {
+    throw new Error(`sub_string start index ${ii} is not utf8 char boundary`);
+  }
+  if (!std_string_internal_is_char_boundary(v, j, $c)) {
+    throw new Error(`sub_string end index ${jj} is not utf8 char boundary`);
+  }
+  if (ii > jj) {
+    throw new Error(`Substring start index ${ii} greater than ending index ${jj}`);
+  }
+  return v.slice(ii, jj);
+}
+
+export function std_string_internal_index_of(v: U8[], r: U8[], $c: AptosDataCache): U64 {
+  const vv = new Uint8Array(v.map(u => u.toJsNumber()));
+  const rr = new Uint8Array(r.map(u => u.toJsNumber()));
+  const decoder = new TextDecoder('utf-8', {fatal: true});
+  const vStr = decoder.decode(vv);
+  const rStr = decoder.decode(rr);
+  const idx = vStr.indexOf(rStr);
+  return u64(idx === -1 ? v.length : idx);
+}
+
+export function std_unit_test_create_signers_for_testing(numSigners: U64, $c: AptosDataCache) : HexString[] {
   const result: HexString[] = [];
   for(let i = 0; i < numSigners.value.toJSNumber(); i++) {
     result.push(new HexString((0x1000 + i).toString(16)));
@@ -149,14 +193,14 @@ export function Std_UnitTest_create_signers_for_testing(numSigners: U64, $c: Apt
   return result;
 }
 
-export function Std_Vector_empty($c: AptosDataCache, tags: TypeTag[]): any[] {
+export function std_vector_empty($c: AptosDataCache, tags: TypeTag[]): any[] {
   if (tags.length !== 1) {
     throw new Error(`Incorrect number of type arguments: ${tags.length}`);
   }
   return [];
 }
 
-export function Std_Vector_length(vec: any[], $c: AptosDataCache, tags: TypeTag[]): U64 {
+export function std_vector_length(vec: any[], $c: AptosDataCache, tags: TypeTag[]): U64 {
   if (tags.length !== 1) {
     throw new Error(`Incorrect number of type arguments: ${tags.length}`);
   }
@@ -164,7 +208,7 @@ export function Std_Vector_length(vec: any[], $c: AptosDataCache, tags: TypeTag[
 }
 
 
-export function Std_Vector_borrow(vec: any[], i: U64, $c: AptosDataCache, tags: TypeTag[]): any {
+export function std_vector_borrow(vec: any[], i: U64, $c: AptosDataCache, tags: TypeTag[]): any {
   if (tags.length !== 1) {
     throw new Error(`Incorrect number of type arguments: ${tags.length}`);
   }
@@ -175,14 +219,14 @@ export function Std_Vector_borrow(vec: any[], i: U64, $c: AptosDataCache, tags: 
   return vec[idx];
 }
 
-export function Std_Vector_push_back(vec: any[], e: any, $c: AptosDataCache, tags: TypeTag[]): void {
+export function std_vector_push_back(vec: any[], e: any, $c: AptosDataCache, tags: TypeTag[]): void {
   if (tags.length !== 1) {
     throw new Error(`Incorrect number of type arguments: ${tags.length}`);
   }
   vec.push(e);
 }
 
-export function Std_Vector_borrow_mut(vec: any[], i: U64, $c: AptosDataCache, tags: TypeTag[]): any {
+export function std_vector_borrow_mut(vec: any[], i: U64, $c: AptosDataCache, tags: TypeTag[]): any {
   if (tags.length !== 1) {
     throw new Error(`Incorrect number of type arguments: ${tags.length}`);
   }
@@ -194,7 +238,7 @@ export function Std_Vector_borrow_mut(vec: any[], i: U64, $c: AptosDataCache, ta
   return vec[idx];
 }
 
-export function Std_Vector_pop_back(vec: any[], $c: AptosDataCache, tags: TypeTag[]): void {
+export function std_vector_pop_back(vec: any[], $c: AptosDataCache, tags: TypeTag[]): void {
   if (tags.length !== 1) {
     throw new Error(`Incorrect number of type arguments: ${tags.length}`);
   }
@@ -204,7 +248,7 @@ export function Std_Vector_pop_back(vec: any[], $c: AptosDataCache, tags: TypeTa
   return vec.pop();
 }
 
-export function Std_Vector_destroy_empty(vec: any[], $c: AptosDataCache, tags: TypeTag[]): void {
+export function std_vector_destroy_empty(vec: any[], $c: AptosDataCache, tags: TypeTag[]): void {
   if (tags.length !== 1) {
     throw new Error(`Incorrect number of type arguments: ${tags.length}`);
   }
@@ -213,7 +257,7 @@ export function Std_Vector_destroy_empty(vec: any[], $c: AptosDataCache, tags: T
   }
 }
 
-export function Std_Vector_swap(vec: any[], i: U64, j: U64, $c: AptosDataCache, tags: TypeTag[]): void {
+export function std_vector_swap(vec: any[], i: U64, j: U64, $c: AptosDataCache, tags: TypeTag[]): void {
   if (tags.length !== 1) {
     throw new Error(`Incorrect number of type arguments: ${tags.length}`);
   }
@@ -232,7 +276,7 @@ export function Std_Vector_swap(vec: any[], i: U64, j: U64, $c: AptosDataCache, 
 native functions from AptosFramework
 */
 
-export function AptosFramework_Account_create_address(bytes: U8[], $c: AptosDataCache): HexString {
+export function aptos_framework_account_create_address(bytes: U8[], $c: AptosDataCache): HexString {
   if (bytes.length !== 32) {
     throw new Error(`bytes must have length of 32, but got ${bytes.length}`);
   }
@@ -240,7 +284,7 @@ export function AptosFramework_Account_create_address(bytes: U8[], $c: AptosData
   return HexString.fromUint8Array(bytesArray);
 }
 
-export function AptosFramework_Account_create_signer(addr: HexString, $c: AptosDataCache): HexString {
+export function aptos_framework_account_create_signer(addr: HexString, $c: AptosDataCache): HexString {
   // FIXME
   // yep, our runtime does not distinguish between address and signer. This might get us in trouble down the road... 
   // but for now just use this
@@ -251,11 +295,11 @@ function u8ArrayToKeyString(u8array: U8[]): string {
   return u8array.map(u => u.value.toJSNumber().toString(16)).join();
 }
 
-export function AptosFramework_Signature_ed25519_validate_pubkey(pubkey: U8[], $c: AptosDataCache): boolean {
+export function aptos_framework_signature_ed25519_validate_pubkey(pubkey: U8[], $c: AptosDataCache): boolean {
   throw new Error("Not implemented");
 }
 
-export function AptosFramework_Signature_bls12381_validate_pubkey(pubkey: U8[], proof: U8[], $c: AptosDataCache): boolean {
+export function aptos_framework_signature_bls12381_validate_pubkey(pubkey: U8[], proof: U8[], $c: AptosDataCache): boolean {
   throw new Error("Not implemented");
   /*
   const bs58 = base('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
@@ -269,47 +313,51 @@ export function AptosFramework_Signature_bls12381_validate_pubkey(pubkey: U8[], 
   */
 }
 
-export function AptosFramework_Signature_ed25519_verify(signature: U8[], pubkey: U8[], message: U8[], $c: AptosDataCache): boolean {
+export function aptos_framework_signature_ed25519_verify(signature: U8[], pubkey: U8[], message: U8[], $c: AptosDataCache): boolean {
   const ec = new elliptic.eddsa("ed25519");
   const keyString = u8ArrayToKeyString(pubkey);
   const key = ec.keyFromPublic(keyString);
   return key.verify(u8ArrayToKeyString(message), u8ArrayToKeyString(signature));
 }
 
+export function aptos_framework_signature_secp256k1_recover(message: U8[], recovery_id: U8, signature: U8[], $c: AptosDataCache): [U8[], boolean] {
+  throw new Error("Not implemented");
+}
 
-export function AptosFramework_Table_new_table_handle($c: AptosDataCache): U128 {
+
+export function aptos_framework_table_new_table_handle($c: AptosDataCache, tags: TypeTag[]): U128 {
   return $c.table_new_handle();
 }
 
-export function AptosFramework_Table_add_box(table: ITable, key: any, value: IBox, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_framework_table_add_box(table: ITable, key: any, value: IBox, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_add_box(table, key, value);
 }
 
-export function AptosFramework_Table_borrow_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_framework_table_borrow_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_borrow_box(table, key);
 }
 
-export function AptosFramework_Table_borrow_box_mut(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_framework_table_borrow_box_mut(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_borrow_box_mut(table, key);
 }
 
-export function AptosFramework_Table_contains_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_framework_table_contains_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_contains_box(table, key);
 }
 
-export function AptosFramework_Table_remove_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_framework_table_remove_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_remove_box(table, key);
 }
 
-export function AptosFramework_Table_destroy_empty_box(table: ITable, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_framework_table_destroy_empty_box(table: ITable, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_destroy_empty_box(table);
 }
 
-export function AptosFramework_Table_drop_unchecked_box(table: ITable, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_framework_table_drop_unchecked_box(table: ITable, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_drop_unchecked_box(table);
 }
 
-export function AptosFramework_TransactionContext_get_script_hash($c: AptosDataCache): U8[] {
+export function aptos_framework_transaction_context_get_script_hash($c: AptosDataCache): U8[] {
   // we only support ScriptFunction, for which script hash is empty
   return [];
 }
@@ -348,7 +396,7 @@ function stringToU8Array(val: string): U8[] {
   return Array.from(new TextEncoder().encode(val)).map(u => new U8(bigInt(u)));
 }
 
-export function AptosFramework_TypeInfo_type_of($c: AptosDataCache, tags: TypeTag[]): ITypeInfo {
+export function aptos_framework_type_info_type_of($c: AptosDataCache, tags: TypeTag[]): ITypeInfo {
   if (tags.length !== 1) {
     throw new Error(`Expect 1 typetag, but received: ${tags.length}`);
   }

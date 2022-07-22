@@ -31,7 +31,7 @@ pub fn generate_package_json(package_name: String) -> (String, String) {
   "dependencies": {{
     "aptos": "^1.2.0",
     "big-integer": "^1.6.51",
-    "@manahippo/move-to-ts": "^0.0.45"
+    "@manahippo/move-to-ts": "^0.0.49"
   }}
 }}
 "###,
@@ -103,7 +103,7 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         .iter()
         .map(|mi| {
             format!(
-                "export * as {} from './{}';\n",
+                "export * as {}$_ from './{}';\n",
                 mi.value.module, mi.value.module
             )
         })
@@ -114,7 +114,7 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         .iter()
         .map(|mi| {
             format!(
-                "import * as {} from './{}';\n",
+                "import * as {}$_ from './{}';\n",
                 mi.value.module, mi.value.module
             )
         })
@@ -123,7 +123,7 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
 
     let loads = modules
         .iter()
-        .map(|mi| format!("  {}.loadParsers(repo);", mi.value.module))
+        .map(|mi| format!("  {}$_.loadParsers(repo);", mi.value.module))
         .join("\n");
 
     let content = format!(
