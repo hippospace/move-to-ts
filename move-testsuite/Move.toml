@@ -1,13 +1,10 @@
 [package]
 name = "MoveToTsTestsuite"
-version = "0.0.0"
+version = "0.0.1"
 
 [dependencies]
-AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "45140fcf79c2afd3ce8c86bb9952e90632533cbb" }
-MoveNursery = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/move-stdlib/nursery/", rev = "45140fcf79c2afd3ce8c86bb9952e90632533cbb" }
-TokenRegistry = { git = "https://github.com/hippospace/aptos-registry.git", subdir = "move", rev = "548fc31d91edac02ccd772b0d6ce22c637ecc7e1" }
-HippoSwap = { git = "https://github.com/hippospace/hippo-swap.git", rev = "5d24c465aeae1dec7f0a3e7cab145d5e57b53755" }
-Econia = { git = "https://github.com/Manahip/econia.git", subdir = "src/move/econia", rev = "5f506679330e117b3f7fc1fa18638dda91321d3d" }
+Econia = { git = "https://github.com/econia-labs/econia.git", subdir = "src/move/econia", rev = "711cb00e05b13ca03498b7f413ac21e65a8cc027" }
+hippo-swap = { git = "https://github.com/hippospace/hippo-swap.git", rev = "545bd487849c769701982daf381ea12c0b6132ac" }
 
 [addresses]
 MoveToTsTestsuite = "0x12345"

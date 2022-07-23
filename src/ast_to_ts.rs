@@ -2,11 +2,11 @@ use crate::ast_exp::*;
 use crate::ast_tests::check_test;
 use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
-use crate::utils::{get_table_helper_decl, rename, get_iterable_table_helper_decl};
+use crate::utils::{get_iterable_table_helper_decl, get_table_helper_decl, rename};
 use itertools::Itertools;
 use move_compiler::{
     diagnostics::{Diagnostic, Diagnostics},
-    expansion::ast::ModuleIdent,
+    expansion::ast::{Attribute_, Attributes, ModuleIdent},
     hlir::ast::*,
     naming::ast::{BuiltinTypeName_, StructTypeParameter},
     parser::ast::{Ability_, ConstantName, FunctionName, StructName, Var},
@@ -72,10 +72,9 @@ pub fn handle_special_module(
     _c: &mut Context,
 ) -> WriteResult {
     if format_address_hex(mi.value.address) == "0x1" {
-        if mi.value.module.to_string() == "Table" {
+        if mi.value.module.to_string() == "table" {
             w.writeln(get_table_helper_decl());
-        }
-        else if mi.value.module.to_string() == "IterableTable" {
+        } else if mi.value.module.to_string() == "iterable_table" {
             w.writeln(get_iterable_table_helper_decl());
         }
     }
@@ -265,6 +264,22 @@ pub fn handle_special_structs(
     Ok(())
 }
 
+pub fn handle_struct_directives(
+    _: &StructName,
+    sdef: &StructDefinition,
+    _w: &mut TsgenWriter,
+    _c: &mut Context,
+) -> WriteResult {
+    let attrs = &sdef.attributes;
+    for (name, attr) in attrs.key_cloned_iter() {
+        match name.to_string().as_str() {
+            "cmd" => return derr!((attr.loc, "the 'cmd' attribute cannot be used on structs")),
+            _ => (),
+        }
+    }
+    Ok(())
+}
+
 impl AstTsPrinter for (StructName, &StructDefinition) {
     const CTOR_NAME: &'static str = "StructDef";
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
@@ -283,6 +298,8 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
             // 3. ctor
             // 4. static parser
             // 5. resource loader
+            // 6. additional util funcs
+            // 7. attribute-directives
 
             // 0: type parameters
             w.write("static typeParameters: TypeParamDeclType[] = [");
@@ -354,6 +371,9 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
 
                     // 6. additional util funcs
                     handle_special_structs(&name, w, c)?;
+
+                    // 7. attribute directives
+                    handle_struct_directives(&name, sdef, w, c)?;
                 }
             };
             Ok(())
@@ -383,6 +403,66 @@ pub fn write_parameters(
     }
     w.decrease_indent();
 
+    Ok(())
+}
+
+pub fn handle_function_cmd_directive(
+    fname: &FunctionName,
+    f: &Function,
+    inner_attrs: Option<&Attributes>,
+    _w: &mut TsgenWriter,
+    c: &mut Context,
+) -> WriteResult {
+    let mut desc = None;
+    if let Some(params) = inner_attrs {
+        for (pname, pattr) in params.key_cloned_iter() {
+            match pname.to_string().as_str() {
+                "desc" => {
+                    if let Some(str_desc) = extract_attribute_value_string(pattr) {
+                        desc = Some(str_desc);
+                    } else {
+                        return derr!((
+                            pattr.loc,
+                            "desc needs to be assigned a byte string value (e.g. b\"description\")"
+                        ));
+                    }
+                }
+                _ => {
+                    return derr!((pname.loc, "Unrecognized parameter to cmd directive"));
+                }
+            }
+        }
+    }
+    c.add_cmd(&c.current_module.unwrap(), fname, f, desc);
+
+    Ok(())
+}
+
+pub fn handle_function_directives(
+    fname: &FunctionName,
+    f: &Function,
+    w: &mut TsgenWriter,
+    c: &mut Context,
+) -> WriteResult {
+    let attrs = &f.attributes;
+    for (name, attr) in attrs.key_cloned_iter() {
+        match name.to_string().as_str() {
+            "cmd" => match &attr.value {
+                Attribute_::Parameterized(_, inner_attrs) => {
+                    w.new_line();
+                    handle_function_cmd_directive(fname, f, Some(inner_attrs), w, c)?;
+                }
+                Attribute_::Name(_) => {
+                    w.new_line();
+                    handle_function_cmd_directive(fname, f, None, w, c)?;
+                }
+                Attribute_::Assigned(_, _) => {
+                    return derr!((attr.loc, "the 'cmd' attribute cannot be assigned"))
+                }
+            },
+            _ => (),
+        }
+    }
     Ok(())
 }
 
@@ -532,6 +612,8 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 Ok(())
             })?;
             w.new_line();
+
+            handle_function_directives(name, func, w, c)?;
         }
 
         c.current_function_signature = None;

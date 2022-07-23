@@ -6,7 +6,7 @@ use move_compiler::{
         codes::{Category, DiagnosticCode, Severity},
         Diagnostic,
     },
-    expansion::ast::{Address, Attribute, ModuleIdent},
+    expansion::ast::{Address, Attribute, AttributeValue_, Attribute_, ModuleIdent},
     hlir::ast::*,
     naming::ast::{BuiltinTypeName_, StructTypeParameter, TParam},
     parser::ast::FunctionName,
@@ -62,8 +62,12 @@ pub struct MoveToTsOptions {
     )]
     pub package_path: PathBuf,
     /// generate #[test] functions
-    #[clap(long = "test", short = 't')]
+    #[clap(long = "gen-test", short = 't')]
     pub test: bool,
+    #[clap(long = "gen-cli", short = 'c')]
+    pub cli: bool,
+    #[clap(long = "gen-ui", short = 'u')]
+    pub ui: bool,
     /// generate package.json
     #[clap(long = "package-json-name", short = 'n', default_value = "")]
     pub package_json_name: String,
@@ -72,6 +76,13 @@ pub struct MoveToTsOptions {
 use crate::utils::rename;
 pub(crate) use derr;
 use move_command_line_common::address::NumericalAddress;
+
+pub struct CmdParams {
+    pub mi: ModuleIdent,
+    pub fname: FunctionName,
+    pub func: Function,
+    pub desc: Option<String>,
+}
 
 pub struct Context {
     pub current_module: Option<ModuleIdent>,
@@ -93,6 +104,8 @@ pub struct Context {
         Attribute,
         Option<Attribute>,
     )>,
+    // cmd info
+    pub cmds: Vec<CmdParams>,
 }
 
 pub fn is_same_package(a1: Address, a2: Address) -> bool {
@@ -117,6 +130,7 @@ impl Context {
             visited_packages: BTreeMap::new(),
             config: config.clone(),
             tests: vec![],
+            cmds: vec![],
         }
     }
 
@@ -162,6 +176,21 @@ impl Context {
                 found.map(|(idx, _tp)| idx)
             }
         }
+    }
+
+    pub fn add_cmd(
+        &mut self,
+        mi: &ModuleIdent,
+        fname: &FunctionName,
+        func: &Function,
+        desc: Option<String>,
+    ) {
+        self.cmds.push(CmdParams {
+            mi: mi.clone(),
+            fname: fname.clone(),
+            func: func.clone(),
+            desc: desc,
+        });
     }
 }
 
@@ -378,5 +407,22 @@ pub fn type_to_typetag(ty: &Type, c: &mut Context) -> TermResult {
             SingleType_::Base(base_ty) => base_type_to_typetag(base_ty, c),
         },
         Type_::Multiple(_) => derr!((ty.loc, "Cannot construct typeTag for tuples")),
+    }
+}
+
+pub fn extract_attribute_value_string(attr: &Attribute) -> Option<String> {
+    use move_compiler::expansion::ast::Value_ as EV;
+    match &attr.value {
+        Attribute_::Assigned(_, v) => match &v.value {
+            AttributeValue_::Value(value) => match &value.value {
+                EV::Bytearray(bytes) => {
+                    let str_val = String::from_utf8(bytes.clone()).unwrap_or(String::from(""));
+                    Some(str_val)
+                }
+                _ => None,
+            },
+            _ => None,
+        },
+        _ => None,
     }
 }

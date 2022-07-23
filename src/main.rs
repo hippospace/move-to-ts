@@ -6,7 +6,7 @@ pub mod tsgen_writer;
 pub mod utils;
 
 use crate::shared::is_same_package;
-use crate::utils::{generate_index, generate_topmost_index};
+use crate::utils::{generate_cli, generate_index, generate_topmost_index};
 use clap::Parser;
 use move_command_line_common::address::NumericalAddress;
 use move_command_line_common::parser::NumberFormat;
@@ -39,8 +39,9 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     2. feed typing AST through move-tsgen to get files
     3. write files
     4. write jest .test.ts files if --test is given
-    5. write package.json and tsconfig.json if --generate-package is given
-    6. generate various index.ts for packages
+    5. write cli and ui if --gen-cli and --gen-tui is given
+    6. write package.json and tsconfig.json if --generate-package is given
+    7. generate various index.ts for packages
      */
     let root_package = &resolution_graph.package_table[&resolution_graph.root_package.package.name];
     let project_root = match &resolution_graph.build_options.install_dir {
@@ -146,9 +147,20 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     }
 
     // 5
+    if config.cli {
+        let (filename, content) = unwrap_or_report_diagnostics(&files, generate_cli(&ctx));
+        write_file(&build_root_path.join("src"), (filename, content));
+    }
+
+    if config.ui {
+        // not yet
+    }
+
+    // 6
     if !config.package_json_name.is_empty() {
         // package.json
-        let (filename, content) = utils::generate_package_json(config.package_json_name.clone());
+        let (filename, content) =
+            utils::generate_package_json(config.package_json_name.clone(), config.cli, config.ui);
         write_file(&build_root_path, (filename, content));
 
         // tsconfig.json
@@ -162,7 +174,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         }
     }
 
-    // 6
+    // 7
     for (package_name, address) in ctx.visited_packages.iter() {
         let modules = ctx
             .visited_modules

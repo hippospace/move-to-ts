@@ -1,15 +1,33 @@
+use crate::ast_to_ts::is_type_signer;
+use crate::shared::*;
 use itertools::Itertools;
+use move_compiler::diagnostics::{Diagnostic, Diagnostics};
 use move_compiler::expansion::ast::ModuleIdent;
+use move_compiler::hlir::ast::{BaseType, BaseType_, SingleType, SingleType_, TypeName_};
+use move_compiler::naming::ast::BuiltinTypeName_;
+use move_compiler::parser::ast::Var;
+use move_ir_types::location::Loc;
+use std::collections::BTreeSet;
 use std::fmt;
 
-pub fn generate_package_json(package_name: String) -> (String, String) {
+pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (String, String) {
+    let ui_dependencies = r###"
+    "react": "^18.1.0",
+"###;
+    let cli_dependencies = r###"
+    "commander": "^9.3.0",
+    "yaml": "^2.1.1",
+"###;
+    let cli_script = r###"
+    "cli": "node dist/cli.js",
+"###;
     let content = format!(
         r###"
 {{
   "name": "{}",
   "version": "0.0.1",
   "scripts": {{
-    "build": "rm -rf dist; tsc -p tsconfig.json",
+    "build": "rm -rf dist; tsc -p tsconfig.json",{}
     "test": "jest"
   }},
   "main": "dist/index.js",
@@ -25,17 +43,20 @@ pub fn generate_package_json(package_name: String) -> (String, String) {
     "eslint-plugin-prettier": "^4.0.0",
     "jest": "^27.5.1",
     "prettier": "^2.6.2",
-    "ts-jest": "^27.1.4",
+    "ts-jest": "^27.1.4",{}
     "typescript": "^4.6.4"
   }},
   "dependencies": {{
     "aptos": "^1.2.0",
-    "big-integer": "^1.6.51",
+    "big-integer": "^1.6.51",{}
     "@manahippo/move-to-ts": "^0.0.49"
   }}
 }}
 "###,
-        package_name
+        package_name,
+        if cli { cli_script } else { "" },
+        if ui { ui_dependencies } else { "" },
+        if cli { cli_dependencies } else { "" },
     );
     ("package.json".to_string(), content)
 }
@@ -195,7 +216,7 @@ export class TypedTable<K, V> {
     if (!(tag instanceof StructTag)) {
       throw new Error();
     }
-    if (tag.getParamlessName() !== '0x1::Table::Table') {
+    if (tag.getParamlessName() !== '0x1::table::Table') {
       throw new Error();
     }
     if (tag.typeParams.length !== 2) {
@@ -237,7 +258,7 @@ export class TypedIterableTable<K, V> {
     if (!(tag instanceof StructTag)) {
       throw new Error();
     }
-    if (tag.getParamlessName() !== '0x1::IterableTable::IterableTable') {
+    if (tag.getParamlessName() !== '0x1::iterable_table::IterableTable') {
       throw new Error();
     }
     if (tag.typeParams.length !== 2) {
@@ -273,8 +294,8 @@ export class TypedIterableTable<K, V> {
     const result: [K, V][] = [];
     const cache = new $.DummyCache();
     let next = this.table.head;
-    while(next && Std.Option.is_some$(next, cache, [this.keyTag])) {
-      const key = Std.Option.borrow$(next, cache, [this.keyTag]) as K;
+    while(next && std$_.option$_.is_some$(next, cache, [this.keyTag])) {
+      const key = std$_.option$_.borrow$(next, cache, [this.keyTag]) as K;
       const iterVal = await this.loadEntry(client, repo, key);
       const value = iterVal.val as V;
       result.push([key, value]);
@@ -285,4 +306,265 @@ export class TypedIterableTable<K, V> {
 }
 "###
         .to_string()
+}
+
+pub fn vector_type_ts_parser(name: &Var, element_type: &BaseType) -> TermResult {
+    match &element_type.value {
+        BaseType_::Param(tparam) => {
+            derr!((
+                element_type.loc,
+                "Generic-typed arguments not supported at entry function invocation (yet)"
+            ))
+        }
+        BaseType_::Apply(_, typename, _) => match &typename.value {
+            TypeName_::ModuleType(_, _) => {
+                derr!((
+                    element_type.loc,
+                    "struct types cannot be used at entry function invocation"
+                ))
+            }
+            TypeName_::Builtin(builtin) => match &builtin.value {
+                BuiltinTypeName_::U8 => Ok(format!("strToU8({})", name)),
+                _ => derr!((
+                    element_type.loc,
+                    "byte-strings is the only vector type supported at entry function invocation"
+                )),
+            },
+        },
+        _ => unreachable!(),
+    }
+}
+
+pub fn stype_to_ts_parser(name: &Var, stype: &SingleType) -> TermResult {
+    let base = match &stype.value {
+        SingleType_::Base(b) => b,
+        SingleType_::Ref(_, b) => b,
+    };
+    match &base.value {
+        BaseType_::Param(tparam) => {
+            derr!((
+                name.0.loc,
+                "Generic-typed arguments not supported at entry function invocation (yet)"
+            ))
+        }
+        BaseType_::Apply(_, typename, targs) => match &typename.value {
+            TypeName_::ModuleType(_, _) => {
+                derr!((
+                    stype.loc,
+                    "struct types cannot be used at entry function invocation"
+                ))
+            }
+            TypeName_::Builtin(builtin) => match &builtin.value {
+                BuiltinTypeName_::U8 => Ok(format!("u8({})", name)),
+                BuiltinTypeName_::U64 => Ok(format!("u64({})", name)),
+                BuiltinTypeName_::U128 => Ok(format!("u128({})", name)),
+                BuiltinTypeName_::Bool => Ok(format!("{}", name)),
+                BuiltinTypeName_::Address => Ok(format!("new HexString({})", name)),
+                BuiltinTypeName_::Signer => unreachable!(),
+                BuiltinTypeName_::Vector => {
+                    assert!(targs.len() == 1);
+                    vector_type_ts_parser(name, &targs[0])
+                }
+            },
+        },
+        _ => unreachable!(),
+    }
+}
+
+pub fn format_qualified_fname_and_import(
+    mident: &ModuleIdent,
+    name: &impl fmt::Display,
+) -> (String, String) {
+    // name exists in a different package, use fully qualified name
+    let package_name = format_address(mident.value.address);
+    (
+        format!(
+            "{}$_.{}$_.buildPayload_{}",
+            package_name, mident.value.module, name
+        ),
+        package_name,
+    )
+}
+
+pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic> {
+    let type_param_names = cmd
+        .func
+        .signature
+        .type_parameters
+        .iter()
+        .map(|tparam| tparam.user_specified_name.to_string())
+        .collect::<Vec<_>>();
+    let param_no_signers = cmd
+        .func
+        .signature
+        .parameters
+        .iter()
+        .filter(|(_, stype)| !is_type_signer(stype));
+    let param_names_no_signer = param_no_signers
+        .clone()
+        .map(|(name, _)| name.to_string())
+        .collect::<Vec<_>>();
+    let mut all_params = vec![];
+    all_params.extend(type_param_names.clone());
+    all_params.extend(param_names_no_signer.clone());
+    let param_decl = all_params
+        .iter()
+        .map(|pname| format!("{}: string", pname))
+        .join(", ");
+    let mut param_parsers = vec![];
+    let mut arguments = vec![];
+    for tparam in cmd.func.signature.type_parameters.iter() {
+        let tname = tparam.user_specified_name;
+        param_parsers.push(format!(
+            "  const {}_ = parseTypeTagOrThrow({});",
+            tname, tname
+        ));
+        arguments.push(format!("  .argument('<TYPE_{}>')", tname));
+    }
+    for (pname, ptype) in param_no_signers {
+        param_parsers.push(format!(
+            "  const {}_ = {};",
+            pname,
+            stype_to_ts_parser(pname, ptype)?
+        ));
+        arguments.push(format!("  .argument('<{}>')", pname));
+    }
+    let (payload_builder, package_name) = format_qualified_fname_and_import(&cmd.mi, &cmd.fname);
+    let payload = format!(
+        "{}({}{})",
+        payload_builder,
+        param_names_no_signer
+            .clone()
+            .iter()
+            .map(|pname| format!("{}_", pname))
+            .join(", "),
+        if cmd.func.signature.type_parameters.len() == 0 {
+            "".to_string()
+        } else {
+            format!(
+                "{}[{}]",
+                if param_names_no_signer.len() > 0 {
+                    ", "
+                } else {
+                    ""
+                },
+                type_param_names
+                    .iter()
+                    .map(|name| format!("{}_", name))
+                    .join(", ")
+            )
+        }
+    );
+    let action_body = format!(
+        r###"
+const action_{} = async ({}) => {{
+  const {{client, account}} = readConfig(program);
+{}
+  const payload = {};
+  await sendPayloadTx(client, account, payload);
+}}
+
+program
+  .command("{}")
+{}
+  .action(action_{});
+"###,
+        cmd.fname,
+        param_decl,
+        param_parsers.join("\n"),
+        payload,
+        cmd.fname,
+        arguments.join("\n"),
+        cmd.fname,
+    );
+
+    Ok((action_body, package_name))
+}
+
+pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
+    let mut commands = vec![];
+    let mut imported_packages = BTreeSet::new();
+    for cmd_param in ctx.cmds.iter() {
+        let command_res = generate_command(cmd_param);
+        if let Ok((cmd_str, package_name)) = command_res {
+            commands.push(cmd_str);
+            imported_packages.insert(package_name);
+        } else {
+            let diag = command_res.err().unwrap();
+            let mut diags = Diagnostics::new();
+            diags.add(diag);
+            return Err(diags);
+        }
+    }
+    let package_imports = imported_packages
+        .iter()
+        .map(|name| format!("import * as {}$_ from './{}';", name, name))
+        .join("\n");
+    let filename = "cli.ts".to_string();
+    let content = format!(
+        r###"
+import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, strToU8, u8str, DummyCache }} from "@manahippo/move-to-ts";
+import {{ AptosAccount, AptosClient, HexString, Types }} from "aptos";
+import {{ Command }} from "commander";
+import {{ getProjectRepo }} from "./";
+import * as fs from "fs";
+import * as yaml from "yaml";
+{}
+
+export const readConfig = (program: Command) => {{
+  const {{config, profile}} = program.opts();
+  const ymlContent = fs.readFileSync(config, {{encoding: "utf-8"}});
+  const result = yaml.parse(ymlContent);
+  //console.log(result);
+  if (!result.profiles) {{
+    throw new Error("Expect a profiles to be present in yaml config");
+  }}
+  if (!result.profiles[profile]) {{
+    throw new Error(`Expect a ${{profile}} profile to be present in yaml config`);
+  }}
+  const url = result.profiles[profile].rest_url;
+  const privateKeyStr = result.profiles[profile].private_key;
+  if (!url) {{
+    throw new Error(`Expect rest_url to be present in ${{profile}} profile`);
+  }}
+  if (!privateKeyStr) {{
+    throw new Error(`Expect private_key to be present in ${{profile}} profile`);
+  }}
+  const privateKey = new HexString(privateKeyStr);
+  const client = new AptosClient(result.profiles[profile].rest_url);
+  const account = new AptosAccount(privateKey.toUint8Array());
+  console.log(`Using address ${{account.address().hex()}}`);
+  return {{client, account}};
+}}
+
+export async function sendPayloadTx(
+  client: AptosClient,
+  account: AptosAccount,
+  payload: Types.TransactionPayload,
+  max_gas=1000
+){{
+  const txnRequest = await client.generateTransaction(account.address(), payload, {{max_gas_amount: `${{max_gas}}`}});
+  const signedTxn = await client.signTransaction(account, txnRequest);
+  const txnResult = await client.submitTransaction(signedTxn);
+  await client.waitForTransaction(txnResult.hash);
+  const txDetails = (await client.getTransaction(txnResult.hash)) as Types.UserTransaction;
+  console.log(txDetails);
+}}
+
+const program = new Command();
+
+program
+  .name('move-ts-cli')
+  .description('Move TS CLI generated by move-to-ts')
+  .requiredOption('-c, --config <path>', 'path to your aptos config.yml (generated with "aptos init")')
+  .option('-p, --profile <PROFILE>', 'aptos config profile to use', 'default')
+
+{}
+
+program.parse();
+"###,
+        package_imports,
+        commands.join("\n"),
+    );
+    Ok((filename, content))
 }
