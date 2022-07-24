@@ -9,7 +9,8 @@ use move_compiler::{
     expansion::ast::{Address, Attribute, AttributeValue_, Attribute_, ModuleIdent},
     hlir::ast::*,
     naming::ast::{BuiltinTypeName_, StructTypeParameter, TParam},
-    parser::ast::FunctionName,
+    parser::ast::{FunctionName, StructName},
+    shared::Name,
 };
 use move_ir_types::location::Loc;
 use std::collections::{BTreeMap, BTreeSet};
@@ -106,6 +107,10 @@ pub struct Context {
     )>,
     // cmd info
     pub cmds: Vec<CmdParams>,
+    // module-specific show directives
+    pub module_shows: Vec<(StructName, StructDefinition, Name)>,
+    // all shows collected
+    pub all_shows: Vec<(ModuleIdent, StructName, StructDefinition, Name)>,
 }
 
 pub fn is_same_package(a1: Address, a2: Address) -> bool {
@@ -117,6 +122,10 @@ pub fn is_same_package(a1: Address, a2: Address) -> bool {
         },
         Address::NamedUnassigned(_) => a1 == a2,
     }
+}
+
+pub fn is_same_module(mi1: &ModuleIdent, mi2: &ModuleIdent) -> bool {
+    mi1.value == mi2.value
 }
 
 impl Context {
@@ -131,6 +140,8 @@ impl Context {
             config: config.clone(),
             tests: vec![],
             cmds: vec![],
+            module_shows: vec![],
+            all_shows: vec![],
         }
     }
 
@@ -143,6 +154,7 @@ impl Context {
         self.visited_modules.insert(mname);
         self.visited_packages
             .insert(format_address(mname.value.address), mname.value.address);
+        self.module_shows.clear();
     }
 
     pub fn is_current_package(&self, other: &ModuleIdent) -> bool {
@@ -191,6 +203,11 @@ impl Context {
             func: func.clone(),
             desc: desc,
         });
+    }
+
+    pub fn add_show(&mut self, mi: &ModuleIdent, sname: &StructName, sdef: &StructDefinition, fname: &Name) {
+        self.module_shows.push((sname.clone(), sdef.clone(), fname.clone()));
+        self.all_shows.push((mi.clone(), sname.clone(), sdef.clone(), fname.clone()));
     }
 }
 

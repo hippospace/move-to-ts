@@ -141,6 +141,48 @@ export function copy<T>(val: T): T {
   }
 }
 
+function printerReplacer(key: string, val: any) {
+  if (key === 'typeTag') {
+    return undefined;
+  }
+  if (val instanceof HexString) {
+    return val.toShortString();
+  }
+  else if (typeof val === 'boolean') {
+    return val;
+  }
+  else if (val instanceof UnsignedInt) {
+    if (val instanceof U8) {
+      return val.toJsNumber();
+    }
+    else {
+      return val.value.toString();
+    }
+  }
+  else if (val instanceof Array) {
+    // optimize for U8[]?
+    return val;
+  }
+  else if (val.typeTag instanceof StructTag) {
+    // check for String
+    const tag = val.typeTag as StructTag;
+    if (tag.getFullname() === '0x1::string::String') {
+      const bytes = val.bytes as U8[];
+      return u8str(bytes);
+    }
+    else {
+      return val;
+    }
+  }
+  else {
+    throw new Error(`Unreachable: ${val}`);
+  }
+}
+
+export function print<T>(val: T) {
+  console.log(JSON.stringify(val, printerReplacer, 2));
+}
+
 export function set(lhs: any, rhs: any) {
   if (lhs instanceof HexString) {
     if (!(rhs instanceof HexString)) {

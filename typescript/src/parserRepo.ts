@@ -36,8 +36,8 @@ export function parseStructProto(data: any, typeTag: TypeTag, repo: AptosParserR
     throw new Error(`${struct.structName} expects a struct name of "${struct.structName}" but received: ${typeTag.name}`);
   }
   if(typeof data !== "object") {
-    // could be 0x1::ASCII::String
-    if (typeTag.address.toShortString() === '0x1' && typeTag.module === 'ASCII' && typeTag.name === 'String') {
+    // could be 0x1::string::String
+    if (typeTag.address.toShortString() === '0x1' && typeTag.module === 'string' && typeTag.name === 'String') {
       // return the proto object directly
       const bytes = strToU8(data);
       const proto = { bytes };

@@ -2,13 +2,15 @@ use crate::ast_to_ts::is_type_signer;
 use crate::shared::*;
 use itertools::Itertools;
 use move_compiler::diagnostics::{Diagnostic, Diagnostics};
-use move_compiler::expansion::ast::ModuleIdent;
-use move_compiler::hlir::ast::{BaseType, BaseType_, SingleType, SingleType_, TypeName_};
+use move_compiler::expansion::ast::{ModuleIdent};
+use move_compiler::hlir::ast::{BaseType, BaseType_, SingleType, SingleType_, StructDefinition,
+                               TypeName_};
 use move_compiler::naming::ast::BuiltinTypeName_;
-use move_compiler::parser::ast::Var;
+use move_compiler::parser::ast::{Var, StructName, Ability_};
 use move_ir_types::location::Loc;
 use std::collections::BTreeSet;
 use std::fmt;
+use move_compiler::shared::Name;
 
 pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (String, String) {
     let ui_dependencies = r###"
@@ -49,7 +51,7 @@ pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (Stri
   "dependencies": {{
     "aptos": "^1.2.0",
     "big-integer": "^1.6.51",{}
-    "@manahippo/move-to-ts": "^0.0.49"
+    "@manahippo/move-to-ts": "^0.0.51"
   }}
 }}
 "###,
@@ -481,8 +483,79 @@ program
     Ok((action_body, package_name))
 }
 
+pub fn format_qualified_sname_and_import(
+    mident: &ModuleIdent,
+    name: &StructName,
+) -> (String, String) {
+    // name exists in a different package, use fully qualified name
+    let package_name = format_address(mident.value.address);
+    (
+        format!(
+            "{}$_.{}$_.{}",
+            package_name, mident.value.module, rename(name)
+        ),
+        package_name,
+    )
+}
+
+pub fn generate_printer(
+    mi: &ModuleIdent,
+    sname: &StructName,
+    sdef: &StructDefinition,
+    fname: &Name,
+) -> (String, String) {
+    let type_param_decls = sdef
+        .type_parameters
+        .iter()
+        .map(|tparam| format!("{}: string", tparam.param.user_specified_name))
+        .join(", ");
+
+    let (struct_qualified_name, package_name) = format_qualified_sname_and_import(mi, sname);
+
+    let type_tags_inner = sdef
+        .type_parameters
+        .iter()
+        .map(|tp| format!("parseTypeTagOrThrow({})", tp.param.user_specified_name))
+        .join(", ");
+
+    let arguments = sdef
+        .type_parameters
+        .iter()
+        .map(|tp| (format!("  .argument('<TYPE_{}>')", tp.param.user_specified_name)))
+        .join("\n");
+
+    let body = format!(
+        r###"
+const {} = async (owner: string, {}) => {{
+  const {{client}} = readConfig(program);
+  const repo = getProjectRepo();
+  const owner_ = new HexString(owner);
+  const value = await {}.load(repo, client, owner_, [{}])
+  print(value.{}());
+}}
+
+program
+  .command("{}")
+  .argument("<ADDRESS:owner>")
+{}
+  .action({})
+"###,
+        fname,
+        type_param_decls,
+        struct_qualified_name,
+        type_tags_inner,
+        fname,
+        fname,
+        arguments,
+        fname,
+    );
+
+    (body, package_name)
+}
+
 pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
     let mut commands = vec![];
+    let mut printers = vec![];
     let mut imported_packages = BTreeSet::new();
     for cmd_param in ctx.cmds.iter() {
         let command_res = generate_command(cmd_param);
@@ -496,6 +569,15 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
             return Err(diags);
         }
     }
+    for show in ctx.all_shows.iter() {
+        let (mi, sname, sdef, fname) = show;
+        // if sdef is a resource type, generate printer for it
+        if sdef.abilities.has_ability_(Ability_::Key) {
+            let (printer_body, package_name) = generate_printer(mi, sname, sdef, fname);
+            printers.push(printer_body);
+            imported_packages.insert(package_name);
+        }
+    }
     let package_imports = imported_packages
         .iter()
         .map(|name| format!("import * as {}$_ from './{}';", name, name))
@@ -503,7 +585,7 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
     let filename = "cli.ts".to_string();
     let content = format!(
         r###"
-import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, strToU8, u8str, DummyCache }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, print, strToU8, u8str, DummyCache }} from "@manahippo/move-to-ts";
 import {{ AptosAccount, AptosClient, HexString, Types }} from "aptos";
 import {{ Command }} from "commander";
 import {{ getProjectRepo }} from "./";
@@ -561,10 +643,13 @@ program
 
 {}
 
+{}
+
 program.parse();
 "###,
         package_imports,
         commands.join("\n"),
+        printers.join("\n"),
     );
     Ok((filename, content))
 }
