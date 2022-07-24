@@ -2,15 +2,16 @@ use crate::ast_to_ts::is_type_signer;
 use crate::shared::*;
 use itertools::Itertools;
 use move_compiler::diagnostics::{Diagnostic, Diagnostics};
-use move_compiler::expansion::ast::{ModuleIdent};
-use move_compiler::hlir::ast::{BaseType, BaseType_, SingleType, SingleType_, StructDefinition,
-                               TypeName_};
+use move_compiler::expansion::ast::ModuleIdent;
+use move_compiler::hlir::ast::{
+    BaseType, BaseType_, SingleType, SingleType_, StructDefinition, TypeName_,
+};
 use move_compiler::naming::ast::BuiltinTypeName_;
-use move_compiler::parser::ast::{Var, StructName, Ability_};
+use move_compiler::parser::ast::{Ability_, StructName, Var};
+use move_compiler::shared::Name;
 use move_ir_types::location::Loc;
 use std::collections::BTreeSet;
 use std::fmt;
-use move_compiler::shared::Name;
 
 pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (String, String) {
     let ui_dependencies = r###"
@@ -51,7 +52,7 @@ pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (Stri
   "dependencies": {{
     "aptos": "^1.2.0",
     "big-integer": "^1.6.51",{}
-    "@manahippo/move-to-ts": "^0.0.51"
+    "@manahippo/move-to-ts": "^0.0.55"
   }}
 }}
 "###,
@@ -457,6 +458,8 @@ pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic>
             )
         }
     );
+    let command_name = cmd.fname.to_string().replace("_", "-");
+    let description = cmd.desc.clone().unwrap_or_default();
     let action_body = format!(
         r###"
 const action_{} = async ({}) => {{
@@ -468,6 +471,7 @@ const action_{} = async ({}) => {{
 
 program
   .command("{}")
+  .description("{}")
 {}
   .action(action_{});
 "###,
@@ -475,7 +479,8 @@ program
         param_decl,
         param_parsers.join("\n"),
         payload,
-        cmd.fname,
+        command_name,
+        description,
         arguments.join("\n"),
         cmd.fname,
     );
@@ -492,7 +497,9 @@ pub fn format_qualified_sname_and_import(
     (
         format!(
             "{}$_.{}$_.{}",
-            package_name, mident.value.module, rename(name)
+            package_name,
+            mident.value.module,
+            rename(name)
         ),
         package_name,
     )
@@ -524,6 +531,8 @@ pub fn generate_printer(
         .map(|tp| (format!("  .argument('<TYPE_{}>')", tp.param.user_specified_name)))
         .join("\n");
 
+    let command_name = fname.to_string().replace("_", "-");
+
     let body = format!(
         r###"
 const {} = async (owner: string, {}) => {{
@@ -545,11 +554,78 @@ program
         struct_qualified_name,
         type_tags_inner,
         fname,
-        fname,
+        command_name,
         arguments,
         fname,
     );
 
+    (body, package_name)
+}
+
+pub fn generate_iter_table_printer(
+    mi: &ModuleIdent,
+    sname: &StructName,
+    sdef: &StructDefinition,
+    field_name: &Name,
+) -> (String, String) {
+    let action_name = format!("show_entries_{}_{}", sname, field_name);
+
+    let type_param_decls = sdef
+        .type_parameters
+        .iter()
+        .map(|tparam| format!("{}: string", tparam.param.user_specified_name))
+        .join(", ");
+
+    let (struct_qualified_name, package_name) = format_qualified_sname_and_import(mi, sname);
+
+    let type_tags_inner = sdef
+        .type_parameters
+        .iter()
+        .map(|tp| format!("parseTypeTagOrThrow({})", tp.param.user_specified_name))
+        .join(", ");
+
+    let arguments = sdef
+        .type_parameters
+        .iter()
+        .map(|tp| (format!("  .argument('<TYPE_{}>')", tp.param.user_specified_name)))
+        .join("\n");
+
+    let command_name = action_name.to_string().replace("_", "-");
+
+    let body = format!(
+        r###"
+const {} = async (owner: string{}) => {{
+  const {{client}} = readConfig(program);
+  const repo = getProjectRepo();
+  const owner_ = new HexString(owner);
+  const value = await {}.load(repo, client, owner_, [{}])
+  const entries = await value.getIterTableEntries_{}(client, repo);
+  for (const entry of entries) {{
+    console.log();
+    console.log(`Entry:`);
+    print(entry[0]);
+    print(entry[1]);
+  }}
+}}
+
+program
+  .command("{}")
+  .argument("<ADDRESS:owner>"){}
+  .action({})
+"###,
+        action_name,
+        if type_param_decls.len() > 0 {
+            format!(", {}", type_param_decls)
+        } else {
+            "".to_string()
+        },
+        struct_qualified_name,
+        type_tags_inner,
+        field_name,
+        command_name,
+        if arguments.len() > 0 {format!("\n{}", arguments)} else {"".to_ascii_lowercase()},
+        action_name,
+    );
     (body, package_name)
 }
 
@@ -577,6 +653,12 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
             printers.push(printer_body);
             imported_packages.insert(package_name);
         }
+    }
+    for show_iter_table in ctx.all_shows_iter_tables.iter() {
+        let (mi, sname, sdef, field_name) = show_iter_table;
+        let (printer_body, package_name) = generate_iter_table_printer(mi, sname, sdef, field_name);
+        printers.push(printer_body);
+        imported_packages.insert(package_name);
     }
     let package_imports = imported_packages
         .iter()

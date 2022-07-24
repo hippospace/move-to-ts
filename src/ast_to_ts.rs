@@ -42,8 +42,7 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
     v.write_ts(&mut writer, c)?;
     let mut lines = vec![
         "import * as $ from \"@manahippo/move-to-ts\";".to_string(),
-        "import {AptosDataCache, AptosParserRepo, DummyCache} from \"@manahippo/move-to-ts\";"
-            .to_string(),
+        "import {AptosDataCache, AptosParserRepo, DummyCache} from \"@manahippo/move-to-ts\";".to_string(),
         "import {U8, U64, U128} from \"@manahippo/move-to-ts\";".to_string(),
         "import {u8, u64, u128} from \"@manahippo/move-to-ts\";".to_string(),
         "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
@@ -344,11 +343,124 @@ pub fn handle_special_structs(
         return Ok(());
     }
     let mident = c.current_module.unwrap();
-    if format_address(mident.value.address) == "std" {
+    let package_name = format_address(mident.value.address);
+    if package_name == "std" {
         if mident.value.module.to_string() == "string" && name.to_string() == "String" {
             w.writeln("str(): string { return $.u8str(this.bytes); }");
         }
     }
+    else if package_name == "aptos_framework" {
+        if mident.value.module.to_string() == "iterable_table" && name.to_string() == "IterableTable" {
+            w.writeln("toTypedIterTable<K, V>(field: $.FieldDeclType) { return TypedIterableTable<K, V>.buildFromField(this, field); }");
+        }
+    }
+    Ok(())
+}
+
+pub fn handle_struct_show_iter_table_directive(
+    sname: &StructName,
+    sdef: &StructDefinition,
+    inner_attrs: &Attributes,
+    w: &mut TsgenWriter,
+    c: &mut Context,
+) -> WriteResult {
+    for (_, pattr) in inner_attrs.key_cloned_iter() {
+        match &pattr.value {
+            Attribute_::Name(field_name) => {
+                // validate this at end-of-module generation
+                c.add_show_iter_table(&c.current_module.unwrap(), sname, sdef, field_name);
+
+                // generate show method
+                w.new_line();
+
+                let fields = match &sdef.fields {
+                    StructFields::Defined(fields) => fields,
+                    StructFields::Native(_) => {
+                        return derr!((
+                            field_name.loc,
+                            "cannot show iterable tables from native struct"
+                        ));
+                    }
+                };
+
+                let field_opt = fields
+                    .into_iter()
+                    .find(|(f_name, _)| f_name.to_string() == field_name.to_string());
+
+                if field_opt.is_none() {
+                    return derr!((
+                        field_name.loc,
+                        format!("Field {} does not exist", field_name)
+                    ));
+                }
+                let (field_decl_name, table_base) = field_opt.unwrap();
+
+                let table_targs_opt = match &table_base.value {
+                    BaseType_::Apply(_, typename, targs) => match &typename.value {
+                        TypeName_::ModuleType(table_mi, table_sname) => {
+                            if format_address_hex(table_mi.value.address) != "0x1"
+                                || table_mi.value.module.to_string() != "iterable_table"
+                                || table_sname.to_string() != "IterableTable"
+                            {
+                                None
+                            } else {
+                                Some(targs)
+                            }
+                        }
+                        _ => None,
+                    },
+                    _ => None,
+                };
+
+                if table_targs_opt.is_none() {
+                    return derr!((
+                        field_name.loc,
+                        format!("Field {} is not an IterableTable", field_name)
+                    ));
+                }
+
+                let table_targs = table_targs_opt.unwrap();
+                if table_targs.len() != 2 {
+                    return derr!((
+                        field_decl_name.0.loc,
+                        "IterableTable should have 2 type arguments "
+                    ));
+                }
+                let key_ts_type = base_type_to_tstype(&table_targs[0], c)?;
+                let value_ts_type = base_type_to_tstype(&table_targs[1], c)?;
+
+                w.writeln(format!(
+                    "async getIterTableEntries_{}(client: AptosClient, repo: AptosParserRepo) {{",
+                    field_name
+                ));
+                w.writeln(format!("  const cache = new DummyCache();"));
+                w.writeln(format!(
+                    "  const tags = (this.typeTag as StructTag).typeParams;"
+                ));
+                w.writeln(format!(
+                    "  const iterTableField = {}.fields.filter(f=>f.name === '{}')[0]",
+                    sname, field_name
+                ));
+                w.writeln(format!(
+                    "  const typedIterTable = this.{}.toTypedIterTable<{},{}>(iterTableField);",
+                    field_name,
+                    key_ts_type,
+                    value_ts_type,
+                ));
+                w.writeln(format!(
+                    "  return await typedIterTable.fetchAll(client, repo);"
+                ));
+                w.writeln("}");
+            }
+            _ => {
+                return derr!((
+                    pattr.loc,
+                    "show_iter_table directive expects only a field name as argument"
+                ));
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -402,6 +514,15 @@ pub fn handle_struct_directives(
                 Attribute_::Parameterized(_, inner_attrs) => {
                     w.new_line();
                     handle_struct_show_directive(sname, sdef, inner_attrs, w, c)?;
+                }
+                _ => {
+                    return derr!((attr.loc, "the 'show' requires a list of function names as argument (e.g. $[show(show_x_as_y)]"))
+                }
+            }
+            "show_iter_table" => match &attr.value {
+                Attribute_::Parameterized(_, inner_attrs) => {
+                    w.new_line();
+                    handle_struct_show_iter_table_directive(sname, sdef, inner_attrs, w, c)?;
                 }
                 _ => {
                     return derr!((attr.loc, "the 'show' requires a list of function names as argument (e.g. $[show(show_x_as_y)]"))

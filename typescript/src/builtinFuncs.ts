@@ -151,6 +151,9 @@ function printerReplacer(key: string, val: any) {
   else if (typeof val === 'boolean') {
     return val;
   }
+  else if (typeof val === 'string') {
+    return val;
+  }
   else if (val instanceof UnsignedInt) {
     if (val instanceof U8) {
       return val.toJsNumber();
@@ -166,9 +169,22 @@ function printerReplacer(key: string, val: any) {
   else if (val.typeTag instanceof StructTag) {
     // check for String
     const tag = val.typeTag as StructTag;
-    if (tag.getFullname() === '0x1::string::String') {
+    const tagFullname = tag.getFullname();
+    if (tagFullname === '0x1::string::String') {
       const bytes = val.bytes as U8[];
       return u8str(bytes);
+    }
+    else if (tagFullname === '0x1::type_info::TypeInfo') {
+      const account_address = (val.account_address as HexString).toShortString();
+      const module_name = u8str(val.module_name as U8[]);
+      const struct_name = u8str(val.struct_name as U8[]);
+      const type = `${account_address}::${module_name}::${struct_name}`;
+      return {
+        type,
+        account_address,
+        module_name,
+        struct_name,
+      }
     }
     else {
       return val;

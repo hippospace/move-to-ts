@@ -111,6 +111,8 @@ pub struct Context {
     pub module_shows: Vec<(StructName, StructDefinition, Name)>,
     // all shows collected
     pub all_shows: Vec<(ModuleIdent, StructName, StructDefinition, Name)>,
+    // all show_iter_table directives collected
+    pub all_shows_iter_tables: Vec<(ModuleIdent, StructName, StructDefinition, Name)>,
 }
 
 pub fn is_same_package(a1: Address, a2: Address) -> bool {
@@ -142,6 +144,7 @@ impl Context {
             cmds: vec![],
             module_shows: vec![],
             all_shows: vec![],
+            all_shows_iter_tables: vec![],
         }
     }
 
@@ -205,9 +208,32 @@ impl Context {
         });
     }
 
-    pub fn add_show(&mut self, mi: &ModuleIdent, sname: &StructName, sdef: &StructDefinition, fname: &Name) {
-        self.module_shows.push((sname.clone(), sdef.clone(), fname.clone()));
-        self.all_shows.push((mi.clone(), sname.clone(), sdef.clone(), fname.clone()));
+    pub fn add_show(
+        &mut self,
+        mi: &ModuleIdent,
+        sname: &StructName,
+        sdef: &StructDefinition,
+        fname: &Name,
+    ) {
+        self.module_shows
+            .push((sname.clone(), sdef.clone(), fname.clone()));
+        self.all_shows
+            .push((mi.clone(), sname.clone(), sdef.clone(), fname.clone()));
+    }
+
+    pub fn add_show_iter_table(
+        &mut self,
+        mi: &ModuleIdent,
+        sname: &StructName,
+        sdef: &StructDefinition,
+        field_name: &Name,
+    ) {
+        self.all_shows_iter_tables.push((
+            mi.clone(),
+            sname.clone(),
+            sdef.clone(),
+            field_name.clone(),
+        ));
     }
 }
 
@@ -255,23 +281,6 @@ pub fn comma_term<T, F: Fn(T, &mut Context) -> TermResult>(
 ) -> TermResult {
     comma_term_opt(items, c, f, true)
 }
-
-/*
-pub fn semicolon_term<T, F: Fn(T, &mut Context) -> TermResult>(
-    items: impl std::iter::IntoIterator<Item = T>,
-    c: &mut Context,
-    f: F,
-) -> TermResult {
-    let mut parts = vec![];
-    for item in items.into_iter() {
-        let result = f(item, c)?;
-        if !result.is_empty() {
-            parts.push(result);
-        }
-    }
-    Ok(parts.join("; "))
-}
- */
 
 pub fn format_address(address: Address) -> String {
     // this one prefers Name if it exists
