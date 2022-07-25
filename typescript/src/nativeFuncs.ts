@@ -1,14 +1,14 @@
 import { HexString } from "aptos";
 import { AptosDataCache, IBox, ITable } from "./aptosDataCache";
 import { U128, U64, U8 } from "./builtinTypes";
-import { AtomicTypeTag, getTypeParamsString, StructTag, substituteTypeParams, TypeParamIdx, TypeTag, VectorTag } from "./typeTag";
+import { AtomicTypeTag, getTypeParamsString, parseTypeTagOrThrow, StructTag, substituteTypeParams, TypeParamIdx, TypeTag, VectorTag } from "./typeTag";
 import * as sha from "sha.js";
 import { SHA3 } from "sha3";
 import bigInt from "big-integer";
 import * as elliptic from "elliptic";
 import { BCS } from "aptos";
 import { FieldDeclType, StructInfoType, TypeParamDeclType } from "./parserRepo";
-import { u64 } from "./builtinFuncs";
+import { u64, u8str } from "./builtinFuncs";
 
 
 /*
@@ -390,13 +390,22 @@ class ActualTypeInfoClass {
     this.module_name = proto['module_name'] as U8[];
     this.struct_name = proto['struct_name'] as U8[];
   }
+
+  typeFullname(): string {
+    return `${this.account_address.toShortString()}::${u8str(this.module_name)}::${u8str(this.struct_name)}`;
+  }
+  toTypeTag() {
+    return parseTypeTagOrThrow(this.typeFullname());
+  }
+  moduleName() { return u8str(this.module_name); }
+  structName() { return u8str(this.struct_name); }
 }
 
 function stringToU8Array(val: string): U8[] {
   return Array.from(new TextEncoder().encode(val)).map(u => new U8(bigInt(u)));
 }
 
-export function aptos_framework_type_info_type_of($c: AptosDataCache, tags: TypeTag[]): ITypeInfo {
+export function aptos_framework_type_info_type_of($c: AptosDataCache, tags: TypeTag[]): ActualTypeInfoClass {
   if (tags.length !== 1) {
     throw new Error(`Expect 1 typetag, but received: ${tags.length}`);
   }
