@@ -42,7 +42,8 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
     v.write_ts(&mut writer, c)?;
     let mut lines = vec![
         "import * as $ from \"@manahippo/move-to-ts\";".to_string(),
-        "import {AptosDataCache, AptosParserRepo, DummyCache} from \"@manahippo/move-to-ts\";".to_string(),
+        "import {AptosDataCache, AptosParserRepo, DummyCache} from \"@manahippo/move-to-ts\";"
+            .to_string(),
         "import {U8, U64, U128} from \"@manahippo/move-to-ts\";".to_string(),
         "import {u8, u64, u128} from \"@manahippo/move-to-ts\";".to_string(),
         "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
@@ -222,6 +223,8 @@ impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
         // loadParsers
         write_load_parsers(name, module, w, c)?;
 
+        if c.config.ui {}
+
         // for things like Table, IterableTable
         handle_special_module(name, module, w, c)?;
 
@@ -348,10 +351,11 @@ pub fn handle_special_structs(
         if mident.value.module.to_string() == "string" && name.to_string() == "String" {
             w.writeln("str(): string { return $.u8str(this.bytes); }");
         }
-    }
-    else if package_name == "aptos_framework" {
-        if mident.value.module.to_string() == "iterable_table" && name.to_string() == "IterableTable" {
-            w.writeln("toTypedIterTable<K, V>(field: $.FieldDeclType) { return TypedIterableTable<K, V>.buildFromField(this, field); }");
+    } else if package_name == "aptos_std" {
+        if mident.value.module.to_string() == "iterable_table"
+            && name.to_string() == "IterableTable"
+        {
+            w.writeln("toTypedIterTable<K, V>(field: $.FieldDeclType) { return (TypedIterableTable<K, V>).buildFromField(this, field); }");
         }
         if mident.value.module.to_string() == "type_info" && name.to_string() == "TypeInfo" {
             w.writeln("typeFullname(): string {");
@@ -451,9 +455,7 @@ pub fn handle_struct_show_iter_table_directive(
                 ));
                 w.writeln(format!(
                     "  const typedIterTable = this.{}.toTypedIterTable<{},{}>(iterTableField);",
-                    field_name,
-                    key_ts_type,
-                    value_ts_type,
+                    field_name, key_ts_type, value_ts_type,
                 ));
                 w.writeln(format!(
                     "  return await typedIterTable.fetchAll(client, repo);"
@@ -522,6 +524,10 @@ pub fn handle_struct_directives(
                 Attribute_::Parameterized(_, inner_attrs) => {
                     w.new_line();
                     handle_struct_show_directive(sname, sdef, inner_attrs, w, c)?;
+                }
+                Attribute_::Name(_) => {
+                    w.new_line();
+
                 }
                 _ => {
                     return derr!((attr.loc, "the 'show' requires a list of function names as argument (e.g. $[show(show_x_as_y)]"))

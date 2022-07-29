@@ -1,12 +1,16 @@
 mod ast_exp;
 mod ast_tests;
 pub mod ast_to_ts;
+pub mod gen_cli;
+pub mod gen_ui;
 mod shared;
 pub mod tsgen_writer;
 pub mod utils;
 
+use crate::gen_cli::generate_cli;
+use crate::gen_ui::{gen_public_html, generate_ui};
 use crate::shared::is_same_package;
-use crate::utils::{generate_cli, generate_index, generate_topmost_index};
+use crate::utils::{generate_index, generate_topmost_index};
 use clap::Parser;
 use move_command_line_common::address::NumericalAddress;
 use move_command_line_common::parser::NumberFormat;
@@ -153,7 +157,19 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     }
 
     if config.ui {
-        // not yet
+        let files = unwrap_or_report_diagnostics(&files, generate_ui(&mut ctx));
+        for (filename, content) in files.iter() {
+            write_file(
+                &build_root_path.join("src"),
+                (filename.clone(), content.clone()),
+            );
+        }
+
+        let (filename, content) = gen_public_html();
+        write_file(
+            &build_root_path.join("public"),
+            (filename.clone(), content.clone()),
+        );
     }
 
     // 6
@@ -186,11 +202,14 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         write_file(&build_root_path.join("src"), (filename, content));
     }
 
-    let package_names = ctx.visited_packages.keys().collect::<Vec<_>>();
-    write_file(
-        &build_root_path.join("src"),
-        generate_topmost_index(&package_names),
-    )
+    // cannot generat topmost index.ts when generating a React playground
+    if !config.ui {
+        let package_names = ctx.visited_packages.keys().collect::<Vec<_>>();
+        write_file(
+            &build_root_path.join("src"),
+            generate_topmost_index(&package_names),
+        )
+    }
 }
 
 fn main() {

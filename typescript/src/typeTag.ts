@@ -86,7 +86,7 @@ export function getTypeParamsString(typeParams: TypeTag[]) {
   if (typeParams.length === 0) {
     return "";
   }
-  return `<${typeParams.map(getTypeTagFullname).join(',')}>`
+  return `<${typeParams.map(getTypeTagFullname).join(', ')}>`
 }
 
 function splitByDoubleColon(name: string) {

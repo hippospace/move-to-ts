@@ -1,14 +1,14 @@
 import { HexString } from "aptos";
 import { AptosDataCache, IBox, ITable } from "./aptosDataCache";
 import { U128, U64, U8 } from "./builtinTypes";
-import { AtomicTypeTag, getTypeParamsString, parseTypeTagOrThrow, StructTag, substituteTypeParams, TypeParamIdx, TypeTag, VectorTag } from "./typeTag";
+import { AtomicTypeTag, getTypeParamsString, getTypeTagFullname, parseTypeTagOrThrow, StructTag, substituteTypeParams, TypeParamIdx, TypeTag, VectorTag } from "./typeTag";
 import * as sha from "sha.js";
 import { SHA3 } from "sha3";
 import bigInt from "big-integer";
 import * as elliptic from "elliptic";
 import { BCS } from "aptos";
-import { FieldDeclType, StructInfoType, TypeParamDeclType } from "./parserRepo";
-import { u64, u8str } from "./builtinFuncs";
+import { AptosParserRepo, FieldDeclType, parseStructProto, StructInfoType, TypeParamDeclType } from "./parserRepo";
+import { strToU8, u64, u8str } from "./builtinFuncs";
 
 
 /*
@@ -117,7 +117,7 @@ export function std_debug_print_stack_trace($c: AptosDataCache) {
   // NOP
 }
 
-export function std_event_write_to_event_store(guid: U8[], count: U64, msg: any, $c: AptosDataCache, _tags: TypeTag[]) {
+export function aptos_std_event_write_to_event_store(guid: U8[], count: U64, msg: any, $c: AptosDataCache, _tags: TypeTag[]) {
   // FIXME: should probably allow some callback/prints??
   // NOP
 }
@@ -291,15 +291,168 @@ export function aptos_framework_account_create_signer(addr: HexString, $c: Aptos
   return addr;
 }
 
+
+class AddressAlias 
+{
+  static moduleAddress = new HexString("0x1");
+  static moduleName = "code";
+  static structName: string = "AddressAlias";
+  static typeParameters: TypeParamDeclType[] = [
+
+  ];
+  static fields: FieldDeclType[] = [
+  { name: "alias", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
+  { name: "addr", typeTag: AtomicTypeTag.Address }];
+
+  alias: ActualStringClass;
+  addr: HexString;
+
+  constructor(proto: any, public typeTag: TypeTag) {
+    this.alias = proto['alias'] as ActualStringClass;
+    this.addr = proto['addr'] as HexString;
+  }
+
+  static AddressAliasParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : AddressAlias {
+    const proto = parseStructProto(data, typeTag, repo, AddressAlias);
+    return new AddressAlias(proto, typeTag);
+  }
+}
+
+class ModuleMetadata 
+{
+  static moduleAddress = new HexString("0x1");
+  static moduleName = "code";
+  static structName: string = "ModuleMetadata";
+  static typeParameters: TypeParamDeclType[] = [
+
+  ];
+  static fields: FieldDeclType[] = [
+  { name: "name", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
+  { name: "source_map", typeTag: new VectorTag(AtomicTypeTag.U8) },
+  { name: "source", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) }];
+
+  name: ActualStringClass;
+  source_map: U8[];
+  source: ActualStringClass;
+
+  constructor(proto: any, public typeTag: TypeTag) {
+    this.name = proto['name'] as ActualStringClass;
+    this.source_map = proto['source_map'] as U8[];
+    this.source = proto['source'] as ActualStringClass;
+  }
+
+  static ModuleMetadataParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : ModuleMetadata {
+    const proto = parseStructProto(data, typeTag, repo, ModuleMetadata);
+    return new ModuleMetadata(proto, typeTag);
+  }
+
+}
+
+export class PackageDep 
+{
+  static moduleAddress = new HexString("0x1");
+  static moduleName = "code";
+  static structName: string = "PackageDep";
+  static typeParameters: TypeParamDeclType[] = [
+
+  ];
+  static fields: FieldDeclType[] = [
+  { name: "addr", typeTag: AtomicTypeTag.Address },
+  { name: "name", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) }];
+
+  addr: HexString;
+  name: ActualStringClass;
+
+  constructor(proto: any, public typeTag: TypeTag) {
+    this.addr = proto['addr'] as HexString;
+    this.name = proto['name'] as ActualStringClass;
+  }
+
+  static PackageDepParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : PackageDep {
+    const proto = parseStructProto(data, typeTag, repo, PackageDep);
+    return new PackageDep(proto, typeTag);
+  }
+
+}
+
+export class PackageMetadata 
+{
+  static moduleAddress = new HexString("0x1");
+  static moduleName = "code";
+  static structName: string = "PackageMetadata";
+  static typeParameters: TypeParamDeclType[] = [
+
+  ];
+  static fields: FieldDeclType[] = [
+  { name: "name", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
+  { name: "upgrade_policy", typeTag: new StructTag(new HexString("0x1"), "code", "UpgradePolicy", []) },
+  { name: "modules", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "ModuleMetadata", [])) },
+  { name: "address_aliases", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "AddressAlias", [])) },
+  { name: "deps", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "PackageDep", [])) }];
+
+  name: ActualStringClass;
+  upgrade_policy: UpgradePolicy;
+  modules: ModuleMetadata[];
+  address_aliases: AddressAlias[];
+  deps: PackageDep[];
+
+  constructor(proto: any, public typeTag: TypeTag) {
+    this.name = proto['name'] as ActualStringClass;
+    this.upgrade_policy = proto['upgrade_policy'] as UpgradePolicy;
+    this.modules = proto['modules'] as ModuleMetadata[];
+    this.address_aliases = proto['address_aliases'] as AddressAlias[];
+    this.deps = proto['deps'] as PackageDep[];
+  }
+
+  static PackageMetadataParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : PackageMetadata {
+    const proto = parseStructProto(data, typeTag, repo, PackageMetadata);
+    return new PackageMetadata(proto, typeTag);
+  }
+
+}
+
+export class UpgradePolicy 
+{
+  static moduleAddress = new HexString("0x1");
+  static moduleName = "code";
+  static structName: string = "UpgradePolicy";
+  static typeParameters: TypeParamDeclType[] = [
+
+  ];
+  static fields: FieldDeclType[] = [
+  { name: "policy", typeTag: AtomicTypeTag.U8 }];
+
+  policy: U8;
+
+  constructor(proto: any, public typeTag: TypeTag) {
+    this.policy = proto['policy'] as U8;
+  }
+
+  static UpgradePolicyParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : UpgradePolicy {
+    const proto = parseStructProto(data, typeTag, repo, UpgradePolicy);
+    return new UpgradePolicy(proto, typeTag);
+  }
+
+}
+
+
+export function aptos_framework_code_from_bytes(bytes: U8[], $c: AptosDataCache, tags: TypeTag[]): PackageMetadata {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_code_request_publish(owner: HexString, expected_modules: ActualStringClass[], bundle: U8[][], policy: U8, $c: AptosDataCache) {
+  throw new Error("Not Implemented");
+}
+
 function u8ArrayToKeyString(u8array: U8[]): string {
   return u8array.map(u => u.value.toJSNumber().toString(16)).join();
 }
 
-export function aptos_framework_signature_ed25519_validate_pubkey(pubkey: U8[], $c: AptosDataCache): boolean {
+export function aptos_std_signature_ed25519_validate_pubkey(pubkey: U8[], $c: AptosDataCache): boolean {
   throw new Error("Not implemented");
 }
 
-export function aptos_framework_signature_bls12381_validate_pubkey(pubkey: U8[], proof: U8[], $c: AptosDataCache): boolean {
+export function aptos_std_signature_bls12381_validate_pubkey(pubkey: U8[], proof: U8[], $c: AptosDataCache): boolean {
   throw new Error("Not implemented");
   /*
   const bs58 = base('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
@@ -313,47 +466,51 @@ export function aptos_framework_signature_bls12381_validate_pubkey(pubkey: U8[],
   */
 }
 
-export function aptos_framework_signature_ed25519_verify(signature: U8[], pubkey: U8[], message: U8[], $c: AptosDataCache): boolean {
+export function aptos_std_signature_bls12381_verify_signature(signature: U8[], public_key: U8[], mesage: U8[], $c: AptosDataCache): boolean {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_signature_ed25519_verify(signature: U8[], pubkey: U8[], message: U8[], $c: AptosDataCache): boolean {
   const ec = new elliptic.eddsa("ed25519");
   const keyString = u8ArrayToKeyString(pubkey);
   const key = ec.keyFromPublic(keyString);
   return key.verify(u8ArrayToKeyString(message), u8ArrayToKeyString(signature));
 }
 
-export function aptos_framework_signature_secp256k1_recover(message: U8[], recovery_id: U8, signature: U8[], $c: AptosDataCache): [U8[], boolean] {
+export function aptos_std_signature_secp256k1_recover(message: U8[], recovery_id: U8, signature: U8[], $c: AptosDataCache): [U8[], boolean] {
   throw new Error("Not implemented");
 }
 
 
-export function aptos_framework_table_new_table_handle($c: AptosDataCache, tags: TypeTag[]): U128 {
+export function aptos_std_table_new_table_handle($c: AptosDataCache, tags: TypeTag[]): U128 {
   return $c.table_new_handle();
 }
 
-export function aptos_framework_table_add_box(table: ITable, key: any, value: IBox, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_std_table_add_box(table: ITable, key: any, value: IBox, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_add_box(table, key, value);
 }
 
-export function aptos_framework_table_borrow_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_std_table_borrow_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_borrow_box(table, key);
 }
 
-export function aptos_framework_table_borrow_box_mut(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_std_table_borrow_box_mut(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_borrow_box_mut(table, key);
 }
 
-export function aptos_framework_table_contains_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_std_table_contains_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_contains_box(table, key);
 }
 
-export function aptos_framework_table_remove_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_std_table_remove_box(table: ITable, key: any, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_remove_box(table, key);
 }
 
-export function aptos_framework_table_destroy_empty_box(table: ITable, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_std_table_destroy_empty_box(table: ITable, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_destroy_empty_box(table);
 }
 
-export function aptos_framework_table_drop_unchecked_box(table: ITable, $c: AptosDataCache, tags: TypeTag[]) {
+export function aptos_std_table_drop_unchecked_box(table: ITable, $c: AptosDataCache, tags: TypeTag[]) {
   return $c.table_drop_unchecked_box(table);
 }
 
@@ -371,7 +528,7 @@ export interface ITypeInfo {
 
 class ActualTypeInfoClass {
   static moduleAddress = new HexString("0x1");
-  static moduleName = "TypeInfo";
+  static moduleName = "type_info";
   static structName: string = "TypeInfo";
   static typeParameters: TypeParamDeclType[] = [
 
@@ -400,12 +557,37 @@ class ActualTypeInfoClass {
   moduleName() { return u8str(this.module_name); }
   structName() { return u8str(this.struct_name); }
 }
+export class ActualStringClass
+{
+  static moduleAddress = new HexString("0x1");
+  static moduleName = "string";
+  static structName: string = "String";
+  static typeParameters: TypeParamDeclType[] = [
+
+  ];
+  static fields: FieldDeclType[] = [
+  { name: "bytes", typeTag: new VectorTag(AtomicTypeTag.U8) }];
+
+  bytes: U8[];
+
+  constructor(proto: any, public typeTag: TypeTag) {
+    this.bytes = proto['bytes'] as U8[];
+  }
+
+  static StringParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : ActualStringClass {
+    const proto = parseStructProto(data, typeTag, repo, ActualStringClass);
+    return new ActualStringClass(proto, typeTag);
+  }
+  str(): string { return u8str(this.bytes); }
+
+}
+
 
 function stringToU8Array(val: string): U8[] {
   return Array.from(new TextEncoder().encode(val)).map(u => new U8(bigInt(u)));
 }
 
-export function aptos_framework_type_info_type_of($c: AptosDataCache, tags: TypeTag[]): ActualTypeInfoClass {
+export function aptos_std_type_info_type_of($c: AptosDataCache, tags: TypeTag[]): ActualTypeInfoClass {
   if (tags.length !== 1) {
     throw new Error(`Expect 1 typetag, but received: ${tags.length}`);
   }
@@ -420,4 +602,16 @@ export function aptos_framework_type_info_type_of($c: AptosDataCache, tags: Type
     module_name: stringToU8Array(tag.module),
     struct_name: stringToU8Array(struct_name),
   }, newTag);
+}
+
+export function aptos_std_type_info_type_name($c: AptosDataCache, tags: TypeTag[]): ActualStringClass {
+  if (tags.length !== 1) {
+    throw new Error(`Expect 1 typetag, but received: ${tags.length}`);
+  }
+  const tag = tags[0];
+  const newTag = new StructTag(new HexString("0x1"), "string", "String", []);
+  const name = getTypeTagFullname(tag);
+  return new ActualStringClass({
+    bytes: strToU8(name),
+  }, newTag)
 }

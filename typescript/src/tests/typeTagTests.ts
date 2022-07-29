@@ -61,5 +61,5 @@ export function test() {
   genericTest('vector<address>');
   genericTest('vector<u128>');
   genericTest('vector<0x1::M::s>');
-  genericTest('vector<0x1::M::s,u8,0x2::MM::TT,0x2::MM::TT<u8,address,0x2::M:T>,address,vector<0x1::M::S<u8>>>');
+  genericTest('vector<0x1::M::s, u8,0x2::MM::TT, 0x2::MM::TT<u8,address,0x2::M:T>, address, vector<0x1::M::S<u8>>>');
 }
