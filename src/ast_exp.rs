@@ -96,15 +96,11 @@ impl AstTsPrinter for Exp {
                 (l, op, r).term(c)
             }
             E::Borrow(_, e, f) => {
-                /*
-                if *mutable && exp_ty_needs_refmut(exp_ty)  {
-                    Ok(format!("$.refmut({}.{})", e.term(c)?, rename(f)))
-                }
-                else {
+                if c.is_async() {
+                    Ok(format!("({}).{}", e.term(c)?, rename(f)))
+                } else {
                     Ok(format!("{}.{}", e.term(c)?, rename(f)))
                 }
-                 */
-                Ok(format!("{}.{}", e.term(c)?, rename(f)))
             }
             E::BorrowLocal(_, v) => {
                 Ok(format!("{}", rename(v)))
@@ -129,7 +125,15 @@ pub fn format_type_args_at_instantiation(type_args: &Vec<BaseType>, c: &mut Cont
         return Ok("".to_string());
     }
     let inner = comma_term(type_args, c, base_type_to_typetag)?;
-    Ok(format!("[{}] as TypeTag[]", inner))
+    Ok(format!(
+        "[{}]{}",
+        inner,
+        if !inner.is_empty() {
+            ""
+        } else {
+            " as TypeTag[]"
+        }
+    ))
 }
 
 impl AstTsPrinter for ModuleCall {
@@ -154,9 +158,16 @@ impl AstTsPrinter for ModuleCall {
         if arguments.ty.value == Type_::Unit {
             // no arguments
             if type_arguments.is_empty() {
-                Ok(format!("{}$($c)", func_name))
+                Ok(format!(
+                    "{}($c)",
+                    format_function_name(&func_name, c.is_async())
+                ))
             } else {
-                Ok(format!("{}$($c, {})", func_name, tparams_))
+                Ok(format!(
+                    "{}($c, {})",
+                    format_function_name(&func_name, c.is_async()),
+                    tparams_
+                ))
             }
         } else {
             // FIXME since args here is just Box<Exp>, we probably need to do some unwrapping here..
@@ -165,8 +176,8 @@ impl AstTsPrinter for ModuleCall {
                 _ => arguments.term(c)?,
             };
             Ok(format!(
-                "{}$({}, $c{}{})",
-                func_name,
+                "{}({}, $c{}{})",
+                format_function_name(&func_name, c.is_async()),
                 args,
                 if type_arguments.is_empty() { "" } else { ", " },
                 tparams_, // may be ""
@@ -186,32 +197,44 @@ impl AstTsPrinter for (&Box<BuiltinFunction>, &Box<Exp>) {
             args.term(c)?
         };
         use BuiltinFunction_ as F;
+        let await_modifier = if c.is_async() { "await " } else { "" };
+        let await_postfix = if c.is_async() { "_async" } else { "" };
         match &builtin_f.value {
             F::MoveTo(bt) => Ok(format!(
-                "$c.move_to({}, {})",
+                "{}$c.move_to{}({}, {})",
+                await_modifier,
+                await_postfix,
                 base_type_to_typetag(bt, c)?,
                 args_str
             )),
             F::MoveFrom(bt) => Ok(format!(
-                "$c.move_from<{}>({}, {})",
+                "{}$c.move_from{}<{}>({}, {})",
+                await_modifier,
+                await_postfix,
                 base_type_to_tstype(bt, c)?,
                 base_type_to_typetag(bt, c)?,
                 args_str
             )),
             F::BorrowGlobal(true, bt) => Ok(format!(
-                "$c.borrow_global_mut<{}>({}, {})",
+                "{}$c.borrow_global_mut{}<{}>({}, {})",
+                await_modifier,
+                await_postfix,
                 base_type_to_tstype(bt, c)?,
                 base_type_to_typetag(bt, c)?,
                 args_str
             )),
             F::BorrowGlobal(false, bt) => Ok(format!(
-                "$c.borrow_global<{}>({}, {})",
+                "{}$c.borrow_global{}<{}>({}, {})",
+                await_modifier,
+                await_postfix,
                 base_type_to_tstype(bt, c)?,
                 base_type_to_typetag(bt, c)?,
                 args_str
             )),
             F::Exists(bt) => Ok(format!(
-                "$c.exists({}, {})",
+                "{}$c.exists{}({}, {})",
+                await_modifier,
+                await_postfix,
                 base_type_to_typetag(bt, c)?,
                 args_str
             )),
@@ -489,7 +512,7 @@ pub fn handle_binop_for_base_type(
                                 }
                             };
                             Ok(format!(
-                                "({}.hex() {} {}.hex())",
+                                "(({}).hex() {} ({}).hex())",
                                 lhs.term(c)?,
                                 js_op,
                                 rhs.term(c)?
@@ -509,43 +532,53 @@ pub fn handle_binop_for_base_type(
                         BuiltinTypeName_::U8 | BuiltinTypeName_::U64 | BuiltinTypeName_::U128 => {
                             match binop.value {
                                 // operate directly using bigInt since they cannot go wrong
-                                BinOp_::Eq => Ok(format!("{}.eq({})", lhs.term(c)?, rhs.term(c)?)),
-                                BinOp_::Neq => {
-                                    Ok(format!("{}.neq({})", lhs.term(c)?, rhs.term(c)?))
+                                BinOp_::Eq => {
+                                    Ok(format!("({}).eq(({}))", lhs.term(c)?, rhs.term(c)?))
                                 }
-                                BinOp_::Gt => Ok(format!("{}.gt({})", lhs.term(c)?, rhs.term(c)?)),
-                                BinOp_::Lt => Ok(format!("{}.lt({})", lhs.term(c)?, rhs.term(c)?)),
-                                BinOp_::Ge => Ok(format!("{}.ge({})", lhs.term(c)?, rhs.term(c)?)),
-                                BinOp_::Le => Ok(format!("{}.le({})", lhs.term(c)?, rhs.term(c)?)),
+                                BinOp_::Neq => {
+                                    Ok(format!("({}).neq({})", lhs.term(c)?, rhs.term(c)?))
+                                }
+                                BinOp_::Gt => {
+                                    Ok(format!("({}).gt({})", lhs.term(c)?, rhs.term(c)?))
+                                }
+                                BinOp_::Lt => {
+                                    Ok(format!("({}).lt({})", lhs.term(c)?, rhs.term(c)?))
+                                }
+                                BinOp_::Ge => {
+                                    Ok(format!("({}).ge({})", lhs.term(c)?, rhs.term(c)?))
+                                }
+                                BinOp_::Le => {
+                                    Ok(format!("({}).le({})", lhs.term(c)?, rhs.term(c)?))
+                                }
                                 BinOp_::BitOr => {
-                                    Ok(format!("{}.or({})", lhs.term(c)?, rhs.term(c)?))
+                                    Ok(format!("({}).or({})", lhs.term(c)?, rhs.term(c)?))
                                 }
                                 BinOp_::BitAnd => {
-                                    Ok(format!("{}.and({})", lhs.term(c)?, rhs.term(c)?))
+                                    Ok(format!("({}).and({})", lhs.term(c)?, rhs.term(c)?))
                                 }
                                 BinOp_::Xor => {
-                                    Ok(format!("{}.xor({})", lhs.term(c)?, rhs.term(c)?))
+                                    Ok(format!("({}).xor({})", lhs.term(c)?, rhs.term(c)?))
                                 }
                                 BinOp_::Add => {
-                                    Ok(format!("{}.add({})", lhs.term(c)?, rhs.term(c)?))
+                                    Ok(format!("({}).add({})", lhs.term(c)?, rhs.term(c)?))
                                 }
                                 BinOp_::Sub => {
-                                    Ok(format!("{}.sub({})", lhs.term(c)?, rhs.term(c)?))
+                                    Ok(format!("({}).sub({})", lhs.term(c)?, rhs.term(c)?))
                                 }
                                 BinOp_::Mul => {
-                                    Ok(format!("{}.mul({})", lhs.term(c)?, rhs.term(c)?))
+                                    Ok(format!("({}).mul({})", lhs.term(c)?, rhs.term(c)?))
                                 }
                                 BinOp_::Div => {
-                                    Ok(format!("{}.div({})", lhs.term(c)?, rhs.term(c)?))
+                                    Ok(format!("({}).div({})", lhs.term(c)?, rhs.term(c)?))
                                 }
                                 BinOp_::Mod => {
-                                    Ok(format!("{}.mod({})", lhs.term(c)?, rhs.term(c)?))
+                                    Ok(format!("({}).mod({})", lhs.term(c)?, rhs.term(c)?))
                                 }
                                 BinOp_::Shl => {
-                                    Ok(format!("{}.shl({})", lhs.term(c)?, rhs.term(c)?))
+                                    Ok(format!("({}).shl({})", lhs.term(c)?, rhs.term(c)?))
                                 }
                                 BinOp_::Shr => {
-                                    Ok(format!("{}.shr({})", lhs.term(c)?, rhs.term(c)?))
+                                    Ok(format!("({}).shr({})", lhs.term(c)?, rhs.term(c)?))
                                 }
                                 _ => {
                                     derr!((

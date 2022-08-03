@@ -1,6 +1,6 @@
 use crate::ast_to_ts::is_type_signer;
 use crate::shared::*;
-use crate::utils::rename;
+use crate::utils::{capitalize, rename};
 use itertools::Itertools;
 use move_compiler::diagnostics::{Diagnostic, Diagnostics};
 use move_compiler::expansion::ast::ModuleIdent;
@@ -85,8 +85,10 @@ pub fn format_qualified_fname_and_import(
     let package_name = format_address(mident.value.address);
     (
         format!(
-            "{}$_.{}$_.buildPayload_{}",
-            package_name, mident.value.module, name
+            "{}.{}.buildPayload_{}",
+            capitalize(&package_name),
+            capitalize(&mident.value.module),
+            name
         ),
         package_name,
     )
@@ -201,9 +203,9 @@ pub fn format_qualified_sname_and_import(
     let package_name = format_address(mident.value.address);
     (
         format!(
-            "{}$_.{}$_.{}",
-            package_name,
-            mident.value.module,
+            "{}.{}.{}",
+            capitalize(&package_name),
+            capitalize(&mident.value.module),
             rename(name)
         ),
         package_name,
@@ -371,7 +373,7 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
     }
     let package_imports = imported_packages
         .iter()
-        .map(|name| format!("import * as {}$_ from './{}';", name, name))
+        .map(|name| format!("import * as {} from './{}';", capitalize(name), name))
         .join("\n");
     let filename = "cli.ts".to_string();
     let content = format!(

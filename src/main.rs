@@ -129,9 +129,13 @@ fn build(path: &Path, config: &MoveToTsOptions) {
      */
 
     // 2 & 3
-    let build_root_path = project_root
-        .join(CompiledPackageLayout::Root.path())
-        .join("typescript");
+    let build_root_path = if config.output_path.clone().into_os_string().is_empty() {
+        project_root
+            .join(CompiledPackageLayout::Root.path())
+            .join("typescript")
+    } else {
+        config.output_path.clone()
+    };
     let mut ctx = Context::new(config);
     for (mident, mdef) in hlir_program.modules.key_cloned_iter() {
         // 2

@@ -67,7 +67,7 @@ pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (Stri
   "dependencies": {{
     "aptos": "^1.2.0",
     "big-integer": "^1.6.51",{}
-    "@manahippo/move-to-ts": "^0.0.60"
+    "@manahippo/move-to-ts": "^0.0.61"
   }}
 }}
 "###,
@@ -139,14 +139,24 @@ pub fn rename(name: &impl fmt::Display) -> String {
     }
 }
 
+pub fn capitalize(name: &impl fmt::Display) -> String {
+    let name_str = format!("{}", name);
+    let mut c = name_str.chars();
+    match c.next() {
+        None => String::new(),
+        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+    }
+}
+
 pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (String, String) {
     let filename = format!("{}/index.ts", package_name);
     let exports = modules
         .iter()
         .map(|mi| {
             format!(
-                "export * as {}$_ from './{}';\n",
-                mi.value.module, mi.value.module
+                "export * as {} from './{}';\n",
+                capitalize(&mi.value.module),
+                mi.value.module
             )
         })
         .collect::<Vec<_>>()
@@ -156,8 +166,9 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         .iter()
         .map(|mi| {
             format!(
-                "import * as {}$_ from './{}';\n",
-                mi.value.module, mi.value.module
+                "import * as {} from './{}';\n",
+                capitalize(&mi.value.module),
+                mi.value.module
             )
         })
         .collect::<Vec<_>>()
@@ -165,7 +176,7 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
 
     let loads = modules
         .iter()
-        .map(|mi| format!("  {}$_.loadParsers(repo);", mi.value.module))
+        .map(|mi| format!("  {}.loadParsers(repo);", capitalize(&mi.value.module)))
         .join("\n");
 
     let content = format!(
@@ -315,8 +326,8 @@ export class TypedIterableTable<K, V> {
     const result: [K, V][] = [];
     const cache = new $.DummyCache();
     let next = this.table.head;
-    while(next && std$_.option$_.is_some$(next, cache, [this.keyTag])) {
-      const key = std$_.option$_.borrow$(next, cache, [this.keyTag]) as K;
+    while(next && await Std.Option.is_some_(next, cache, [this.keyTag])) {
+      const key = await Std.Option.borrow_(next, cache, [this.keyTag]) as K;
       const iterVal = await this.loadEntry(client, repo, key);
       const value = iterVal.val as V;
       result.push([key, value]);

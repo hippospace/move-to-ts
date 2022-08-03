@@ -24,6 +24,11 @@ export interface AptosDataCache {
   move_from<T>(tag: TypeTag, address: HexString): T;
   borrow_global<T>(tag: TypeTag, address: HexString): T;
   borrow_global_mut<T>(tag: TypeTag, address: HexString): T;
+  exists_async(_tag: TypeTag, _address: HexString): Promise<boolean>;
+  move_to_async(_tag: TypeTag, _address: HexString, _resource: any): Promise<void>;
+  move_from_async<T>(_tag: TypeTag, _address: HexString): Promise<T>;
+  borrow_global_async<T>(_tag: TypeTag, _address: HexString): Promise<T>;
+  borrow_global_mut_async<T>(_tag: TypeTag, _address: HexString): Promise<T>;
 
   // Table
   table_new_handle(): U128;
@@ -37,6 +42,7 @@ export interface AptosDataCache {
 }
 
 export class DummyCache implements AptosDataCache {
+  // synchronous builtins
   exists(_tag: TypeTag, _address: HexString): boolean {
     throw new Error("DummyCache does not support 'exists'");
   }
@@ -52,6 +58,23 @@ export class DummyCache implements AptosDataCache {
   borrow_global_mut<T>(_tag: TypeTag, _address: HexString): T {
     throw new Error("DummyCache does not support 'borrow_global_mut'");
   }
+  // async builtins
+  async exists_async(_tag: TypeTag, _address: HexString): Promise<boolean> {
+    return this.exists(_tag, _address);
+  }
+  async move_to_async(_tag: TypeTag, _address: HexString, _resource: any): Promise<void> {
+    return this.move_to(_tag, _address, _resource);
+  }
+  async move_from_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
+    return this.move_from(_tag, _address);
+  }
+  async borrow_global_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
+    return this.borrow_global(_tag, _address);
+  }
+  async borrow_global_mut_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
+    return this.borrow_global_mut(_tag, _address);
+  }
+  // table
   table_new_handle(): U128 {
     throw new Error("DummyCache does not support table_new_handle");
   }
@@ -87,6 +110,15 @@ class AccountCache {
   has(tag: TypeTag) {
     return this.resources.has(getTypeTagFullname(tag));
   }
+  async has_async(tag: TypeTag, repo: AptosParserRepo, client: AptosClient) {
+    try{
+      await this.get_async(tag, repo, client);
+      return true;
+    }
+    catch (e) {
+      return false;
+    }
+  }
   get(tag: TypeTag) {
     const fullname = getTypeTagFullname(tag);
     const resource = this.resources.get(fullname);
@@ -94,6 +126,16 @@ class AccountCache {
       throw new Error(`Account ${this.address.hex()} does not have resource: ${fullname}`);
     }
     return resource;
+  }
+  async get_async(tag: TypeTag, repo: AptosParserRepo, client: AptosClient) {
+    const fullname = getTypeTagFullname(tag);
+    try{
+      const resource = await client.getAccountResource(this.address, fullname);
+      return repo.parse(resource.data, tag);
+    }
+    catch(e) {
+      throw new Error(`Account ${this.address.hex()} does not have resource ${fullname}`);
+    }
   }
   set(tag: TypeTag, resource: any) {
     const fullname = getTypeTagFullname(tag);
@@ -126,6 +168,7 @@ export class AptosLocalCache implements AptosDataCache {
     this.tables = new Map();
     this.nextTableHandle = 1;
   }
+  // synchronous builtins
   exists(tag: TypeTag, address: HexString): boolean {
     const account = this.accounts.get(address.hex());
     if (!account) {
@@ -158,6 +201,23 @@ export class AptosLocalCache implements AptosDataCache {
   borrow_global_mut<T>(tag: TypeTag, address: HexString): T {
     return this.borrow_global<T>(tag, address);
   }
+  // async builtins
+  async exists_async(_tag: TypeTag, _address: HexString): Promise<boolean> {
+    return this.exists(_tag, _address);
+  }
+  async move_to_async(_tag: TypeTag, _address: HexString, _resource: any): Promise<void> {
+    return this.move_to(_tag, _address, _resource);
+  }
+  async move_from_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
+    return this.move_from(_tag, _address);
+  }
+  async borrow_global_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
+    return this.borrow_global(_tag, _address);
+  }
+  async borrow_global_mut_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
+    return this.borrow_global_mut(_tag, _address);
+  }
+  // table
   table_get_or_create(handle: number): Map<string, any> {
     const table = this.tables.get(handle.toString());
     if (table) {
@@ -221,6 +281,38 @@ export class AptosLocalCache implements AptosDataCache {
 
 // caches data locally, and attempts to fetch from chain when needed
 export class AptosSyncedCache extends AptosLocalCache {
+  constructor(
+    public repo: AptosParserRepo, 
+    public client: AptosClient,
+  ) {
+    super();
+  }
+  // asynchronous builtins
+  async exists_async(tag: TypeTag, address: HexString): Promise<boolean> {
+    let account = this.accounts.get(address.hex());
+    if (!account) {
+      account = new AccountCache(address);
+      this.accounts.set(address.hex(), account);
+    }
+    return account.has_async(tag, this.repo, this.client);
+  }
+  async move_to_async(tag: TypeTag, address: HexString, resource: any): Promise<void> {
+    throw new Error("move_to not supported by AptosSyncedCache");
+  }
+  async move_from_async<T>(tag: TypeTag, address: HexString): Promise<T> {
+    throw new Error("move_from not supported by AptosSyncedCache");
+  }
+  async borrow_global_async<T>(tag: TypeTag, address: HexString): Promise<T> {
+    let account = this.accounts.get(address.hex());
+    if (!account) {
+      account = new AccountCache(address);
+      this.accounts.set(address.hex(), account);
+    }
+    return await account.get_async(tag, this.repo, this.client) as unknown as T;
+  }
+  async borrow_global_mut_async<T>(tag: TypeTag, address: HexString): Promise<T> {
+    return this.borrow_global_async<T>(tag, address);
+  }
 }
 
 

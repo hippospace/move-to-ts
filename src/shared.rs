@@ -62,6 +62,14 @@ pub struct MoveToTsOptions {
         default_value = "."
     )]
     pub package_path: PathBuf,
+    #[clap(
+        long = "output-path",
+        short = 'o',
+        global = true,
+        parse(from_os_str),
+        default_value = ""
+    )]
+    pub output_path: PathBuf,
     /// generate #[test] functions
     #[clap(long = "gen-test", short = 't')]
     pub test: bool,
@@ -69,12 +77,15 @@ pub struct MoveToTsOptions {
     pub cli: bool,
     #[clap(long = "gen-ui", short = 'u')]
     pub ui: bool,
+    // default to synchronous functions but allow synchronous version to be output as well
+    #[clap(long = "asynchronous", short = 'a')]
+    pub asynchronous: bool,
     /// generate package.json
     #[clap(long = "package-json-name", short = 'n', default_value = "")]
     pub package_json_name: String,
 }
 
-use crate::utils::rename;
+use crate::utils::{capitalize, rename};
 pub(crate) use derr;
 use move_command_line_common::address::NumericalAddress;
 
@@ -235,6 +246,10 @@ impl Context {
             field_name.clone(),
         ));
     }
+
+    pub fn is_async(&self) -> bool {
+        return self.config.asynchronous;
+    }
 }
 
 pub trait AstTsPrinter {
@@ -330,13 +345,23 @@ pub fn format_qualified_name(
     } else if c.is_current_package(mident) {
         // name exists in same package, just add module name as qualifier
         c.add_same_package_import(mident.value.module.to_string());
-        format!("{}$_.{}", mident.value.module, name)
+        format!("{}.{}", capitalize(&mident.value.module), name)
     } else {
         // name exists in a different package, use fully qualified name
         let package_name = format_address(mident.value.address);
         c.add_package_import(package_name.clone());
-        format!("{}$_.{}$_.{}", package_name, mident.value.module, name)
+        format!(
+            "{}.{}.{}",
+            capitalize(&package_name),
+            capitalize(&mident.value.module),
+            name
+        )
     }
+}
+
+pub fn format_function_name(fname: &impl fmt::Display, is_async: bool) -> String {
+    let await_modifier = if is_async { "await " } else { "" };
+    format!("{}{}_", await_modifier, fname)
 }
 
 pub fn base_type_to_typetag_builder(

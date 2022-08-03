@@ -125,11 +125,13 @@ pub fn write_tests(w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
 
     w.new_line();
 
+    let async_modifier = if c.is_async() { "async " } else { "" };
+
     // one test runner for each $[test]
     for (name, sig, attr, expect_failure_attr) in c.tests.clone().iter() {
         w.writeln(format!(
-            "test('{}::{}', () => {{",
-            mident.value.module, name
+            "test('{}::{}', {} () => {{",
+            mident.value.module, name, async_modifier
         ));
         w.increase_indent();
 
@@ -161,19 +163,27 @@ pub fn write_tests(w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
             .iter()
             .map(|(var, _ty)| var.to_string())
             .join(", ");
+        let raw_fname = format!("Source.{}", name);
         if let Some(failure_attr) = expect_failure_attr {
             let abort_code = get_abort_code_from_expected_failure(failure_attr);
+            let throw_detector = if c.is_async() {
+                "rejects.toThrow"
+            } else {
+                "toThrow"
+            };
             w.writeln(format!(
-                "expect( () => Source.{}$({}{}$c) ).toThrow({});",
-                name,
+                "expect( {}() => {}({}{}$c) ).{}({});",
+                async_modifier,
+                format_function_name(&raw_fname, c.is_async()),
                 args,
                 if !args.is_empty() { ", " } else { "" },
+                throw_detector,
                 abort_code,
             ));
         } else {
             w.writeln(format!(
-                "Source.{}$({}{}$c);",
-                name,
+                "{}({}{}$c);",
+                format_function_name(&raw_fname, c.is_async()),
                 args,
                 if !args.is_empty() { ", " } else { "" }
             ));

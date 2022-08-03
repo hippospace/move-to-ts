@@ -2,7 +2,7 @@ use crate::ast_exp::*;
 use crate::ast_tests::check_test;
 use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
-use crate::utils::{get_iterable_table_helper_decl, get_table_helper_decl, rename};
+use crate::utils::{capitalize, get_iterable_table_helper_decl, get_table_helper_decl, rename};
 use itertools::Itertools;
 use move_compiler::{
     diagnostics::{Diagnostic, Diagnostics},
@@ -53,14 +53,16 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
     ];
     for package_name in c.package_imports.iter() {
         lines.push(format!(
-            "import * as {}$_ from \"../{}\";",
-            package_name, package_name
+            "import * as {} from \"../{}\";",
+            capitalize(package_name),
+            package_name
         ));
     }
     for module_name in c.same_package_imports.iter() {
         lines.push(format!(
-            "import * as {}$_ from \"./{}\";",
-            module_name, module_name
+            "import * as {} from \"./{}\";",
+            capitalize(module_name),
+            module_name
         ));
     }
     lines.push(format!("{}", writer));
@@ -490,12 +492,16 @@ pub fn handle_struct_show_directive(
                 // generate show method
                 w.new_line();
 
-                w.writeln(format!("{}() {{", fname));
+                let async_modifier = if c.is_async() { "async " } else { "" };
+                w.writeln(format!("{}{}() {{", async_modifier, fname));
                 w.writeln(format!("  const cache = new DummyCache();"));
                 w.writeln(format!(
                     "  const tags = (this.typeTag as StructTag).typeParams;"
                 ));
-                w.writeln(format!("  return {}$(this, cache, tags);", fname));
+                w.writeln(format!(
+                    "  return {}(this, cache, tags);",
+                    format_function_name(fname, c.is_async())
+                ));
                 w.writeln("}");
             }
             _ => {
@@ -746,7 +752,12 @@ impl AstTsPrinter for (FunctionName, &Function) {
             }
         }
         // yep, regardless of visibility, we always export it
-        w.writeln(format!("export function {}$ (", rename(name)));
+        let async_modifier = if c.is_async() { "async " } else { "" };
+        w.writeln(format!(
+            "export {}function {}_ (",
+            async_modifier,
+            rename(name)
+        ));
         // write parameters
         write_parameters(&func.signature, w, c, false)?;
         // cache & typeTags
@@ -767,7 +778,11 @@ impl AstTsPrinter for (FunctionName, &Function) {
         // marks returnType or void
         w.write("): ");
         let ret_type_str = type_to_tstype(&func.signature.return_type, c)?;
-        w.write(ret_type_str);
+        if c.is_async() {
+            w.write(format!("Promise<{}>", ret_type_str));
+        } else {
+            w.write(ret_type_str);
+        }
         w.write(" ");
 
         // set current_function_signature as we enter body
