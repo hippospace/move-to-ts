@@ -9,7 +9,6 @@ import stringify from "json-stable-stringify";
 
 export interface ITable {
   handle: U128;
-  length: U64;
   typeTag: TypeTag;
 }
 
