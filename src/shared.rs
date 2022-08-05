@@ -16,6 +16,7 @@ use move_ir_types::location::Loc;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::path::PathBuf;
+use std::rc::Rc;
 
 #[derive(Copy, Clone)]
 pub struct NotTranslatable {}
@@ -97,6 +98,7 @@ pub struct CmdParams {
 }
 
 pub struct Context {
+    pub program: Rc<Program>,
     pub current_module: Option<ModuleIdent>,
     pub current_function_signature: Option<FunctionSignature>,
     // modules imported from same package
@@ -118,10 +120,14 @@ pub struct Context {
     )>,
     // cmd info
     pub cmds: Vec<CmdParams>,
-    // module-specific show directives
-    pub module_shows: Vec<(StructName, StructDefinition, Name)>,
     // all shows collected
-    pub all_shows: Vec<(ModuleIdent, StructName, StructDefinition, Name)>,
+    pub all_queries: Vec<(
+        ModuleIdent,
+        StructName,
+        StructDefinition,
+        Name,
+        FunctionSignature,
+    )>,
     // all show_iter_table directives collected
     pub all_shows_iter_tables: Vec<(ModuleIdent, StructName, StructDefinition, Name)>,
 }
@@ -142,8 +148,9 @@ pub fn is_same_module(mi1: &ModuleIdent, mi2: &ModuleIdent) -> bool {
 }
 
 impl Context {
-    pub fn new(config: &MoveToTsOptions) -> Self {
+    pub fn new(config: &MoveToTsOptions, program: Rc<Program>) -> Self {
         Self {
+            program,
             current_module: None,
             current_function_signature: None,
             same_package_imports: BTreeSet::new(),
@@ -153,8 +160,7 @@ impl Context {
             config: config.clone(),
             tests: vec![],
             cmds: vec![],
-            module_shows: vec![],
-            all_shows: vec![],
+            all_queries: vec![],
             all_shows_iter_tables: vec![],
         }
     }
@@ -168,7 +174,6 @@ impl Context {
         self.visited_modules.insert(mname);
         self.visited_packages
             .insert(format_address(mname.value.address), mname.value.address);
-        self.module_shows.clear();
     }
 
     pub fn is_current_package(&self, other: &ModuleIdent) -> bool {
@@ -219,17 +224,21 @@ impl Context {
         });
     }
 
-    pub fn add_show(
+    pub fn add_query(
         &mut self,
         mi: &ModuleIdent,
         sname: &StructName,
         sdef: &StructDefinition,
         fname: &Name,
+        sig: &FunctionSignature,
     ) {
-        self.module_shows
-            .push((sname.clone(), sdef.clone(), fname.clone()));
-        self.all_shows
-            .push((mi.clone(), sname.clone(), sdef.clone(), fname.clone()));
+        self.all_queries.push((
+            mi.clone(),
+            sname.clone(),
+            sdef.clone(),
+            fname.clone(),
+            sig.clone(),
+        ));
     }
 
     pub fn add_show_iter_table(

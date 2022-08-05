@@ -5,7 +5,7 @@ use itertools::Itertools;
 use move_compiler::diagnostics::{Diagnostic, Diagnostics};
 use move_compiler::expansion::ast::ModuleIdent;
 use move_compiler::hlir::ast::{
-    BaseType, BaseType_, SingleType, SingleType_, StructDefinition, TypeName_,
+    BaseType, BaseType_, FunctionSignature, SingleType, SingleType_, StructDefinition, TypeName_,
 };
 use move_compiler::naming::ast::BuiltinTypeName_;
 use move_compiler::parser::ast::{Ability_, StructName};
@@ -217,12 +217,15 @@ pub fn generate_printer(
     sname: &StructName,
     sdef: &StructDefinition,
     fname: &Name,
-) -> (String, String) {
-    let type_param_decls = sdef
-        .type_parameters
-        .iter()
-        .map(|tparam| format!("{}: string", tparam.param.user_specified_name))
-        .join(", ");
+    fsig: &FunctionSignature,
+) -> Result<(String, String), Diagnostic> {
+    let mut arg_decls = vec![];
+    for tp in sdef.type_parameters.iter() {
+        arg_decls.push(format!("{}: string", tp.param.user_specified_name));
+    }
+    for (name, _) in fsig.parameters[1..].iter() {
+        arg_decls.push(format!("{}: string", name));
+    }
 
     let (struct_qualified_name, package_name) = format_qualified_sname_and_import(mi, sname);
 
@@ -232,11 +235,22 @@ pub fn generate_printer(
         .map(|tp| format!("parseTypeTagOrThrow({})", tp.param.user_specified_name))
         .join(", ");
 
-    let arguments = sdef
-        .type_parameters
-        .iter()
-        .map(|tp| (format!("  .argument('<TYPE_{}>')", tp.param.user_specified_name)))
-        .join("\n");
+    let mut arguments = vec![];
+
+    for tp in sdef.type_parameters.iter() {
+        arguments.push(format!(
+            "  .argument('<TYPE_{}>')",
+            tp.param.user_specified_name
+        ));
+    }
+    for (name, _) in fsig.parameters[1..].iter() {
+        arguments.push(format!("  .argument('<{}>')", name));
+    }
+
+    let mut param_handlers = vec![];
+    for (name, ty) in fsig.parameters[1..].iter() {
+        param_handlers.push(stype_to_ts_parser(&name.to_string(), name.0.loc, ty)?);
+    }
 
     let command_name = fname.to_string().replace("_", "-");
 
@@ -247,7 +261,7 @@ const {} = async (owner: string, {}) => {{
   const repo = getProjectRepo();
   const owner_ = new HexString(owner);
   const value = await {}.load(repo, client, owner_, [{}])
-  print(value.{}());
+  print(value.{}({}));
 }}
 
 program
@@ -257,16 +271,17 @@ program
   .action({})
 "###,
         fname,
-        type_param_decls,
+        arg_decls.join(", "),
         struct_qualified_name,
         type_tags_inner,
         fname,
+        param_handlers.join(", "),
         command_name,
-        arguments,
+        arguments.join("\n"),
         fname,
     );
 
-    (body, package_name)
+    Ok((body, package_name))
 }
 
 pub fn generate_iter_table_printer(
@@ -356,13 +371,21 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
             return Err(diags);
         }
     }
-    for show in ctx.all_shows.iter() {
-        let (mi, sname, sdef, fname) = show;
+    for query in ctx.all_queries.iter() {
+        let (mi, sname, sdef, fname, fsig) = query;
         // if sdef is a resource type, generate printer for it
         if sdef.abilities.has_ability_(Ability_::Key) {
-            let (printer_body, package_name) = generate_printer(mi, sname, sdef, fname);
-            printers.push(printer_body);
-            imported_packages.insert(package_name);
+            let printer_res = generate_printer(mi, sname, sdef, fname, fsig);
+            if let Ok((printer_body, package_name)) = printer_res {
+                printers.push(printer_body);
+                imported_packages.insert(package_name);
+            }
+            else {
+                let diag = printer_res.err().unwrap();
+                let mut diags = Diagnostics::new();
+                diags.add(diag);
+                return Err(diags);
+            }
         }
     }
     for show_iter_table in ctx.all_shows_iter_tables.iter() {

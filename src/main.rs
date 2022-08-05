@@ -23,6 +23,7 @@ use shared::{Context, MoveToTsOptions};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process;
+use std::rc::Rc;
 
 fn write_file(root_path: &PathBuf, pair: (String, String)) {
     let (filename, content) = pair;
@@ -113,6 +114,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     let (_comments, hlir_compiler) = unwrap_or_report_diagnostics(&files, res_comments_compiler);
 
     let (_, hlir_program) = hlir_compiler.into_ast();
+    let hlir_program = Rc::new(hlir_program);
 
     // run the full pipeline to check errors/warnings
     // move package doesn't provide a way to save intermediate program ast, so rerunning the
@@ -136,7 +138,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     } else {
         config.output_path.clone()
     };
-    let mut ctx = Context::new(config);
+    let mut ctx = Context::new(config, hlir_program.clone());
     for (mident, mdef) in hlir_program.modules.key_cloned_iter() {
         // 2
         let result = ast_to_ts::translate_module(mident, mdef, &mut ctx);

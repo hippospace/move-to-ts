@@ -4,13 +4,13 @@ use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
 use crate::utils::{capitalize, get_iterable_table_helper_decl, get_table_helper_decl, rename};
 use itertools::Itertools;
+use move_compiler::shared::Name;
 use move_compiler::{
     diagnostics::{Diagnostic, Diagnostics},
     expansion::ast::{Attribute_, Attributes, ModuleIdent},
     hlir::ast::*,
     naming::ast::{BuiltinTypeName_, StructTypeParameter},
     parser::ast::{Ability_, ConstantName, FunctionName, StructName, Var},
-    shared::unique_map::UniqueMap,
 };
 use move_ir_types::location::Loc;
 use std::collections::BTreeSet;
@@ -85,89 +85,6 @@ pub fn handle_special_module(
     Ok(())
 }
 
-pub fn validate_show_functions(
-    functions: &UniqueMap<FunctionName, Function>,
-    c: &Context,
-) -> WriteResult {
-    for (sname, sdef, fname) in c.module_shows.iter() {
-        // expect the fname to be a valid function, whose signature is:
-        // fname<sdef.type_params>(obj: &sdef)
-        let f_opt = functions
-            .key_cloned_iter()
-            .find(|(name, _)| name.to_string() == fname.to_string());
-        if let Some((name, f)) = f_opt {
-            let err = derr!((
-                name.0.loc,
-                format!("This function should have &{} as the only parameter", sname)
-            ));
-            let sig = &f.signature;
-            // check it has the same type parameters as sdef
-            if sig.type_parameters.len() != sdef.type_parameters.len() {
-                return derr!((
-                    name.0.loc,
-                    format!(
-                        "This function should have the same type parameters as {}",
-                        sname
-                    )
-                ));
-            }
-            for (idx, tparam) in sig.type_parameters.iter().enumerate() {
-                if sdef.type_parameters[idx].param.user_specified_name != tparam.user_specified_name
-                {
-                    return derr!((tparam.user_specified_name.loc, "Mismatched type parameters"));
-                }
-            }
-            // check it has a single parameter of sdef's type
-            if sig.parameters.len() != 1 {
-                return err;
-            }
-            let base = match &sig.parameters[0].1.value {
-                SingleType_::Base(b) => b,
-                SingleType_::Ref(_, b) => b,
-            };
-            if let BaseType_::Apply(_, typename, targs) = &base.value {
-                match &typename.value {
-                    TypeName_::ModuleType(mi, sname2) => {
-                        if is_same_module(&c.current_module.unwrap(), mi) && *sname == *sname2 {
-                            // check type params are in the right order
-                            for (idx, tparam) in targs.iter().enumerate() {
-                                match &tparam.value {
-                                    BaseType_::Param(tp) => {
-                                        if sdef.type_parameters[idx].param.user_specified_name
-                                            != tp.user_specified_name
-                                        {
-                                            return derr!((
-                                                tparam.loc,
-                                                "Mismatched type parameters"
-                                            ));
-                                        }
-                                    }
-                                    _ => {
-                                        return derr!((tparam.loc, "Mismatched type parameters"));
-                                    }
-                                }
-                            }
-                            // good
-                        } else {
-                            return err;
-                        }
-                    }
-                    _ => return err,
-                }
-            } else {
-                return derr!((
-                    name.0.loc,
-                    format!("This function should have &{} as the only parameter", sname)
-                ));
-            }
-        } else {
-            return derr!((fname.loc, "This function does not exist in current module"));
-        }
-    }
-
-    Ok(())
-}
-
 impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
     const CTOR_NAME: &'static str = "ModuleDefinition";
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
@@ -218,9 +135,6 @@ impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
         for (fname, fdef) in functions.key_cloned_iter() {
             (fname, fdef).write_ts(w, c)?;
         }
-
-        // validate show directives
-        validate_show_functions(functions, c)?;
 
         // loadParsers
         write_load_parsers(name, module, w, c)?;
@@ -476,7 +390,80 @@ pub fn handle_struct_show_iter_table_directive(
     Ok(())
 }
 
-pub fn handle_struct_show_directive(
+pub fn validate_query_function(
+    sname: &StructName,
+    sdef: &StructDefinition,
+    name: &Name,
+    f: &Function,
+    c: &mut Context,
+) -> WriteResult {
+    // expect the fname to be a valid function, whose signature is:
+    // fname<sdef.type_params>(obj: &sdef)
+    let err = derr!((
+        name.loc,
+        format!(
+            "This function should have &{} as its first parameter",
+            sname
+        )
+    ));
+    let sig = &f.signature;
+    // check it has the same type parameters as sdef
+    if sig.type_parameters.len() != sdef.type_parameters.len() {
+        return derr!((
+            name.loc,
+            format!(
+                "This function should have the same type parameters as {}",
+                sname
+            )
+        ));
+    }
+    for (idx, tparam) in sig.type_parameters.iter().enumerate() {
+        if sdef.type_parameters[idx].param.user_specified_name != tparam.user_specified_name {
+            return derr!((tparam.user_specified_name.loc, "Mismatched type parameters"));
+        }
+    }
+    // check it has at least one parameter of sdef's type
+    if sig.parameters.len() < 1 {
+        return err;
+    }
+    let base = match &sig.parameters[0].1.value {
+        SingleType_::Base(b) => b,
+        SingleType_::Ref(_, b) => b,
+    };
+    if let BaseType_::Apply(_, typename, targs) = &base.value {
+        match &typename.value {
+            TypeName_::ModuleType(mi, sname2) => {
+                if is_same_module(&c.current_module.unwrap(), mi) && *sname == *sname2 {
+                    // check type params are in the right order
+                    for (idx, tparam) in targs.iter().enumerate() {
+                        match &tparam.value {
+                            BaseType_::Param(tp) => {
+                                if sdef.type_parameters[idx].param.user_specified_name
+                                    != tp.user_specified_name
+                                {
+                                    return derr!((tparam.loc, "Mismatched type parameters"));
+                                }
+                            }
+                            _ => {
+                                return derr!((tparam.loc, "Mismatched type parameters"));
+                            }
+                        }
+                    }
+                    // good
+                } else {
+                    return err;
+                }
+            }
+            _ => return err,
+        }
+    } else {
+        return err;
+    }
+
+    Ok(())
+}
+
+pub fn handle_struct_query_directive(
     sname: &StructName,
     sdef: &StructDefinition,
     inner_attrs: &Attributes,
@@ -486,23 +473,42 @@ pub fn handle_struct_show_directive(
     for (_, pattr) in inner_attrs.key_cloned_iter() {
         match &pattr.value {
             Attribute_::Name(fname) => {
-                // validate this at end-of-module generation
-                c.add_show(&c.current_module.unwrap(), sname, sdef, fname);
+                // validate it now
+                let program = c.program.clone();
+                let mdef = program.modules.get(&c.current_module.unwrap()).unwrap();
+                let func_opt = mdef.functions.get(&FunctionName(*fname));
+
+                if func_opt.is_none() {
+                    return derr!((fname.loc, "This function does not exist in current module"));
+                }
+                let func = func_opt.unwrap();
+                validate_query_function(sname, sdef, fname, func, c)?;
 
                 // generate show method
                 w.new_line();
 
                 let async_modifier = if c.is_async() { "async " } else { "" };
-                w.writeln(format!("{}{}() {{", async_modifier, fname));
+                w.writeln(format!("{}{}(", async_modifier, fname));
+                write_parameters(&func.signature, w, c, false, true)?;
+                w.writeln(") {");
                 w.writeln(format!("  const cache = new DummyCache();"));
                 w.writeln(format!(
                     "  const tags = (this.typeTag as StructTag).typeParams;"
                 ));
+                let args_str = func.signature.parameters[1..]
+                    .iter()
+                    .map(|(v, _)| v.to_string())
+                    .join(", ");
                 w.writeln(format!(
-                    "  return {}(this, cache, tags);",
-                    format_function_name(fname, c.is_async())
+                    "  return {}(this, {}{}cache, tags);",
+                    format_function_name(fname, c.is_async()),
+                    args_str,
+                    if args_str.is_empty() { "" } else { ", " }
                 ));
                 w.writeln("}");
+
+                // generate printer for cli
+                c.add_query(&c.current_module.unwrap(), sname, sdef, fname, &func.signature);
             }
             _ => {
                 return derr!((
@@ -526,17 +532,13 @@ pub fn handle_struct_directives(
     for (name, attr) in attrs.key_cloned_iter() {
         match name.to_string().as_str() {
             "cmd" => return derr!((attr.loc, "the 'cmd' attribute cannot be used on structs")),
-            "show" => match &attr.value {
+            "query" => match &attr.value {
                 Attribute_::Parameterized(_, inner_attrs) => {
                     w.new_line();
-                    handle_struct_show_directive(sname, sdef, inner_attrs, w, c)?;
-                }
-                Attribute_::Name(_) => {
-                    w.new_line();
-
+                    handle_struct_query_directive(sname, sdef, inner_attrs, w, c)?;
                 }
                 _ => {
-                    return derr!((attr.loc, "the 'show' requires a list of function names as argument (e.g. $[show(show_x_as_y)]"))
+                    return derr!((attr.loc, "the 'query' requires a list of function names as argument (e.g. $[query(show_x_as_y)]"))
                 }
             }
             "show_iter_table" => match &attr.value {
@@ -663,10 +665,14 @@ pub fn write_parameters(
     w: &mut TsgenWriter,
     c: &mut Context,
     skip_signer: bool,
+    skip_first: bool,
 ) -> WriteResult {
     w.increase_indent();
-    for (name, ty) in &sig.parameters {
+    for (idx, (name, ty)) in sig.parameters.iter().enumerate() {
         if skip_signer && is_type_signer(ty) {
+            continue;
+        }
+        if skip_first && idx == 0 {
             continue;
         }
         w.writeln(format!(
@@ -759,7 +765,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
             rename(name)
         ));
         // write parameters
-        write_parameters(&func.signature, w, c, false)?;
+        write_parameters(&func.signature, w, c, false, false)?;
         // cache & typeTags
         w.writeln("  $c: AptosDataCache,");
         let num_tparams = func.signature.type_parameters.len();
@@ -847,7 +853,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
             // yep, regardless of visibility, we always export it
             w.writeln(format!("export function buildPayload_{} (", name));
             // write parameters
-            write_parameters(&func.signature, w, c, true)?;
+            write_parameters(&func.signature, w, c, true, false)?;
             // typeTags
             if num_tparams > 0 {
                 w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
