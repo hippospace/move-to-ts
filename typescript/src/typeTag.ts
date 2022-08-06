@@ -1,4 +1,5 @@
 import { HexString } from "aptos"
+import { MoveStructTag } from "aptos/dist/generated";
 import { assert } from "./utils";
 
 export enum AtomicTypeTag{
@@ -26,6 +27,15 @@ export class StructTag {
 
   getParamlessName(): string {
     return `${this.address.hex()}::${this.module}::${this.name}`;
+  }
+
+  getAptosMoveTypeTag(): MoveStructTag {
+    return {
+      address: this.address.toShortString(),
+      module: this.module,
+      name: this.name,
+      generic_type_params: this.typeParams.map(getTypeTagFullname,)
+    };
   }
 }
 
@@ -225,6 +235,11 @@ export function parseTypeTagOrThrow(name: string): TypeTag {
     throw new Error(`Invalid type tag: ${name}`);
   }
   return tag;
+}
+
+export function parseMoveStructTag(moveTag: MoveStructTag): StructTag {
+  const params = moveTag.generic_type_params.map(parseTypeTagOrThrow);
+  return new StructTag(new HexString(moveTag.address), moveTag.module, moveTag.name, params);
 }
 
 export function parseResourceType(fullname: string): StructTag {

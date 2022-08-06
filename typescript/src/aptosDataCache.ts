@@ -1,10 +1,10 @@
 import { AptosClient, HexString, Types } from "aptos";
-import { DeleteResource, WriteResource } from "aptos/dist/api/data-contracts";
 import bigInt from "big-integer";
 import { U128, U64 } from "./builtinTypes";
 import { AptosParserRepo, StructInfoType } from "./parserRepo";
-import { getTypeTagFullname, parseTypeTagOrThrow, StructTag, TypeTag } from "./typeTag";
+import { getTypeTagFullname, parseMoveStructTag, parseTypeTagOrThrow, StructTag, TypeTag } from "./typeTag";
 import stringify from "json-stable-stringify";
+import { DeleteResource, WriteResource } from "aptos/dist/generated";
 
 
 export interface ITable {
@@ -127,13 +127,15 @@ class AccountCache {
     return resource;
   }
   async get_async(tag: TypeTag, repo: AptosParserRepo, client: AptosClient) {
-    const fullname = getTypeTagFullname(tag);
+    if(!(tag instanceof StructTag)) {
+      throw new Error(`Expected StructTag`);
+    }
     try{
-      const resource = await client.getAccountResource(this.address, fullname);
+      const resource = await client.getAccountResource(this.address, (tag as StructTag).getAptosMoveTypeTag());
       return repo.parse(resource.data, tag);
     }
     catch(e) {
-      throw new Error(`Account ${this.address.hex()} does not have resource ${fullname}`);
+      throw new Error(`Account ${this.address.hex()} does not have resource ${getTypeTagFullname(tag)}`);
     }
   }
   set(tag: TypeTag, resource: any) {
@@ -371,7 +373,7 @@ export class AptosResourceCache {
     const resources = await this.client.getAccountResources(address);
     const loadedResourceKeys = [];
     for(const resource of resources) {
-      const typeTag = parseTypeTagOrThrow(resource.type);
+      const typeTag = parseMoveStructTag(resource.type);
       try{
         const value = this.repo.parse(resource.data, typeTag);
         const resourceKey = this.getResourceKey(address, typeTag);
@@ -444,7 +446,7 @@ export class AptosResourceCache {
       for(const change of txn.changes) {
         if(change.type === 'write_resource' ) {
           const write = change as WriteResource;
-          const typeTag = parseTypeTagOrThrow(write.data.type);
+          const typeTag = parseMoveStructTag(write.data.type);
           const resourceKey = this.getResourceKey(new HexString(write.address), typeTag);
           if (resourceKey in this.cachedResources) {
             const newValue = this.repo.parse(write.data.data, typeTag);
@@ -454,7 +456,7 @@ export class AptosResourceCache {
         }
         else if (change.type === 'delete_resource') {
           const del = change as DeleteResource;
-          const typeTag = parseTypeTagOrThrow(del.resource);
+          const typeTag = parseMoveStructTag(del.resource);
           const resourceKey = this.getResourceKey(new HexString(del.address), typeTag);
           if (resourceKey in this.cachedResources) {
             this.deleteResource(resourceKey);

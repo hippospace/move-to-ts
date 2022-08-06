@@ -252,7 +252,8 @@ pub fn generate_printer(
         param_handlers.push(stype_to_ts_parser(&name.to_string(), name.0.loc, ty)?);
     }
 
-    let command_name = fname.to_string().replace("_", "-");
+    let cmd_func_name = format!("{}_{}", sname, fname);
+    let command_name = format!("{}:{}", sname, fname.to_string().replace("_", "-"));
 
     let body = format!(
         r###"
@@ -270,7 +271,7 @@ program
 {}
   .action({})
 "###,
-        fname,
+        cmd_func_name,
         arg_decls.join(", "),
         struct_qualified_name,
         type_tags_inner,
@@ -278,7 +279,7 @@ program
         param_handlers.join(", "),
         command_name,
         arguments.join("\n"),
-        fname,
+        cmd_func_name,
     );
 
     Ok((body, package_name))
@@ -445,7 +446,7 @@ export async function sendPayloadTx(
   const signedTxn = await client.signTransaction(account, txnRequest);
   const txnResult = await client.submitTransaction(signedTxn);
   await client.waitForTransaction(txnResult.hash);
-  const txDetails = (await client.getTransaction(txnResult.hash)) as Types.UserTransaction;
+  const txDetails = (await client.getTransactionByHash(txnResult.hash)) as Types.UserTransaction;
   console.log(txDetails);
 }}
 

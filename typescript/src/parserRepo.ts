@@ -209,7 +209,7 @@ export class AptosParserRepo {
       throw new Error(`Expected ${structTsType.typeParameters.length} type parameters but got ${typeParams.length}`);
     }
     const typeTag = new StructTag(structTsType.moduleAddress, structTsType.moduleName, structTsType.structName, typeParams);
-    const resource = await client.getAccountResource(address, getTypeTagFullname(typeTag));
+    const resource = await client.getAccountResource(address, typeTag.getAptosMoveTypeTag());
     const proto = parseStructProto(resource.data, typeTag, this, structTsType);
     return new structTsType(proto, typeTag);
   }
@@ -218,13 +218,12 @@ export class AptosParserRepo {
     address: HexString, 
     containerTypeTag: TypeTag, 
     field: string,
-    query?: { start?: number; limit?: number },
+    query?: { start?: BigInt; limit?: number },
   ) {
-    const handlerFullname = getTypeTagFullname(containerTypeTag);
     if(!(containerTypeTag instanceof StructTag)) {
       throw new Error(`Event handler container struct should be a struct, but received: ${getTypeTagParamlessName(containerTypeTag)}`);
     }
-    const events = await client.getEventsByEventHandle(address, handlerFullname, field, query);
+    const events = await client.getEventsByEventHandle(address, (containerTypeTag as StructTag).getAptosMoveTypeTag(), field, query);
     return events.map( e => { 
       const tag = parseTypeTagOrThrow(e.type);
       return this.parse(e.data, tag);

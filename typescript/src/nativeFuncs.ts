@@ -6,9 +6,9 @@ import * as sha from "sha.js";
 import { SHA3 } from "sha3";
 import bigInt from "big-integer";
 import * as elliptic from "elliptic";
-import { BCS } from "aptos";
 import { AptosParserRepo, FieldDeclType, parseStructProto, StructInfoType, TypeParamDeclType } from "./parserRepo";
 import { strToU8, u64, u8str } from "./builtinFuncs";
+import { BCS } from "aptos/dist/transaction_builder";
 
 
 /*
@@ -291,33 +291,6 @@ export function aptos_framework_account_create_signer(addr: HexString, $c: Aptos
   return addr;
 }
 
-
-class AddressAlias 
-{
-  static moduleAddress = new HexString("0x1");
-  static moduleName = "code";
-  static structName: string = "AddressAlias";
-  static typeParameters: TypeParamDeclType[] = [
-
-  ];
-  static fields: FieldDeclType[] = [
-  { name: "alias", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
-  { name: "addr", typeTag: AtomicTypeTag.Address }];
-
-  alias: ActualStringClass;
-  addr: HexString;
-
-  constructor(proto: any, public typeTag: TypeTag) {
-    this.alias = proto['alias'] as ActualStringClass;
-    this.addr = proto['addr'] as HexString;
-  }
-
-  static AddressAliasParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : AddressAlias {
-    const proto = parseStructProto(data, typeTag, repo, AddressAlias);
-    return new AddressAlias(proto, typeTag);
-  }
-}
-
 class ModuleMetadata 
 {
   static moduleAddress = new HexString("0x1");
@@ -328,49 +301,26 @@ class ModuleMetadata
   ];
   static fields: FieldDeclType[] = [
   { name: "name", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
+  { name: "source", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
   { name: "source_map", typeTag: new VectorTag(AtomicTypeTag.U8) },
-  { name: "source", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) }];
+  { name: "abi", typeTag: new VectorTag(AtomicTypeTag.U8) }];
+
 
   name: ActualStringClass;
-  source_map: U8[];
   source: ActualStringClass;
+  source_map: U8[];
+  abi: U8[];
 
   constructor(proto: any, public typeTag: TypeTag) {
     this.name = proto['name'] as ActualStringClass;
-    this.source_map = proto['source_map'] as U8[];
     this.source = proto['source'] as ActualStringClass;
+    this.source_map = proto['source_map'] as U8[];
+    this.abi = proto['abi'] as U8[];
   }
 
   static ModuleMetadataParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : ModuleMetadata {
     const proto = parseStructProto(data, typeTag, repo, ModuleMetadata);
     return new ModuleMetadata(proto, typeTag);
-  }
-
-}
-
-export class PackageDep 
-{
-  static moduleAddress = new HexString("0x1");
-  static moduleName = "code";
-  static structName: string = "PackageDep";
-  static typeParameters: TypeParamDeclType[] = [
-
-  ];
-  static fields: FieldDeclType[] = [
-  { name: "addr", typeTag: AtomicTypeTag.Address },
-  { name: "name", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) }];
-
-  addr: HexString;
-  name: ActualStringClass;
-
-  constructor(proto: any, public typeTag: TypeTag) {
-    this.addr = proto['addr'] as HexString;
-    this.name = proto['name'] as ActualStringClass;
-  }
-
-  static PackageDepParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : PackageDep {
-    const proto = parseStructProto(data, typeTag, repo, PackageDep);
-    return new PackageDep(proto, typeTag);
   }
 
 }
@@ -386,22 +336,19 @@ export class PackageMetadata
   static fields: FieldDeclType[] = [
   { name: "name", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
   { name: "upgrade_policy", typeTag: new StructTag(new HexString("0x1"), "code", "UpgradePolicy", []) },
-  { name: "modules", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "ModuleMetadata", [])) },
-  { name: "address_aliases", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "AddressAlias", [])) },
-  { name: "deps", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "PackageDep", [])) }];
+  { name: "manifest", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
+  { name: "modules", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "ModuleMetadata", [])) }];
 
   name: ActualStringClass;
   upgrade_policy: UpgradePolicy;
+  manifest: ActualStringClass;
   modules: ModuleMetadata[];
-  address_aliases: AddressAlias[];
-  deps: PackageDep[];
 
   constructor(proto: any, public typeTag: TypeTag) {
     this.name = proto['name'] as ActualStringClass;
     this.upgrade_policy = proto['upgrade_policy'] as UpgradePolicy;
+    this.manifest = proto['manifest'] as ActualStringClass;
     this.modules = proto['modules'] as ModuleMetadata[];
-    this.address_aliases = proto['address_aliases'] as AddressAlias[];
-    this.deps = proto['deps'] as PackageDep[];
   }
 
   static PackageMetadataParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : PackageMetadata {
@@ -452,23 +399,27 @@ export function aptos_std_signature_ed25519_validate_pubkey(pubkey: U8[], $c: Ap
   throw new Error("Not implemented");
 }
 
-export function aptos_std_signature_bls12381_validate_pubkey(pubkey: U8[], proof: U8[], $c: AptosDataCache): boolean {
+export function aptos_std_signature_bls12381_validate_pubkey(pubkey: U8[], $c: AptosDataCache): boolean {
   throw new Error("Not implemented");
-  /*
-  const bs58 = base('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
-  const pubkeyBytes = new Uint8Array(pubkey.map(u => u.toJsNumber()));
-  const proofBytes = new Uint8Array(proof.map(u => u.toJsNumber()));
-  const pubkeyBase58 = bs58.encode(pubkeyBytes);
-  const proofBase58 = bs58.encode(proofBytes);
-  const keypair = new Bls12381G1KeyPair({publicKeyBase58: pubkeyBase58});
-  const result = keypair.verifyFingerprint(proofBase58);
-  return !!result.valid;
-  */
 }
 
 export function aptos_std_signature_bls12381_verify_signature(signature: U8[], public_key: U8[], mesage: U8[], $c: AptosDataCache): boolean {
   throw new Error("Not implemented");
 }
+
+export function aptos_std_signature_bls12381_verify_proof_of_possession(public_key: U8[], proof_of_posession: U8[], $c: AptosDataCache): boolean {
+  throw new Error("Not implemented");
+}
+
+interface IOption {
+  vec: any[];
+  typeTag: TypeTag;
+}
+
+export function aptos_std_signature_bls12381_aggregate_pop_verified_pubkeys(public_keys: U8[][], $c: AptosDataCache): IOption {
+  throw new Error("Not implemented");
+}
+
 
 export function aptos_std_signature_ed25519_verify(signature: U8[], pubkey: U8[], message: U8[], $c: AptosDataCache): boolean {
   const ec = new elliptic.eddsa("ed25519");
@@ -477,7 +428,7 @@ export function aptos_std_signature_ed25519_verify(signature: U8[], pubkey: U8[]
   return key.verify(u8ArrayToKeyString(message), u8ArrayToKeyString(signature));
 }
 
-export function aptos_std_signature_secp256k1_recover(message: U8[], recovery_id: U8, signature: U8[], $c: AptosDataCache): [U8[], boolean] {
+export function aptos_std_signature_secp256k1_ecdsa_recover(message: U8[], recovery_id: U8, signature: U8[], $c: AptosDataCache): [U8[], boolean] {
   throw new Error("Not implemented");
 }
 

@@ -65,9 +65,9 @@ pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (Stri
     "typescript": "^4.6.4"
   }},
   "dependencies": {{
-    "aptos": "^1.2.0",
+    "aptos": "^1.3.2",
     "big-integer": "^1.6.51",{}
-    "@manahippo/move-to-ts": "^0.0.61"
+    "@manahippo/move-to-ts": "^0.0.64"
   }}
 }}
 "###,
@@ -310,7 +310,7 @@ export class TypedIterableTable<K, V> {
   }
 
   async loadEntryRaw(client: AptosClient, key: K): Promise<any> {
-    return await client.getTableItem(this.table.inner.handle.value.toString(), {
+    return await client.getTableItem(this.table.inner.inner.handle.value.toString(), {
       key_type: $.getTypeTagFullname(this.keyTag),
       value_type: $.getTypeTagFullname(this.iterValueTag),
       key: $.moveValueToOpenApiObject(key, this.keyTag),
