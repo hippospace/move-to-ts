@@ -133,7 +133,6 @@ export function copy<T>(val: T): T {
       proto[fname] = copy(v[fname]);
     }
     let copied = new structInfo(proto, v.typeTag);
-    copied.constructor = structInfo;
     return copied;
   }
   else {

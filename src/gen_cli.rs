@@ -77,7 +77,7 @@ pub fn stype_to_ts_parser(name: &String, loc: Loc, stype: &SingleType) -> TermRe
     }
 }
 
-pub fn format_qualified_fname_and_import(
+pub fn format_qualified_payload_fname_and_import(
     mident: &ModuleIdent,
     name: &impl fmt::Display,
 ) -> (String, String) {
@@ -86,6 +86,23 @@ pub fn format_qualified_fname_and_import(
     (
         format!(
             "{}.{}.buildPayload_{}",
+            capitalize(&package_name),
+            capitalize(&mident.value.module),
+            name
+        ),
+        package_name,
+    )
+}
+
+pub fn format_qualified_fname_and_import(
+    mident: &ModuleIdent,
+    name: &impl fmt::Display,
+) -> (String, String) {
+    // name exists in a different package, use fully qualified name
+    let package_name = format_address(mident.value.address);
+    (
+        format!(
+            "{}.{}.query_{}",
             capitalize(&package_name),
             capitalize(&mident.value.module),
             name
@@ -137,7 +154,7 @@ pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic>
         ));
         arguments.push(format!("  .argument('<{}>')", pname));
     }
-    let (payload_builder, package_name) = format_qualified_fname_and_import(&cmd.mi, &cmd.fname);
+    let (payload_builder, package_name) = format_qualified_payload_fname_and_import(&cmd.mi, &cmd.fname);
     let payload = format!(
         "{}({}{})",
         payload_builder,
@@ -285,6 +302,74 @@ program
     Ok((body, package_name))
 }
 
+pub fn generate_query_printer(
+    query: &CmdParams,
+) -> Result<(String, String), Diagnostic> {
+    let mut arg_decls = vec![];
+    for tp in query.func.signature.type_parameters.iter() {
+        arg_decls.push(format!("{}: string", tp.user_specified_name));
+    }
+    let params_no_signer = query.func.signature.parameters.iter().filter(|(_, t)| !is_type_signer (t));
+    for (name, _) in params_no_signer.clone() {
+        arg_decls.push(format!("{}: string", name));
+    }
+
+    let (query_func_name, package_name) = format_qualified_fname_and_import(&query.mi, &query.fname);
+
+    let type_tags_inner = query.func.signature
+        .type_parameters
+        .iter()
+        .map(|tp| format!("parseTypeTagOrThrow({})", tp.user_specified_name))
+        .join(", ");
+
+    let mut arguments = vec![];
+
+    for tp in query.func.signature.type_parameters.iter() {
+        arguments.push(format!(
+            "  .argument('<TYPE_{}>')",
+            tp.user_specified_name
+        ));
+    }
+    for (name, _) in params_no_signer.clone() {
+        arguments.push(format!("  .argument('<{}>')", name));
+    }
+
+    let mut param_handlers = vec![];
+    for (name, ty) in params_no_signer {
+        param_handlers.push(stype_to_ts_parser(&name.to_string(), name.0.loc, ty)?);
+    }
+
+    let cmd_func_name = format!("{}_{}", query.mi.value.module, query.fname);
+    let command_name = format!("{}:query-{}", query.mi.value.module, query.fname.to_string().replace("_", "-"));
+
+    let body = format!(
+        r###"
+const {} = async ({}) => {{
+  const {{client, account}} = readConfig(program);
+  const repo = getProjectRepo();
+  const value = await {}(client, account, repo, {}{}[{}])
+  print(value);
+}}
+
+program
+  .command("{}")
+{}
+  .action({})
+"###,
+        cmd_func_name,
+        arg_decls.join(", "),
+        query_func_name,
+        param_handlers.join(", "),
+        if param_handlers.is_empty() {""} else {", "},
+        type_tags_inner,
+        command_name,
+        arguments.join("\n"),
+        cmd_func_name,
+    );
+
+    Ok((body, package_name))
+}
+
 pub fn generate_iter_table_printer(
     mi: &ModuleIdent,
     sname: &StructName,
@@ -372,21 +457,32 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
             return Err(diags);
         }
     }
-    for query in ctx.all_queries.iter() {
-        let (mi, sname, sdef, fname, fsig) = query;
+    for method in ctx.printer_methods.iter() {
+        let (mi, sname, sdef, fname, fsig) = method;
         // if sdef is a resource type, generate printer for it
         if sdef.abilities.has_ability_(Ability_::Key) {
             let printer_res = generate_printer(mi, sname, sdef, fname, fsig);
             if let Ok((printer_body, package_name)) = printer_res {
                 printers.push(printer_body);
                 imported_packages.insert(package_name);
-            }
-            else {
+            } else {
                 let diag = printer_res.err().unwrap();
                 let mut diags = Diagnostics::new();
                 diags.add(diag);
                 return Err(diags);
             }
+        }
+    }
+    for query in ctx.queries.iter() {
+        let command_res = generate_query_printer(query);
+        if let Ok((cmd_str, package_name)) = command_res {
+            commands.push(cmd_str);
+            imported_packages.insert(package_name);
+        } else {
+            let diag = command_res.err().unwrap();
+            let mut diags = Diagnostics::new();
+            diags.add(diag);
+            return Err(diags);
         }
     }
     for show_iter_table in ctx.all_shows_iter_tables.iter() {

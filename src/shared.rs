@@ -120,8 +120,10 @@ pub struct Context {
     )>,
     // cmd info
     pub cmds: Vec<CmdParams>,
+    // query info
+    pub queries: Vec<CmdParams>,
     // all shows collected
-    pub all_queries: Vec<(
+    pub printer_methods: Vec<(
         ModuleIdent,
         StructName,
         StructDefinition,
@@ -160,7 +162,8 @@ impl Context {
             config: config.clone(),
             tests: vec![],
             cmds: vec![],
-            all_queries: vec![],
+            queries: vec![],
+            printer_methods: vec![],
             all_shows_iter_tables: vec![],
         }
     }
@@ -224,7 +227,16 @@ impl Context {
         });
     }
 
-    pub fn add_query(
+    pub fn add_query(&mut self, mi: &ModuleIdent, fname: &FunctionName, func: &Function) {
+        self.queries.push(CmdParams {
+            mi: mi.clone(),
+            fname: fname.clone(),
+            func: func.clone(),
+            desc: None,
+        });
+    }
+
+    pub fn add_printer_method(
         &mut self,
         mi: &ModuleIdent,
         sname: &StructName,
@@ -232,7 +244,7 @@ impl Context {
         fname: &Name,
         sig: &FunctionSignature,
     ) {
-        self.all_queries.push((
+        self.printer_methods.push((
             mi.clone(),
             sname.clone(),
             sdef.clone(),

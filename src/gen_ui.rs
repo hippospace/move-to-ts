@@ -1,5 +1,5 @@
 use crate::ast_to_ts::is_type_signer;
-use crate::gen_cli::{format_qualified_fname_and_import, stype_to_ts_parser};
+use crate::gen_cli::{format_qualified_payload_fname_and_import, stype_to_ts_parser};
 use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
 use itertools::Itertools;
@@ -146,7 +146,7 @@ pub fn write_command(cmd: &CmdParams, w: &mut TsgenWriter) -> TermResult {
             stype_to_ts_parser(&format!("{}_", pname), pname.0.loc, ptype)?
         ));
     }
-    let (payload_builder, package_name) = format_qualified_fname_and_import(&cmd.mi, &cmd.fname);
+    let (payload_builder, package_name) = format_qualified_payload_fname_and_import(&cmd.mi, &cmd.fname);
     w.writeln(format!(
         "const payload = {}({}{});",
         payload_builder,

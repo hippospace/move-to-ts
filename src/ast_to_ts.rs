@@ -49,7 +49,7 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
         "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
         "import {AtomicTypeTag, StructTag, TypeTag, VectorTag} from \"@manahippo/move-to-ts\";"
             .to_string(),
-        "import {HexString, AptosClient} from \"aptos\";".to_string(),
+        "import {HexString, AptosClient, AptosAccount} from \"aptos\";".to_string(),
     ];
     for package_name in c.package_imports.iter() {
         lines.push(format!(
@@ -390,7 +390,7 @@ pub fn handle_struct_show_iter_table_directive(
     Ok(())
 }
 
-pub fn validate_query_function(
+pub fn validate_method(
     sname: &StructName,
     sdef: &StructDefinition,
     name: &Name,
@@ -463,7 +463,7 @@ pub fn validate_query_function(
     Ok(())
 }
 
-pub fn handle_struct_query_directive(
+pub fn handle_struct_method_directive(
     sname: &StructName,
     sdef: &StructDefinition,
     inner_attrs: &Attributes,
@@ -482,9 +482,9 @@ pub fn handle_struct_query_directive(
                     return derr!((fname.loc, "This function does not exist in current module"));
                 }
                 let func = func_opt.unwrap();
-                validate_query_function(sname, sdef, fname, func, c)?;
+                validate_method(sname, sdef, fname, func, c)?;
 
-                // generate show method
+                // generate method
                 w.new_line();
 
                 let async_modifier = if c.is_async() { "async " } else { "" };
@@ -508,7 +508,15 @@ pub fn handle_struct_query_directive(
                 w.writeln("}");
 
                 // generate printer for cli
-                c.add_query(&c.current_module.unwrap(), sname, sdef, fname, &func.signature);
+                if func.signature.return_type.value != Type_::Unit {
+                    c.add_printer_method(
+                        &c.current_module.unwrap(),
+                        sname,
+                        sdef,
+                        fname,
+                        &func.signature,
+                    );
+                }
             }
             _ => {
                 return derr!((
@@ -532,13 +540,13 @@ pub fn handle_struct_directives(
     for (name, attr) in attrs.key_cloned_iter() {
         match name.to_string().as_str() {
             "cmd" => return derr!((attr.loc, "the 'cmd' attribute cannot be used on structs")),
-            "query" => match &attr.value {
+            "method" => match &attr.value {
                 Attribute_::Parameterized(_, inner_attrs) => {
                     w.new_line();
-                    handle_struct_query_directive(sname, sdef, inner_attrs, w, c)?;
+                    handle_struct_method_directive(sname, sdef, inner_attrs, w, c)?;
                 }
                 _ => {
-                    return derr!((attr.loc, "the 'query' requires a list of function names as argument (e.g. $[query(show_x_as_y)]"))
+                    return derr!((attr.loc, "the 'method' attribute requires a list of function names as argument (e.g. $[method(show_x_as_y)]"))
                 }
             }
             "show_iter_table" => match &attr.value {
@@ -693,6 +701,12 @@ pub fn handle_function_cmd_directive(
     _w: &mut TsgenWriter,
     c: &mut Context,
 ) -> WriteResult {
+    if f.entry.is_none() {
+        return derr!((
+            fname.0.loc,
+            "the cmd attribute only works on public entry functions"
+        ));
+    }
     let mut desc = None;
     if let Some(params) = inner_attrs {
         for (pname, pattr) in params.key_cloned_iter() {
@@ -718,6 +732,120 @@ pub fn handle_function_cmd_directive(
     Ok(())
 }
 
+pub fn write_query_function(
+    fname: &FunctionName,
+    f: &Function,
+    return_type: &BaseType,
+    w: &mut TsgenWriter,
+    c: &mut Context,
+) -> WriteResult {
+    let query_fname = format!("query_{}", fname);
+    w.writeln(format!("export async function {}(", query_fname));
+    w.increase_indent();
+
+    // params
+    w.writeln("client: AptosClient,");
+    w.writeln("account: AptosAccount,");
+    w.writeln("repo: AptosParserRepo,");
+    write_parameters(&f.signature, w, c, true, false)?;
+    w.writeln("$p: TypeTag[],");
+
+    w.decrease_indent();
+    w.writeln(") {");
+
+    let mut param_list = f
+        .signature
+        .parameters
+        .iter()
+        .filter(|(_, t)| !is_type_signer(t))
+        .map(|(v, _)| v.to_string())
+        .collect::<Vec<_>>();
+
+    if !f.signature.type_parameters.is_empty() {
+        param_list.push("$p".to_string());
+    }
+
+    let move_to_err = derr!((return_type.loc, "Expect move_to to contain a struct type"));
+    let output_struct_name = match &return_type.value {
+        BaseType_::Apply(_, tn, _) => match &tn.value {
+            TypeName_::ModuleType(_, name) => name.to_string(),
+            _ => {
+                return move_to_err;
+            },
+        }
+        _ => {
+            return move_to_err;
+        }
+    };
+
+    w.increase_indent();
+
+    // body
+    w.writeln(format!(
+        "const payload = buildPayload_{}({});",
+        fname, param_list.join(", ")
+    ));
+    let output_tag = base_type_to_typetag(return_type, c)?;
+    w.writeln(format!("const outputTypeTag = {};", output_tag));
+    w.writeln("const output = await $.simulatePayloadTx(client, account, payload);");
+    w.writeln(format!("return $.takeSimulationValue<{}>(output, outputTypeTag, repo)", output_struct_name));
+
+    w.decrease_indent();
+    w.writeln("}");
+
+    Ok(())
+}
+
+pub fn handle_function_query_directive(
+    fname: &FunctionName,
+    f: &Function,
+    w: &mut TsgenWriter,
+    c: &mut Context,
+) -> WriteResult {
+    if f.entry.is_none() {
+        return derr!((
+            fname.0.loc,
+            "the query attribute only works on public entry functions"
+        ));
+    }
+
+    // validate that the function has:
+    // move_to<X>(..., x) as last statement
+
+    match &f.body.value {
+        FunctionBody_::Native => {
+            derr!((
+                fname.0.loc,
+                "the query attribute can only be used on user-defined entry functions"
+            ))
+        }
+        FunctionBody_::Defined { locals: _, body } => {
+            if body.is_empty() {
+                return derr!((f.body.loc, "the query attribute can only be used on entry functions with a move_to<X>(signer, x); as the final statement"));
+            }
+            let last_stmt = body.get(body.len() - 1).unwrap();
+            let err  = derr!((last_stmt.loc, "the query attribute can only be used on entry functions with a move_to<X>(signer, x); as the final statement"));
+            match &last_stmt.value {
+                Statement_::Command(command) => match &command.value {
+                    Command_::Return { from_user: _, exp } => match &exp.exp.value {
+                        UnannotatedExp_::Builtin(builtin_f, _) => match &builtin_f.value {
+                            BuiltinFunction_::MoveTo(base) => {
+                                write_query_function(fname, f, base, w, c)?;
+                                c.add_query(&c.current_module.unwrap(), fname, f);
+                                Ok(())
+                            }
+                            _ => err,
+                        },
+                        _ => err,
+                    },
+                    _ => err,
+                },
+                _ => err,
+            }
+        }
+    }
+}
+
 pub fn handle_function_directives(
     fname: &FunctionName,
     f: &Function,
@@ -740,6 +868,19 @@ pub fn handle_function_directives(
                     return derr!((attr.loc, "the 'cmd' attribute cannot be assigned"))
                 }
             },
+            "query" => match &attr.value {
+                Attribute_::Name(_) => {
+                    w.new_line();
+                    handle_function_query_directive(fname, f, w, c)?;
+                }
+                _ => return derr!((attr.loc, "the 'query' attribute has no parameters")),
+            },
+            "method" => {
+                return derr!((
+                    attr.loc,
+                    "the 'method' attribute can only be used on structs"
+                ))
+            }
             _ => (),
         }
     }
@@ -901,9 +1042,9 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 Ok(())
             })?;
             w.new_line();
-
-            handle_function_directives(name, func, w, c)?;
         }
+
+        handle_function_directives(name, func, w, c)?;
 
         c.current_function_signature = None;
 
