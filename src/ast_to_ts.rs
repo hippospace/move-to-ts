@@ -500,10 +500,11 @@ pub fn handle_struct_method_directive(
                     .map(|(v, _)| v.to_string())
                     .join(", ");
                 w.writeln(format!(
-                    "  return {}(this, {}{}cache, tags);",
+                    "  return {}(this, {}{}cache{});",
                     format_function_name(fname, c.is_async()),
                     args_str,
-                    if args_str.is_empty() { "" } else { ", " }
+                    if args_str.is_empty() { "" } else { ", " },
+                    if func.signature.type_parameters.is_empty() {""} else {", tags"},
                 ));
                 w.writeln("}");
 

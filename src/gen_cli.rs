@@ -466,10 +466,13 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
                 printers.push(printer_body);
                 imported_packages.insert(package_name);
             } else {
+                println!("Skipping CLI generation for {} as it contains unsupported arguments", fname);
+                /*
                 let diag = printer_res.err().unwrap();
                 let mut diags = Diagnostics::new();
                 diags.add(diag);
                 return Err(diags);
+                 */
             }
         }
     }
