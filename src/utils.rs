@@ -67,7 +67,7 @@ pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (Stri
   "dependencies": {{
     "aptos": "^1.3.5",
     "big-integer": "^1.6.51",{}
-    "@manahippo/move-to-ts": "^0.1.2"
+    "@manahippo/move-to-ts": "^0.1.3"
   }}
 }}
 "###,
@@ -179,8 +179,19 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         .map(|mi| format!("  {}.loadParsers(repo);", capitalize(&mi.value.module)))
         .join("\n");
 
+    let app_fields = modules.iter().map(|mi| {
+        let cap_name = capitalize(&mi.value.module);
+        return format!("  {} : {}.App", mi.value.module, cap_name);
+    }).join("\n");
+
+    let app_field_inits = modules.iter().map(|mi| {
+        let cap_name = capitalize(&mi.value.module);
+        return format!("    this.{} = new {}.App(client, repo);", mi.value.module, cap_name);
+    }).join("\n");
+
     let content = format!(
         r###"
+import {{ AptosClient }} from "aptos";
 import {{ AptosParserRepo }} from "@manahippo/move-to-ts";
 {}
 {}
@@ -195,8 +206,18 @@ export function getPackageRepo(): AptosParserRepo {{
   repo.addDefaultParsers();
   return repo;
 }}
+
+export class App {{
+{}
+  constructor(
+    public client: AptosClient,
+    public repo: AptosParserRepo,
+  ) {{
+{}
+  }}
+}}
 "###,
-        imports, exports, loads
+        imports, exports, loads, app_fields, app_field_inits
     );
 
     (filename, content)
@@ -221,8 +242,17 @@ pub fn generate_topmost_index(packages: &Vec<&String>) -> (String, String) {
         .map(|p| format!("  {}.loadParsers(repo);", p))
         .join("\n");
 
+    let app_fields = packages.iter().map(|p| {
+        return format!("  {} : {}.App", p, p);
+    }).join("\n");
+
+    let app_field_inits = packages.iter().map(|p| {
+        return format!("    this.{} = new {}.App(client, this.parserRepo);", p, p);
+    }).join("\n");
+
     let content = format!(
         r###"
+import {{ AptosClient }} from "aptos";
 import {{ AptosParserRepo }} from "@manahippo/move-to-ts";
 {}
 {}
@@ -233,8 +263,19 @@ export function getProjectRepo(): AptosParserRepo {{
   repo.addDefaultParsers();
   return repo;
 }}
+
+export class App {{
+  parserRepo: AptosParserRepo;
+{}
+  constructor(
+    public client: AptosClient,
+  ) {{
+    this.parserRepo = getProjectRepo();
+{}
+  }}
+}}
 "###,
-        imports, exports, loads
+        imports, exports, loads, app_fields, app_field_inits
     );
 
     (filename, content)

@@ -139,6 +139,9 @@ impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
         // loadParsers
         write_load_parsers(name, module, w, c)?;
 
+        // app
+        write_app(name, module, w, c)?;
+
         if c.config.ui {}
 
         // for things like Table, IterableTable
@@ -171,6 +174,90 @@ pub fn write_load_parsers(
         ));
     }
 
+    w.writeln("}");
+
+    Ok(())
+}
+
+pub fn write_app(
+    _mident: &ModuleIdent,
+    module: &ModuleDefinition,
+    w: &mut TsgenWriter,
+    c: &mut Context,
+) -> WriteResult {
+    w.writeln("export class App {");
+    w.increase_indent();
+
+    w.writeln("constructor(");
+    w.writeln("  public client: AptosClient,");
+    w.writeln("  public repo: AptosParserRepo,");
+    w.writeln(") {");
+    w.writeln("}");
+
+    // struct loaders
+    for (sname, sdef) in module.structs.key_cloned_iter() {
+        if !sdef.abilities.has_ability_(Ability_::Key) {
+            continue;
+        }
+        let tpnames = sdef
+            .type_parameters
+            .iter()
+            .map(|tp| rename(&tp.param.user_specified_name))
+            .join(", ");
+        w.writeln(format!("async load{}(", sname));
+        w.writeln("  owner: HexString,");
+        if !sdef.type_parameters.is_empty() {
+            w.writeln(format!("  $p: TypeTag[], /* <{}> */", tpnames));
+        }
+        let tags = if sdef.type_parameters.is_empty() {
+            "[] as TypeTag[]"
+        } else {
+            "$p"
+        };
+        w.writeln(") {");
+        w.writeln(format!(
+            "  return {}.load(this.repo, this.client, owner, {});",
+            sname, tags
+        ));
+        w.writeln("}");
+    }
+
+    // payload builders
+    for (fname, func) in module.functions.key_cloned_iter() {
+        if func.entry.is_none() || !script_function_has_valid_parameter(&func.signature) {
+            continue;
+        }
+        let tpnames = func
+            .signature
+            .type_parameters
+            .iter()
+            .map(|tp| rename(&tp.user_specified_name))
+            .join(", ");
+
+        let args = func
+            .signature
+            .parameters
+            .iter()
+            .filter(|(_, ty)| !is_type_signer(ty))
+            .map(|(name, _)| rename(name))
+            .join(", ");
+
+        w.writeln(format!("{}(", fname));
+        write_parameters(&func.signature, w, c, true, false)?;
+        if func.signature.type_parameters.len() > 0 {
+            w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
+        }
+        let tags = if func.signature.type_parameters.is_empty() {""} else {"$p"};
+        let separator = if args.is_empty() || tags.is_empty() {""} else {", "};
+        w.writeln(") {");
+        w.writeln(format!(
+            "  return buildPayload_{}({}{}{});",
+            fname, args, separator, tags
+        ));
+        w.writeln("}");
+    }
+
+    w.decrease_indent();
     w.writeln("}");
 
     Ok(())
@@ -504,7 +591,11 @@ pub fn handle_struct_method_directive(
                     format_function_name(fname, c.is_async()),
                     args_str,
                     if args_str.is_empty() { "" } else { ", " },
-                    if func.signature.type_parameters.is_empty() {""} else {", tags"},
+                    if func.signature.type_parameters.is_empty() {
+                        ""
+                    } else {
+                        ", tags"
+                    },
                 ));
                 w.writeln("}");
 
@@ -772,8 +863,8 @@ pub fn write_query_function(
             TypeName_::ModuleType(_, name) => name.to_string(),
             _ => {
                 return move_to_err;
-            },
-        }
+            }
+        },
         _ => {
             return move_to_err;
         }
@@ -784,12 +875,16 @@ pub fn write_query_function(
     // body
     w.writeln(format!(
         "const payload = buildPayload_{}({});",
-        fname, param_list.join(", ")
+        fname,
+        param_list.join(", ")
     ));
     let output_tag = base_type_to_typetag(return_type, c)?;
     w.writeln(format!("const outputTypeTag = {};", output_tag));
     w.writeln("const output = await $.simulatePayloadTx(client, account, payload);");
-    w.writeln(format!("return $.takeSimulationValue<{}>(output, outputTypeTag, repo)", output_struct_name));
+    w.writeln(format!(
+        "return $.takeSimulationValue<{}>(output, outputTypeTag, repo)",
+        output_struct_name
+    ));
 
     w.decrease_indent();
     w.writeln("}");

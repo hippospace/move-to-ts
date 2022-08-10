@@ -16,7 +16,8 @@ use std::fmt;
 
 pub fn vector_type_ts_parser(name: &String, element_type: &BaseType) -> TermResult {
     match &element_type.value {
-        BaseType_::Param(tparam) => {
+        BaseType_::Param(_tparam) => {
+            // FIXME
             derr!((
                 element_type.loc,
                 "Generic-typed arguments not supported at entry function invocation (yet)"
@@ -47,7 +48,8 @@ pub fn stype_to_ts_parser(name: &String, loc: Loc, stype: &SingleType) -> TermRe
         SingleType_::Ref(_, b) => b,
     };
     match &base.value {
-        BaseType_::Param(tparam) => {
+        BaseType_::Param(_tparam) => {
+            // FIXME
             derr!((
                 loc,
                 "Generic-typed arguments not supported at entry function invocation (yet)"
@@ -154,7 +156,8 @@ pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic>
         ));
         arguments.push(format!("  .argument('<{}>')", pname));
     }
-    let (payload_builder, package_name) = format_qualified_payload_fname_and_import(&cmd.mi, &cmd.fname);
+    let (payload_builder, package_name) =
+        format_qualified_payload_fname_and_import(&cmd.mi, &cmd.fname);
     let payload = format!(
         "{}({}{})",
         payload_builder,
@@ -302,21 +305,27 @@ program
     Ok((body, package_name))
 }
 
-pub fn generate_query_printer(
-    query: &CmdParams,
-) -> Result<(String, String), Diagnostic> {
+pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Diagnostic> {
     let mut arg_decls = vec![];
     for tp in query.func.signature.type_parameters.iter() {
         arg_decls.push(format!("{}: string", tp.user_specified_name));
     }
-    let params_no_signer = query.func.signature.parameters.iter().filter(|(_, t)| !is_type_signer (t));
+    let params_no_signer = query
+        .func
+        .signature
+        .parameters
+        .iter()
+        .filter(|(_, t)| !is_type_signer(t));
     for (name, _) in params_no_signer.clone() {
         arg_decls.push(format!("{}: string", name));
     }
 
-    let (query_func_name, package_name) = format_qualified_fname_and_import(&query.mi, &query.fname);
+    let (query_func_name, package_name) =
+        format_qualified_fname_and_import(&query.mi, &query.fname);
 
-    let type_tags_inner = query.func.signature
+    let type_tags_inner = query
+        .func
+        .signature
         .type_parameters
         .iter()
         .map(|tp| format!("parseTypeTagOrThrow({})", tp.user_specified_name))
@@ -325,10 +334,7 @@ pub fn generate_query_printer(
     let mut arguments = vec![];
 
     for tp in query.func.signature.type_parameters.iter() {
-        arguments.push(format!(
-            "  .argument('<TYPE_{}>')",
-            tp.user_specified_name
-        ));
+        arguments.push(format!("  .argument('<TYPE_{}>')", tp.user_specified_name));
     }
     for (name, _) in params_no_signer.clone() {
         arguments.push(format!("  .argument('<{}>')", name));
@@ -340,7 +346,11 @@ pub fn generate_query_printer(
     }
 
     let cmd_func_name = format!("{}_{}", query.mi.value.module, query.fname);
-    let command_name = format!("{}:query-{}", query.mi.value.module, query.fname.to_string().replace("_", "-"));
+    let command_name = format!(
+        "{}:query-{}",
+        query.mi.value.module,
+        query.fname.to_string().replace("_", "-")
+    );
 
     let body = format!(
         r###"
@@ -360,7 +370,7 @@ program
         arg_decls.join(", "),
         query_func_name,
         param_handlers.join(", "),
-        if param_handlers.is_empty() {""} else {", "},
+        if param_handlers.is_empty() { "" } else { ", " },
         type_tags_inner,
         command_name,
         arguments.join("\n"),
@@ -466,7 +476,10 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
                 printers.push(printer_body);
                 imported_packages.insert(package_name);
             } else {
-                println!("Skipping CLI generation for {} as it contains unsupported arguments", fname);
+                println!(
+                    "Skipping CLI generation for {} as it contains unsupported arguments",
+                    fname
+                );
                 /*
                 let diag = printer_res.err().unwrap();
                 let mut diags = Diagnostics::new();
