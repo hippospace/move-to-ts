@@ -366,9 +366,14 @@ pub fn handle_special_structs(
         if mident.value.module.to_string() == "iterable_table"
             && name.to_string() == "IterableTable"
         {
-            w.writeln("toTypedIterTable<K = any, V = any>(field: $.FieldDeclType) { return (TypedIterableTable<K, V>).buildFromField(this, field); }");
+            w.writeln("toTypedIterTable<K = any, V = any>() { return TypedIterableTable.fromIterableTable<K, V>(this); }");
         }
-        if mident.value.module.to_string() == "type_info" && name.to_string() == "TypeInfo" {
+        else if mident.value.module.to_string() == "table"
+            && name.to_string() == "Table"
+        {
+            w.writeln("toTypedTable<K = any, V = any>() { return TypedTable.fromTable<K, V>(this); }");
+        }
+        else if mident.value.module.to_string() == "type_info" && name.to_string() == "TypeInfo" {
             w.writeln("typeFullname(): string {");
             w.writeln("  return `${this.account_address.toShortString()}::${$.u8str(this.module_name)}::${$.u8str(this.struct_name)}`;");
             w.writeln("}");

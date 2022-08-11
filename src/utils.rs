@@ -298,9 +298,9 @@ export class App {{
 
 pub fn get_table_helper_decl() -> String {
     r###"
-export class TypedTable<K, V> {
-  static buildFromField<K, V>(table: Table, field: FieldDeclType): TypedTable<K, V> {
-    const tag = field.typeTag;
+export class TypedTable<K=any, V=any> {
+  static fromTable<K=any, V=any>(table: Table): TypedTable<K, V> {
+    const tag = table.typeTag;
     if (!(tag instanceof StructTag)) {
       throw new Error();
     }
@@ -340,9 +340,9 @@ export class TypedTable<K, V> {
 
 pub fn get_iterable_table_helper_decl() -> String {
     r###"
-export class TypedIterableTable<K, V> {
-  static buildFromField<K, V>(table: IterableTable, field: FieldDeclType): TypedIterableTable<K, V> {
-    const tag = field.typeTag;
+export class TypedIterableTable<K=any, V=any> {
+  static fromIterableTable<K=any, V=any>(table: IterableTable): TypedIterableTable<K, V> {
+    const tag = table.typeTag;
     if (!(tag instanceof StructTag)) {
       throw new Error();
     }
