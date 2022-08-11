@@ -179,15 +179,24 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         .map(|mi| format!("  {}.loadParsers(repo);", capitalize(&mi.value.module)))
         .join("\n");
 
-    let app_fields = modules.iter().map(|mi| {
-        let cap_name = capitalize(&mi.value.module);
-        return format!("  {} : {}.App", mi.value.module, cap_name);
-    }).join("\n");
+    let app_fields = modules
+        .iter()
+        .map(|mi| {
+            let cap_name = capitalize(&mi.value.module);
+            return format!("  {} : {}.App", mi.value.module, cap_name);
+        })
+        .join("\n");
 
-    let app_field_inits = modules.iter().map(|mi| {
-        let cap_name = capitalize(&mi.value.module);
-        return format!("    this.{} = new {}.App(client, repo);", mi.value.module, cap_name);
-    }).join("\n");
+    let app_field_inits = modules
+        .iter()
+        .map(|mi| {
+            let cap_name = capitalize(&mi.value.module);
+            return format!(
+                "    this.{} = new {}.App(client, repo);",
+                mi.value.module, cap_name
+            );
+        })
+        .join("\n");
 
     let content = format!(
         r###"
@@ -242,13 +251,19 @@ pub fn generate_topmost_index(packages: &Vec<&String>) -> (String, String) {
         .map(|p| format!("  {}.loadParsers(repo);", p))
         .join("\n");
 
-    let app_fields = packages.iter().map(|p| {
-        return format!("  {} : {}.App", p, p);
-    }).join("\n");
+    let app_fields = packages
+        .iter()
+        .map(|p| {
+            return format!("  {} : {}.App", p, p);
+        })
+        .join("\n");
 
-    let app_field_inits = packages.iter().map(|p| {
-        return format!("    this.{} = new {}.App(client, this.parserRepo);", p, p);
-    }).join("\n");
+    let app_field_inits = packages
+        .iter()
+        .map(|p| {
+            return format!("    this.{} = new {}.App(client, this.parserRepo);", p, p);
+        })
+        .join("\n");
 
     let content = format!(
         r###"

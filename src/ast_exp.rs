@@ -57,9 +57,7 @@ impl AstTsPrinter for Exp {
                     Type_::Multiple(_) => explicit_copy,
                 }
             }
-            E::Constant(c) => {
-                Ok(format!("$.copy({})", rename(c)))
-            },
+            E::Constant(c) => Ok(format!("$.copy({})", rename(c))),
             E::ModuleCall(mcall) => {
                 // ModuleCall
                 Ok(mcall.term(c)?)
@@ -605,17 +603,12 @@ pub fn handle_binop_for_base_type(
                 TypeName_::ModuleType(_mident, _s) => {
                     // struct only supports == or !=
                     match &binop.value {
-                        BinOp_::Eq => {
-                            Ok(format!("$.deep_eq({}, {})", lhs.term(c)?, rhs.term(c)?))
-                        }
+                        BinOp_::Eq => Ok(format!("$.deep_eq({}, {})", lhs.term(c)?, rhs.term(c)?)),
                         BinOp_::Neq => {
                             Ok(format!("!$.deep_eq({}, {})", lhs.term(c)?, rhs.term(c)?))
                         }
                         _ => {
-                            return derr!((
-                                        binop.loc,
-                                        "Operation not supported on struct"
-                                    ));
+                            return derr!((binop.loc, "Operation not supported on struct"));
                         }
                     }
                 }

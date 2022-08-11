@@ -247,8 +247,16 @@ pub fn write_app(
         if func.signature.type_parameters.len() > 0 {
             w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
         }
-        let tags = if func.signature.type_parameters.is_empty() {""} else {"$p"};
-        let separator = if args.is_empty() || tags.is_empty() {""} else {", "};
+        let tags = if func.signature.type_parameters.is_empty() {
+            ""
+        } else {
+            "$p"
+        };
+        let separator = if args.is_empty() || tags.is_empty() {
+            ""
+        } else {
+            ", "
+        };
         w.writeln(") {");
         w.writeln(format!(
             "  return buildPayload_{}({}{}{});",
@@ -358,7 +366,7 @@ pub fn handle_special_structs(
         if mident.value.module.to_string() == "iterable_table"
             && name.to_string() == "IterableTable"
         {
-            w.writeln("toTypedIterTable<K, V>(field: $.FieldDeclType) { return (TypedIterableTable<K, V>).buildFromField(this, field); }");
+            w.writeln("toTypedIterTable<K = any, V = any>(field: $.FieldDeclType) { return (TypedIterableTable<K, V>).buildFromField(this, field); }");
         }
         if mident.value.module.to_string() == "type_info" && name.to_string() == "TypeInfo" {
             w.writeln("typeFullname(): string {");
