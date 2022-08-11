@@ -113,6 +113,7 @@ pub fn format_qualified_fname_and_import(
     )
 }
 
+/// Generates module_name:func-name command for entry functions marked with #[cmd]
 pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic> {
     let type_param_names = cmd
         .func
@@ -232,6 +233,7 @@ pub fn format_qualified_sname_and_import(
     )
 }
 
+/// Generate printer commands for functions included by #[method(...)]
 pub fn generate_printer(
     mi: &ModuleIdent,
     sname: &StructName,
@@ -305,6 +307,7 @@ program
     Ok((body, package_name))
 }
 
+/// Generate query commands for functions marked with #[query]
 pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Diagnostic> {
     let mut arg_decls = vec![];
     for tp in query.func.signature.type_parameters.iter() {

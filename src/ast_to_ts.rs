@@ -674,8 +674,9 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
             // 3. ctor
             // 4. static parser
             // 5. resource loader
-            // 6. additional util funcs
-            // 7. attribute-directives
+            // 6. makeTag / getTag
+            // 7. additional util funcs
+            // 8. attribute-directives
 
             // 0: type parameters
             w.write("static typeParameters: TypeParamDeclType[] = [");
@@ -745,10 +746,32 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                         w.write("}");
                     }
 
-                    // 6. additional util funcs
+                    // 6. makeTag / getTag
+                    if sdef.type_parameters.is_empty() {
+                        // getTag
+                        w.new_line();
+                        w.writeln("static getTag(): StructTag {");
+                        w.writeln(format!(
+                            "  return new StructTag(moduleAddress, moduleName, {}, []);",
+                            quote(name)
+                        ));
+                        w.writeln("}");
+                    }
+                    else {
+                        // makeTag
+                        w.new_line();
+                        w.writeln("static makeTag($p: TypeTag[]): StructTag {");
+                        w.writeln(format!(
+                            "  return new StructTag(moduleAddress, moduleName, {}, $p);",
+                            quote(name)
+                        ));
+                        w.writeln("}");
+                    }
+
+                    // 7. additional util funcs
                     handle_special_structs(&name, w, c)?;
 
-                    // 7. attribute directives
+                    // 8. attribute directives
                     handle_struct_directives(&name, sdef, w, c)?;
                 }
             };

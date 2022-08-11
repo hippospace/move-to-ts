@@ -466,8 +466,7 @@ export function aptos_std_table_drop_unchecked_box(table: ITable, $c: AptosDataC
 }
 
 export function aptos_framework_transaction_context_get_script_hash($c: AptosDataCache): U8[] {
-  // we only support ScriptFunction, for which script hash is empty
-  return [];
+  throw new Error("Not Implemented");
 }
 
 export interface ITypeInfo {
