@@ -1,5 +1,5 @@
 import { HexString } from "aptos";
-import { AptosDataCache, IBox, ITable } from "./aptosDataCache";
+import { AptosDataCache, IBox, ITable, AppType } from "./aptosDataCache";
 import { U128, U64, U8 } from "./builtinTypes";
 import { AtomicTypeTag, getTypeParamsString, getTypeTagFullname, parseTypeTagOrThrow, StructTag, substituteTypeParams, TypeParamIdx, TypeTag, VectorTag } from "./typeTag";
 import * as sha from "sha.js";
@@ -99,6 +99,7 @@ export function serializeMoveValue(serializer: BCS.Serializer, v: any, tag: Type
 /*
 native functions from Std
 */
+
 export function std_bcs_to_bytes(v: any, $c: AptosDataCache, tags: TypeTag[]): U8[] {
   if (tags.length !== 1) {
     throw new Error(`Expected 1 TypeTag in tags but received: ${tags.length}`);
@@ -276,6 +277,27 @@ export function std_vector_swap(vec: any[], i: U64, j: U64, $c: AptosDataCache, 
 native functions from AptosFramework
 */
 
+export function aptos_framework_aggregator_add(aggregator: any, value: any, $c: any) {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_aggregator_destroy(aggregator: any, $c: any) {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_aggregator_read(aggregator: any, $c: any): U128 {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_aggregator_sub(aggregator: any, value: any, $c: any) {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_aggregator_factory_new_aggregator(aggregator_factory: any, limit: any, $c: any) {
+  throw new Error("Not Implemented");
+}
+
+
 export function aptos_framework_account_create_address(bytes: U8[], $c: AptosDataCache): HexString {
   if (bytes.length !== 32) {
     throw new Error(`bytes must have length of 32, but got ${bytes.length}`);
@@ -306,6 +328,8 @@ class ModuleMetadata
   { name: "abi", typeTag: new VectorTag(AtomicTypeTag.U8) }];
 
 
+  __app: AppType | null = null;
+
   name: ActualStringClass;
   source: ActualStringClass;
   source_map: U8[];
@@ -323,6 +347,8 @@ class ModuleMetadata
     return new ModuleMetadata(proto, typeTag);
   }
 
+  async loadFullState(app: AppType) {
+  }
 }
 
 export class PackageMetadata 
@@ -338,6 +364,8 @@ export class PackageMetadata
   { name: "upgrade_policy", typeTag: new StructTag(new HexString("0x1"), "code", "UpgradePolicy", []) },
   { name: "manifest", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
   { name: "modules", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "ModuleMetadata", [])) }];
+
+  __app: AppType | null = null;
 
   name: ActualStringClass;
   upgrade_policy: UpgradePolicy;
@@ -356,6 +384,8 @@ export class PackageMetadata
     return new PackageMetadata(proto, typeTag);
   }
 
+  async loadFullState(app: AppType) {
+  }
 }
 
 export class UpgradePolicy 
@@ -369,6 +399,8 @@ export class UpgradePolicy
   static fields: FieldDeclType[] = [
   { name: "policy", typeTag: AtomicTypeTag.U8 }];
 
+  __app: AppType | null = null;
+
   policy: U8;
 
   constructor(proto: any, public typeTag: TypeTag) {
@@ -380,10 +412,13 @@ export class UpgradePolicy
     return new UpgradePolicy(proto, typeTag);
   }
 
+  async loadFullState(app: AppType) {
+  }
+
 }
 
 
-export function aptos_framework_code_from_bytes(bytes: U8[], $c: AptosDataCache, tags: TypeTag[]): PackageMetadata {
+export function aptos_framework_util_from_bytes(bytes: U8[], $c: AptosDataCache, tags: TypeTag[]): PackageMetadata {
   throw new Error("Not Implemented");
 }
 
@@ -414,6 +449,8 @@ export function aptos_std_signature_bls12381_verify_proof_of_possession(public_k
 interface IOption {
   vec: any[];
   typeTag: TypeTag;
+  loadFullState(app: AppType): Promise<void>;
+  __app: AppType | null;
 }
 
 export function aptos_std_signature_bls12381_aggregate_pop_verified_pubkeys(public_keys: U8[][], $c: AptosDataCache): IOption {
@@ -474,6 +511,7 @@ export interface ITypeInfo {
   module_name: U8[];
   struct_name: U8[];
   typeTag: TypeTag;
+  __app: AppType | null;
 }
 
 class ActualTypeInfoClass {
@@ -487,6 +525,8 @@ class ActualTypeInfoClass {
   { name: "account_address", typeTag: AtomicTypeTag.Address },
   { name: "module_name", typeTag: new VectorTag(AtomicTypeTag.U8) },
   { name: "struct_name", typeTag: new VectorTag(AtomicTypeTag.U8) }];
+
+  __app: AppType | null = null;
 
   account_address: HexString;
   module_name: U8[];
@@ -506,6 +546,11 @@ class ActualTypeInfoClass {
   }
   moduleName() { return u8str(this.module_name); }
   structName() { return u8str(this.struct_name); }
+
+  loadFullState(app: AppType): Promise<void> { 
+    return Promise.resolve();
+  }
+
 }
 export class ActualStringClass
 {
@@ -517,6 +562,8 @@ export class ActualStringClass
   ];
   static fields: FieldDeclType[] = [
   { name: "bytes", typeTag: new VectorTag(AtomicTypeTag.U8) }];
+
+  __app: AppType | null = null;
 
   bytes: U8[];
 
@@ -530,6 +577,9 @@ export class ActualStringClass
   }
   str(): string { return u8str(this.bytes); }
 
+  loadFullState(app: AppType): Promise<void> { 
+    return Promise.resolve();
+  }
 }
 
 

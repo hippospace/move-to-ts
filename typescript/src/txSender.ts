@@ -24,6 +24,7 @@ export function buildPayload(
   typeArguments: string[],
   args: any[]
 ): Types.TransactionPayload {
+  /*
   const parts = funcname.split("::");
   if(parts.length !== 3) {
     throw new Error(`Bad funcname: ${funcname}`);
@@ -36,9 +37,10 @@ export function buildPayload(
     module: moduleId,
     name: parts[2],
   }
+  */
   return {
     type: "script_function_payload",
-    function: funcId,
+    function: funcname,
     type_arguments: typeArguments,
     arguments: args,
   }
@@ -83,7 +85,7 @@ export function takeSimulationValue<T>(tx: UserTransaction, tag: StructTag, repo
       return false;
     }
     const wr = change as WriteSetChange_WriteResource;
-    return wr.data.type.address === tag.address.toShortString() && wr.data.type.module == tag.module && wr.data.type.name === tag.name;
+    return wr.data.type === tag.getAptosMoveTypeTag();
   })
   if (valueData.length === 0) {
     throw new Error("Did not find output resource");

@@ -10,11 +10,15 @@ import { DeleteResource, WriteResource } from "aptos/dist/generated";
 export interface ITable {
   handle: U128;
   typeTag: TypeTag;
+  loadFullState(app: AppType): Promise<void>;
+  __app: AppType | null;
 }
 
 export interface IBox {
   val: any;
   typeTag: TypeTag;
+  loadFullState(app: AppType): Promise<void>;
+  __app: AppType | null;
 }
 
 export interface AptosDataCache {
@@ -219,7 +223,7 @@ export class AptosLocalCache implements AptosDataCache {
     return this.borrow_global_mut(_tag, _address);
   }
   // table
-  table_get_or_create(handle: number): Map<string, any> {
+  table_get_or_create(handle: bigInt.BigInteger): Map<string, any> {
     const table = this.tables.get(handle.toString());
     if (table) {
       return table;
@@ -237,7 +241,7 @@ export class AptosLocalCache implements AptosDataCache {
   }
 
   table_add_box(table: ITable, key: any, value: IBox) {
-    const tableMap = this.table_get_or_create(table.handle.value.toJSNumber());
+    const tableMap = this.table_get_or_create(table.handle.value);
     const stringKey = stringify(key);
     if (tableMap.has(stringKey)) {
       throw new Error("key already exists");
@@ -245,7 +249,7 @@ export class AptosLocalCache implements AptosDataCache {
     tableMap.set(stringKey, value);
   }
   table_borrow_box(table: ITable, key: any): IBox {
-    const tableMap = this.table_get_or_create(table.handle.value.toJSNumber());
+    const tableMap = this.table_get_or_create(table.handle.value);
     const stringKey = stringify(key);
     const value = tableMap.get(stringKey);
     if (!value) {
@@ -254,16 +258,15 @@ export class AptosLocalCache implements AptosDataCache {
     return value;
   }
   table_borrow_box_mut(table: ITable, key: any): IBox {
-    // FIXME this isn't great, consider RefMut<T>
     return this.table_borrow_box(table, key);
   }
   table_contains_box(table: ITable, key: any): boolean {
-    const tableMap = this.table_get_or_create(table.handle.value.toJSNumber());
+    const tableMap = this.table_get_or_create(table.handle.value);
     const stringKey = stringify(key);
     return tableMap.has(stringKey);
   }
   table_remove_box(table: ITable, key: any): IBox {
-    const tableMap = this.table_get_or_create(table.handle.value.toJSNumber());
+    const tableMap = this.table_get_or_create(table.handle.value);
     const stringKey = stringify(key);
     const entry = tableMap.get(stringKey);
     if (!entry) {
@@ -499,3 +502,9 @@ export class AptosResourceCache {
     return `${ownerAddress.hex()}/${getTypeTagFullname(typeTag)}`;
   }
 }
+
+export type AppType = {
+  client: AptosClient;
+  repo: AptosParserRepo;
+  cache: AptosLocalCache;
+};

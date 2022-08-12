@@ -65,9 +65,9 @@ pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (Stri
     "typescript": "^4.6.4"
   }},
   "dependencies": {{
-    "aptos": "^1.3.5",
+    "aptos": "^1.3.6",
     "big-integer": "^1.6.51",{}
-    "@manahippo/move-to-ts": "^0.1.4"
+    "@manahippo/move-to-ts": "^0.1.14"
   }}
 }}
 "###,
@@ -192,7 +192,7 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         .map(|mi| {
             let cap_name = capitalize(&mi.value.module);
             return format!(
-                "    this.{} = new {}.App(client, repo);",
+                "    this.{} = new {}.App(client, repo, cache);",
                 mi.value.module, cap_name
             );
         })
@@ -201,7 +201,7 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
     let content = format!(
         r###"
 import {{ AptosClient }} from "aptos";
-import {{ AptosParserRepo }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, AptosLocalCache }} from "@manahippo/move-to-ts";
 {}
 {}
 
@@ -216,11 +216,18 @@ export function getPackageRepo(): AptosParserRepo {{
   return repo;
 }}
 
+export type AppType = {{
+  client: AptosClient,
+  repo: AptosParserRepo,
+  cache: AptosLocalCache,
+}};
+
 export class App {{
 {}
   constructor(
     public client: AptosClient,
     public repo: AptosParserRepo,
+    public cache: AptosLocalCache,
   ) {{
 {}
   }}
@@ -261,14 +268,17 @@ pub fn generate_topmost_index(packages: &Vec<&String>) -> (String, String) {
     let app_field_inits = packages
         .iter()
         .map(|p| {
-            return format!("    this.{} = new {}.App(client, this.parserRepo);", p, p);
+            return format!(
+                "    this.{} = new {}.App(client, this.parserRepo, this.cache);",
+                p, p
+            );
         })
         .join("\n");
 
     let content = format!(
         r###"
 import {{ AptosClient }} from "aptos";
-import {{ AptosParserRepo }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, AptosLocalCache }} from "@manahippo/move-to-ts";
 {}
 {}
 
@@ -281,11 +291,13 @@ export function getProjectRepo(): AptosParserRepo {{
 
 export class App {{
   parserRepo: AptosParserRepo;
+  cache: AptosLocalCache;
 {}
   constructor(
     public client: AptosClient,
   ) {{
     this.parserRepo = getProjectRepo();
+    this.cache = new AptosLocalCache();
 {}
   }}
 }}
@@ -331,7 +343,7 @@ export class TypedTable<K=any, V=any> {
 
   async loadEntry(client: AptosClient, repo: AptosParserRepo, key: K): Promise<V> {
     const rawVal = await this.loadEntryRaw(client, key);
-    return repo.parse(rawVal.data, this.valueTag);
+    return repo.parse(rawVal, this.valueTag);
   }
 }
 "###
@@ -375,19 +387,29 @@ export class TypedIterableTable<K=any, V=any> {
 
   async loadEntry(client: AptosClient, repo: AptosParserRepo, key: K): Promise<IterableValue> {
     const rawVal = await this.loadEntryRaw(client, key);
-    return repo.parse(rawVal.data, this.iterValueTag) as IterableValue;
+    return repo.parse(rawVal, this.iterValueTag) as IterableValue;
   }
 
-  async fetchAll(client: AptosClient, repo: AptosParserRepo): Promise<[K, V][]> {
+  async fetchAll(client: AptosClient, repo: AptosParserRepo, cache: AptosLocalCache | null = null): Promise<[K, V][]> {
     const result: [K, V][] = [];
-    const cache = new $.DummyCache();
+    const dummyCache = new $.DummyCache();
     let next = this.table.head;
-    while(next && await Std.Option.is_some_(next, cache, [this.keyTag])) {
-      const key = await Std.Option.borrow_(next, cache, [this.keyTag]) as K;
+    while(next && await Std.Option.is_some_(next, dummyCache, [this.keyTag])) {
+      const key = await Std.Option.borrow_(next, dummyCache, [this.keyTag]) as K;
       const iterVal = await this.loadEntry(client, repo, key);
       const value = iterVal.val as V;
       result.push([key, value]);
       next = iterVal.next;
+      if (cache) {
+        const $p = [this.keyTag, this.valueTag];
+        Table_with_length.add_(
+          this.table.inner,
+          $.copy(key),
+          iterVal,
+          cache,
+          [$p[0], iterVal.typeTag]
+        );
+      }
     }
     return result;
   }

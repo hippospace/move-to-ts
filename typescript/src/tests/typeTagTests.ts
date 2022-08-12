@@ -36,21 +36,23 @@ export function test() {
     print(result2);
     assert(remaining2 === '');
 
-    const [result3, remaining3] = parseTypeTag('0x1::testMod::struct<u8,0x2::testMod::struct,address,0x2::ttMod::sssruct<address,vector<u8>>>');
+    const [result3, remaining3] = parseTypeTag('0x1::testMod::struct<u8,0x2::testMod::struct, address, 0x2::ttMod::sssruct<address,vector<u8>>>');
     console.log(getTypeTagFullname(result3!));
     print(result3);
     assert(remaining3 === '');
   }
   testStructTags();
 
-  function genericTest(name:string) {
+  function genericTest(name:string, requiresEqual=true) {
     const [result, remaining] = parseTypeTag(name);
     if(result === null) {
       throw new Error();
     }
     assert(remaining === '');
     const reString = getTypeTagFullname(result);
-    if (name !== reString) {
+    if (requiresEqual && name !== reString) {
+      console.log(`name    : ${name}`);
+      console.log(`reString: ${reString}`);
       throw new Error();
     }
     console.log(`Passed: ${name}`);
@@ -61,5 +63,6 @@ export function test() {
   genericTest('vector<address>');
   genericTest('vector<u128>');
   genericTest('vector<0x1::M::s>');
-  genericTest('vector<0x1::M::s, u8,0x2::MM::TT, 0x2::MM::TT<u8,address,0x2::M:T>, address, vector<0x1::M::S<u8>>>');
+  genericTest('0x1::M::S<0x1::M::s, u8, 0x2::MM::TT, 0x2::MM::TT<u8, address, 0x2::M::T>, address, vector<0x1::M::S<u8>>>');
+  genericTest('0x1::M::S<0x1::M::s, u8, 0x2::MM::TT, 0x2::MM::TT<u8,address,0x2::M::T>, address, vector<0x1::M::S<u8>>>', false);
 }

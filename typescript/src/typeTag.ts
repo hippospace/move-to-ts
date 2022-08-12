@@ -30,12 +30,15 @@ export class StructTag {
   }
 
   getAptosMoveTypeTag(): MoveStructTag {
+    return this.getFullname();
+    /*
     return {
       address: this.address.toShortString(),
       module: this.module,
       name: this.name,
       generic_type_params: this.typeParams.map(getTypeTagFullname,)
     };
+    */
   }
 }
 
@@ -115,7 +118,7 @@ export function parseQualifiedStructTag(name: string): [(null | StructTag), stri
   const hexAddress = new HexString(address);
   const [module, withoutModule] = splitByDoubleColon(withoutAddress);
   // structName<...>
-  if (withoutModule.includes("<")) {
+  if (withoutModule.match(/^[a-zA-Z_]+</)) {
     const leftBracketIdx = withoutModule.indexOf("<");
     const structName = withoutModule.substr(0, leftBracketIdx);
     const afterLeftBracket = withoutModule.substr(leftBracketIdx+1);
@@ -238,8 +241,14 @@ export function parseTypeTagOrThrow(name: string): TypeTag {
 }
 
 export function parseMoveStructTag(moveTag: MoveStructTag): StructTag {
-  const params = moveTag.generic_type_params.map(parseTypeTagOrThrow);
-  return new StructTag(new HexString(moveTag.address), moveTag.module, moveTag.name, params);
+  const result = parseTypeTagOrThrow(moveTag);
+  if (!(result instanceof StructTag)) {
+    throw new Error(`Expected a StructTag but instead received: ${moveTag}`);
+  }
+  return result as StructTag;
+  // MoveStructTag was for a while a struct
+  // const params = moveTag.generic_type_params.map(parseTypeTagOrThrow);
+  // return new StructTag(new HexString(moveTag.address), moveTag.module, moveTag.name, params);
 }
 
 export function parseResourceType(fullname: string): StructTag {

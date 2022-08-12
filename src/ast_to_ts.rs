@@ -14,6 +14,7 @@ use move_compiler::{
 };
 use move_ir_types::location::Loc;
 use std::collections::BTreeSet;
+use move_compiler::parser::ast::Field;
 
 pub fn translate_module(
     mident: ModuleIdent,
@@ -42,8 +43,7 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
     v.write_ts(&mut writer, c)?;
     let mut lines = vec![
         "import * as $ from \"@manahippo/move-to-ts\";".to_string(),
-        "import {AptosDataCache, AptosParserRepo, DummyCache} from \"@manahippo/move-to-ts\";"
-            .to_string(),
+        "import {AptosDataCache, AptosParserRepo, DummyCache, AptosLocalCache} from \"@manahippo/move-to-ts\";".to_string(),
         "import {U8, U64, U128} from \"@manahippo/move-to-ts\";".to_string(),
         "import {u8, u64, u128} from \"@manahippo/move-to-ts\";".to_string(),
         "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
@@ -191,11 +191,16 @@ pub fn write_app(
     w.writeln("constructor(");
     w.writeln("  public client: AptosClient,");
     w.writeln("  public repo: AptosParserRepo,");
+    w.writeln("  public cache: AptosLocalCache,");
     w.writeln(") {");
     w.writeln("}");
 
+    w.writeln("get moduleAddress() {{ return moduleAddress; }}");
+    w.writeln("get moduleName() {{ return moduleName; }}");
+
     // struct loaders
     for (sname, sdef) in module.structs.key_cloned_iter() {
+        w.writeln(format!("get {}() {{ return {}; }}", sname, sname));
         if !sdef.abilities.has_ability_(Ability_::Key) {
             continue;
         }
@@ -209,16 +214,19 @@ pub fn write_app(
         if !sdef.type_parameters.is_empty() {
             w.writeln(format!("  $p: TypeTag[], /* <{}> */", tpnames));
         }
+        w.writeln("  loadFull=true,");
         let tags = if sdef.type_parameters.is_empty() {
             "[] as TypeTag[]"
         } else {
             "$p"
         };
         w.writeln(") {");
-        w.writeln(format!(
-            "  return {}.load(this.repo, this.client, owner, {});",
-            sname, tags
-        ));
+        w.writeln(format!("  const val = await {}.load(this.repo, this.client, owner, {});", sname, tags ));
+        w.writeln("  if (loadFull) {");
+        w.writeln("    await val.loadFullState(this);");
+        w.writeln("  }");
+
+        w.writeln("  return val;");
         w.writeln("}");
     }
 
@@ -350,12 +358,14 @@ impl AstTsPrinter for StructTypeParameter {
 
 pub fn handle_special_structs(
     name: &StructName,
+    fields: &Vec<(Field, BaseType)>,
     w: &mut TsgenWriter,
     c: &mut Context,
 ) -> WriteResult {
     if c.current_module.is_none() {
         return Ok(());
     }
+    let mut already_written_load_full_state = false;
     let mident = c.current_module.unwrap();
     let package_name = format_address(mident.value.address);
     if package_name == "std" {
@@ -366,14 +376,28 @@ pub fn handle_special_structs(
         if mident.value.module.to_string() == "iterable_table"
             && name.to_string() == "IterableTable"
         {
+            w.new_line();
             w.writeln("toTypedIterTable<K = any, V = any>() { return TypedIterableTable.fromIterableTable<K, V>(this); }");
-        }
-        else if mident.value.module.to_string() == "table"
-            && name.to_string() == "Table"
-        {
-            w.writeln("toTypedTable<K = any, V = any>() { return TypedTable.fromTable<K, V>(this); }");
-        }
-        else if mident.value.module.to_string() == "type_info" && name.to_string() == "TypeInfo" {
+
+            w.new_line();
+            w.writeln( "async loadFullState(app: $.AppType) {" );
+            w.writeln( "  const typedIterTable = this.toTypedIterTable();" );
+            w.writeln( "  await typedIterTable.fetchAll(app.client, app.repo, app.cache);" );
+            w.writeln( "  this.__app = app;" );
+            w.writeln( "}" );
+            already_written_load_full_state = true;
+        } else if mident.value.module.to_string() == "table" && name.to_string() == "Table" {
+            w.new_line();
+            w.writeln(
+                "toTypedTable<K = any, V = any>() { return TypedTable.fromTable<K, V>(this); }",
+            );
+
+            w.new_line();
+            w.writeln( "async loadFullState(app: $.AppType) {" );
+            w.writeln( "  throw new Error('Cannot enumertate full state of Table');" );
+            w.writeln( "}" );
+            already_written_load_full_state = true;
+        } else if mident.value.module.to_string() == "type_info" && name.to_string() == "TypeInfo" {
             w.writeln("typeFullname(): string {");
             w.writeln("  return `${this.account_address.toShortString()}::${$.u8str(this.module_name)}::${$.u8str(this.struct_name)}`;");
             w.writeln("}");
@@ -381,6 +405,33 @@ pub fn handle_special_structs(
             w.writeln("moduleName() { return (this.toTypeTag() as $.StructTag).module; }");
             w.writeln("structName() { return (this.toTypeTag() as $.StructTag).name; }");
         }
+    }
+    if !already_written_load_full_state {
+        w.writeln("async loadFullState(app: $.AppType) {");
+        w.increase_indent();
+        for (name, ty) in fields.iter() {
+            match &ty.value {
+                BaseType_::Apply(_, typename, _) => {
+                    match &typename.value {
+                        TypeName_::ModuleType(_, _) => {
+                            w.writeln(format!("await this.{}.loadFullState(app);", name));
+                        }
+                        _ => {},
+                    }
+                }
+                BaseType_::Param(_) => {
+                    w.writeln(format!(
+                        "if (this.{}.typeTag instanceof StructTag) {{await this.{}.loadFullState(app);}}",
+                        name,
+                        name
+                    ));
+                }
+                _ => {},
+            }
+        }
+        w.writeln( "this.__app = app;" );
+        w.decrease_indent();
+        w.writeln("}");
     }
     Ok(())
 }
@@ -591,7 +642,7 @@ pub fn handle_struct_method_directive(
                 w.writeln(format!("{}{}(", async_modifier, fname));
                 write_parameters(&func.signature, w, c, false, true)?;
                 w.writeln(") {");
-                w.writeln(format!("  const cache = new DummyCache();"));
+                w.writeln(format!("  const cache = this.__app?.cache || new AptosLocalCache();"));
                 w.writeln(format!(
                     "  const tags = (this.typeTag as StructTag).typeParams;"
                 ));
@@ -679,6 +730,7 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
         w.short_block(|w| {
             w.writeln("static moduleAddress = moduleAddress;");
             w.writeln("static moduleName = moduleName;");
+            w.writeln("__app: $.AppType | null = null;");
             w.writeln(format!("static structName: string = {};", quote(&name.term(c)?)));
 
             // 0. type parameters
@@ -690,6 +742,7 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
             // 6. makeTag / getTag
             // 7. additional util funcs
             // 8. attribute-directives
+            // 9. loadFullState
 
             // 0: type parameters
             w.write("static typeParameters: TypeParamDeclType[] = [");
@@ -757,6 +810,13 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                         w.writeln(format!("  const result = await repo.loadResource(client, address, {}, typeParams);", name));
                         w.writeln(format!("  return result as unknown as {};", name));
                         w.write("}");
+
+                        w.new_line();
+                        w.writeln("static async loadByApp(app: $.AppType, address: HexString, typeParams: TypeTag[]) {");
+                        w.writeln(format!("  const result = await app.repo.loadResource(app.client, address, {}, typeParams);", name));
+                        w.writeln(format!("  await result.loadFullState(app)"));
+                        w.writeln(format!("  return result as unknown as {};", name));
+                        w.write("}");
                     }
 
                     // 6. makeTag / getTag
@@ -782,10 +842,11 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                     }
 
                     // 7. additional util funcs
-                    handle_special_structs(&name, w, c)?;
+                    handle_special_structs(&name, fields, w, c)?;
 
                     // 8. attribute directives
                     handle_struct_directives(&name, sdef, w, c)?;
+
                 }
             };
             Ok(())

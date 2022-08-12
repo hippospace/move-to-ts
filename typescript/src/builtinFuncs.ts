@@ -141,7 +141,7 @@ export function copy<T>(val: T): T {
 }
 
 function printerReplacer(key: string, val: any) {
-  if (key === 'typeTag') {
+  if (key === 'typeTag' || key === '__app') {
     return undefined;
   }
   if (val instanceof HexString) {
