@@ -230,7 +230,7 @@ pub fn write_app(
         w.writeln("}");
     }
 
-    // payload builders
+    // payload builders & tx sender
     for (fname, func) in module.functions.key_cloned_iter() {
         if func.entry.is_none() || !script_function_has_valid_parameter(&func.signature) {
             continue;
@@ -250,7 +250,8 @@ pub fn write_app(
             .map(|(name, _)| rename(name))
             .join(", ");
 
-        w.writeln(format!("{}(", fname));
+        // payload builder
+        w.writeln(format!("payload_{}(", fname));
         write_parameters(&func.signature, w, c, true, false)?;
         if func.signature.type_parameters.len() > 0 {
             w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
@@ -270,6 +271,22 @@ pub fn write_app(
             "  return buildPayload_{}({}{}{});",
             fname, args, separator, tags
         ));
+        w.writeln("}");
+
+        // transaction sender
+        w.writeln(format!("async {}(", fname));
+        w.writeln("  _account: AptosAccount,");
+        write_parameters(&func.signature, w, c, true, false)?;
+        if func.signature.type_parameters.len() > 0 {
+            w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
+        }
+        w.writeln("  _maxGas = 1000,");
+        w.writeln(") {");
+        w.writeln(format!(
+            "  const payload = buildPayload_{}({}{}{});",
+            fname, args, separator, tags
+        ));
+        w.writeln("  return $.sendPayloadTx(this.client, _account, payload, _maxGas)");
         w.writeln("}");
     }
 
