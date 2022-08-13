@@ -7,6 +7,29 @@ A Move-to-TypeScript transpiler & AptosVM emulator. Helps you:
 
 For complete guide & documentation, please refer to [gitbook](https://hippo-labs.gitbook.io/dev/move-to-ts/move-to-typescript-transpiler).
 
+# Example
+
+Example below is based on a naive [lending protocol tutorial](https://github.com/hippospace/tutorial-lending).
+
+
+```typescript
+const {client, account} = ...;
+
+// Load auto-generated App
+const app = new App(client).hippo_tutorial.lend2;
+
+// load User and LendingProtocol struct from chain
+const user = await app.loadUser(account.address());
+const protocol = await app.loadLendingProtocol(app.moduleAddress, false);
+
+// call user_get_limits to compute some info about user's state
+const [isUserHealthy, totalBorrow, totalDeposit] = user.user_get_limits(protocol);
+console.log(isUserHealthy, totalBorrow, totalDeposit);
+
+// make a withdrawal
+await app.withdraw(account, u64(1000000), [app.FakeBTC.getTag()]);
+```
+
 
 # Attributes
 
