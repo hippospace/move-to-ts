@@ -384,11 +384,11 @@ pub fn format_function_name(fname: &impl fmt::Display, is_async: bool) -> String
     let await_modifier = if is_async { "await " } else { "" };
     format!("{}{}_", await_modifier, fname)
 }
-
-pub fn base_type_to_typetag_builder(
+pub fn base_type_to_typetag_builder_inner(
     base_ty: &BaseType,
     tparams: &Vec<StructTypeParameter>,
     c: &mut Context,
+    use_simple_struct_tag: bool,
 ) -> TermResult {
     match &base_ty.value {
         BaseType_::Param(tp) => {
@@ -403,7 +403,12 @@ pub fn base_type_to_typetag_builder(
             TypeName_::Builtin(builtin) => match &builtin.value {
                 BuiltinTypeName_::Vector => {
                     assert!(ss.len() == 1);
-                    let inner_builder = base_type_to_typetag_builder(&ss[0], tparams, c)?;
+                    let inner_builder = base_type_to_typetag_builder_inner(
+                        &ss[0],
+                        tparams,
+                        c,
+                        use_simple_struct_tag,
+                    )?;
                     Ok(format!("new VectorTag({})", inner_builder))
                 }
                 BuiltinTypeName_::Bool => Ok("AtomicTypeTag.Bool".to_string()),
@@ -418,19 +423,44 @@ pub fn base_type_to_typetag_builder(
                 let modname = mident.value.module;
                 let tparams = format!(
                     "[{}]",
-                    comma_term(ss, c, |t, c| base_type_to_typetag_builder(t, tparams, c))?
+                    comma_term(ss, c, |t, c| base_type_to_typetag_builder_inner(
+                        t,
+                        tparams,
+                        c,
+                        use_simple_struct_tag
+                    ))?
                 );
-                Ok(format!(
-                    "new StructTag(new HexString({}), {}, {}, {})",
-                    quote(&address),
-                    quote(&modname),
-                    quote(&sname),
-                    tparams
-                ))
+                if use_simple_struct_tag && c.is_current_module(mident) {
+                    Ok(format!(
+                        "new SimpleStructTag({}{})",
+                        sname,
+                        if tparams.len() == 2 {
+                            "".to_string()
+                        } else {
+                            format!(", {}", tparams)
+                        }
+                    ))
+                } else {
+                    Ok(format!(
+                        "new StructTag(new HexString({}), {}, {}, {})",
+                        quote(&address),
+                        quote(&modname),
+                        quote(&sname),
+                        tparams
+                    ))
+                }
             }
         },
         _ => derr!((base_ty.loc, "Received Unresolved Type")),
     }
+}
+
+pub fn base_type_to_typetag_builder(
+    base_ty: &BaseType,
+    tparams: &Vec<StructTypeParameter>,
+    c: &mut Context,
+) -> TermResult {
+    base_type_to_typetag_builder_inner(base_ty, tparams, c, false)
 }
 
 pub fn base_type_to_typetag(base_ty: &BaseType, c: &mut Context) -> TermResult {
@@ -457,13 +487,26 @@ pub fn base_type_to_typetag(base_ty: &BaseType, c: &mut Context) -> TermResult {
                 let address = format_address_hex(mident.value.address);
                 let modname = mident.value.module;
                 let tparams = format!("[{}]", comma_term(ss, c, base_type_to_typetag)?);
-                Ok(format!(
-                    "new StructTag(new HexString({}), {}, {}, {})",
-                    quote(&address),
-                    quote(&modname),
-                    quote(sname),
-                    tparams
-                ))
+                if c.is_current_module(mident) {
+                    Ok(format!(
+                        "new SimpleStructTag({}{})",
+                        sname,
+                        if tparams.len() == 2 {
+                            "".to_string()
+                        } else {
+                            format!(", {}", tparams)
+                        }
+                    ))
+                }
+                else {
+                    Ok(format!(
+                        "new StructTag(new HexString({}), {}, {}, {})",
+                        quote(&address),
+                        quote(&modname),
+                        quote(sname),
+                        tparams
+                    ))
+                }
             }
         },
         BaseType_::UnresolvedError => derr!((base_ty.loc, "Received Unresolved Type")),

@@ -1,4 +1,4 @@
-import { AtomicTypeTag, getTypeTagParamlessName, StructTag, TypeTag, TypeParamIdx, VectorTag, getTypeTagFullname, parseTypeTagOrThrow, substituteTypeParams } from "./typeTag";
+import { AtomicTypeTag, getTypeTagParamlessName, StructTag, TypeTag, VectorTag, parseTypeTagOrThrow, substituteTypeParams } from "./typeTag";
 import { AptosClient, HexString } from "aptos";
 import bigInt from "big-integer";
 import { U128, U64, U8 } from "./builtinTypes";

@@ -1,103 +1,18 @@
 import { HexString } from "aptos";
 import { AptosDataCache, IBox, ITable, AppType } from "./aptosDataCache";
 import { U128, U64, U8 } from "./builtinTypes";
-import { AtomicTypeTag, getTypeParamsString, getTypeTagFullname, parseTypeTagOrThrow, StructTag, substituteTypeParams, TypeParamIdx, TypeTag, VectorTag } from "./typeTag";
+import { AtomicTypeTag, getTypeParamsString, getTypeTagFullname, parseTypeTagOrThrow, StructTag, TypeTag, VectorTag } from "./typeTag";
 import * as sha from "sha.js";
 import { SHA3 } from "sha3";
 import bigInt from "big-integer";
 import * as elliptic from "elliptic";
-import { AptosParserRepo, FieldDeclType, parseStructProto, StructInfoType, TypeParamDeclType } from "./parserRepo";
+import { AptosParserRepo, FieldDeclType, parseStructProto, TypeParamDeclType } from "./parserRepo";
 import { strToU8, u64, u8str } from "./builtinFuncs";
 import { BCS } from "aptos/dist/transaction_builder";
-
-
-/*
-BCS serialization of Move values
-*/
-
-export function serializeVector(serializer: BCS.Serializer, v: any, elementTag: TypeTag) {
-    if (!(v instanceof Array)) {
-      throw new Error("Expected v to be a vector/array");
-    }
-    serializer.serializeU32AsUleb128(v.length);
-    for(const element of v) {
-      serializeMoveValue(serializer, element, elementTag);
-    }
-}
-
-export function serializeStruct(serializer: BCS.Serializer, v: any, tag: StructTag) {
-  if (typeof v !== 'object') {
-    throw new Error("serializeStruct expected an object input as v");
-  }
-  const ctor = v.constructor;
-  if (!ctor) {
-    throw new Error("Struct value should have a constructor!");
-  }
-  const structDef = ctor as unknown as StructInfoType;
-  for (const field of structDef.fields) {
-    const concreteTag = substituteTypeParams(field.typeTag, tag.typeParams);
-    serializeMoveValue(serializer, v[field.name], concreteTag);
-  }
-}
-
-function addressToUint8Array(h: HexString) {
-  const noPrefix = h.noPrefix();
-  // build a hexString of 64 hexadecimal digits
-  const full = '0'.repeat(64 - noPrefix.length) + noPrefix;
-  const buf = Buffer.from(full, 'hex');
-  return Uint8Array.from(buf);
-}
-
-export function serializeMoveValue(serializer: BCS.Serializer, v: any, tag: TypeTag) {
-  if (tag === AtomicTypeTag.Address) {
-    if (!(v instanceof HexString)) {
-      throw new Error('Expected value to be HexString');
-    }
-    serializer.serializeFixedBytes(addressToUint8Array(v));
-  }
-  else if (tag === AtomicTypeTag.Signer) {
-    throw new Error("Cannot serialize signer!");
-  }
-  else if (tag === AtomicTypeTag.Bool) {
-    if (!(typeof v === 'boolean')) {
-      throw new Error('Expected value to be boolean');
-    }
-    serializer.serializeBool(v);
-  }
-  else if (tag === AtomicTypeTag.U8) {
-    if (!(v instanceof U8)) {
-      throw new Error('Expected value to be U8');
-    }
-    serializer.serializeU8(v.toJsNumber());
-  }
-  else if (tag === AtomicTypeTag.U64) {
-    if (!(v instanceof U64)) {
-      throw new Error('Expected value to be U64');
-    }
-    serializer.serializeU64(v.toBigInt());
-  }
-  else if (tag === AtomicTypeTag.U128) {
-    if (!(v instanceof U128)) {
-      throw new Error('Expected value to be U128');
-    }
-    serializer.serializeU64(v.toBigInt());
-  }
-  else if (tag instanceof VectorTag) {
-    serializeVector(serializer, v, tag.elementType);
-  }
-  else if (tag instanceof StructTag) {
-    serializeStruct(serializer, v, tag);
-  }
-  else if (v instanceof TypeParamIdx) {
-      throw new Error("BCS serialization expected concrete TypeTag but received TypeParamIdx");
-  }
-  else {
-    throw new Error("Unreachable");
-  }
-}
+import { deserializeMoveValue, serializeMoveValue } from "./bcs";
 
 /*
-native functions from Std
+native functions for BCS serialization/deserialization
 */
 
 export function std_bcs_to_bytes(v: any, $c: AptosDataCache, tags: TypeTag[]): U8[] {
@@ -109,6 +24,21 @@ export function std_bcs_to_bytes(v: any, $c: AptosDataCache, tags: TypeTag[]): U
   const array = Array.from(serializer.getBytes());
   return array.map(u => new U8(bigInt(u)));
 }
+
+export function aptos_framework_util_from_bytes(bytes: U8[], $c: AptosDataCache, tags: TypeTag[]): any {
+  if (tags.length !== 1) {
+    throw new Error(`Expected 1 TypeTag in tags but received: ${tags.length}`);
+  }
+  const array = new Uint8Array(bytes.map(u => u.toJsNumber()));
+  const deserializer = new BCS.Deserializer(array);
+  const result = deserializeMoveValue(deserializer, tags[0]);
+  return result;
+}
+
+/*
+native functions from Std
+*/
+
 
 export function std_debug_print(v: any, $c: AptosDataCache, _: TypeTag[]) {
   console.log(JSON.stringify(v, null, 2));
@@ -417,10 +347,6 @@ export class UpgradePolicy
 
 }
 
-
-export function aptos_framework_util_from_bytes(bytes: U8[], $c: AptosDataCache, tags: TypeTag[]): PackageMetadata {
-  throw new Error("Not Implemented");
-}
 
 export function aptos_framework_code_request_publish(owner: HexString, expected_modules: ActualStringClass[], bundle: U8[][], policy: U8, $c: AptosDataCache) {
   throw new Error("Not Implemented");

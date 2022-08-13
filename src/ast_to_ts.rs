@@ -4,6 +4,7 @@ use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
 use crate::utils::{capitalize, get_iterable_table_helper_decl, get_table_helper_decl, rename};
 use itertools::Itertools;
+use move_compiler::parser::ast::Field;
 use move_compiler::shared::Name;
 use move_compiler::{
     diagnostics::{Diagnostic, Diagnostics},
@@ -14,7 +15,6 @@ use move_compiler::{
 };
 use move_ir_types::location::Loc;
 use std::collections::BTreeSet;
-use move_compiler::parser::ast::Field;
 
 pub fn translate_module(
     mident: ModuleIdent,
@@ -47,7 +47,7 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
         "import {U8, U64, U128} from \"@manahippo/move-to-ts\";".to_string(),
         "import {u8, u64, u128} from \"@manahippo/move-to-ts\";".to_string(),
         "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
-        "import {AtomicTypeTag, StructTag, TypeTag, VectorTag} from \"@manahippo/move-to-ts\";"
+        "import {AtomicTypeTag, StructTag, TypeTag, VectorTag, SimpleStructTag} from \"@manahippo/move-to-ts\";"
             .to_string(),
         "import {HexString, AptosClient, AptosAccount} from \"aptos\";".to_string(),
     ];
@@ -221,7 +221,10 @@ pub fn write_app(
             "$p"
         };
         w.writeln(") {");
-        w.writeln(format!("  const val = await {}.load(this.repo, this.client, owner, {});", sname, tags ));
+        w.writeln(format!(
+            "  const val = await {}.load(this.repo, this.client, owner, {});",
+            sname, tags
+        ));
         w.writeln("  if (loadFull) {");
         w.writeln("    await val.loadFullState(this);");
         w.writeln("  }");
@@ -397,11 +400,11 @@ pub fn handle_special_structs(
             w.writeln("toTypedIterTable<K = any, V = any>() { return TypedIterableTable.fromIterableTable<K, V>(this); }");
 
             w.new_line();
-            w.writeln( "async loadFullState(app: $.AppType) {" );
-            w.writeln( "  const typedIterTable = this.toTypedIterTable();" );
-            w.writeln( "  await typedIterTable.fetchAll(app.client, app.repo, app.cache);" );
-            w.writeln( "  this.__app = app;" );
-            w.writeln( "}" );
+            w.writeln("async loadFullState(app: $.AppType) {");
+            w.writeln("  const typedIterTable = this.toTypedIterTable();");
+            w.writeln("  await typedIterTable.fetchAll(app.client, app.repo, app.cache);");
+            w.writeln("  this.__app = app;");
+            w.writeln("}");
             already_written_load_full_state = true;
         } else if mident.value.module.to_string() == "table" && name.to_string() == "Table" {
             w.new_line();
@@ -410,9 +413,9 @@ pub fn handle_special_structs(
             );
 
             w.new_line();
-            w.writeln( "async loadFullState(app: $.AppType) {" );
-            w.writeln( "  throw new Error('Cannot enumertate full state of Table');" );
-            w.writeln( "}" );
+            w.writeln("async loadFullState(app: $.AppType) {");
+            w.writeln("  throw new Error('Cannot enumertate full state of Table');");
+            w.writeln("}");
             already_written_load_full_state = true;
         } else if mident.value.module.to_string() == "type_info" && name.to_string() == "TypeInfo" {
             w.writeln("typeFullname(): string {");
@@ -428,14 +431,12 @@ pub fn handle_special_structs(
         w.increase_indent();
         for (name, ty) in fields.iter() {
             match &ty.value {
-                BaseType_::Apply(_, typename, _) => {
-                    match &typename.value {
-                        TypeName_::ModuleType(_, _) => {
-                            w.writeln(format!("await this.{}.loadFullState(app);", name));
-                        }
-                        _ => {},
+                BaseType_::Apply(_, typename, _) => match &typename.value {
+                    TypeName_::ModuleType(_, _) => {
+                        w.writeln(format!("await this.{}.loadFullState(app);", name));
                     }
-                }
+                    _ => {}
+                },
                 BaseType_::Param(_) => {
                     w.writeln(format!(
                         "if (this.{}.typeTag instanceof StructTag) {{await this.{}.loadFullState(app);}}",
@@ -443,10 +444,10 @@ pub fn handle_special_structs(
                         name
                     ));
                 }
-                _ => {},
+                _ => {}
             }
         }
-        w.writeln( "this.__app = app;" );
+        w.writeln("this.__app = app;");
         w.decrease_indent();
         w.writeln("}");
     }
@@ -659,7 +660,9 @@ pub fn handle_struct_method_directive(
                 w.writeln(format!("{}{}(", async_modifier, fname));
                 write_parameters(&func.signature, w, c, false, true)?;
                 w.writeln(") {");
-                w.writeln(format!("  const cache = this.__app?.cache || new AptosLocalCache();"));
+                w.writeln(format!(
+                    "  const cache = this.__app?.cache || new AptosLocalCache();"
+                ));
                 w.writeln(format!(
                     "  const tags = (this.typeTag as StructTag).typeParams;"
                 ));
@@ -933,8 +936,10 @@ pub fn handle_function_cmd_printer_directive(
     _w: &mut TsgenWriter,
     c: &mut Context,
 ) -> WriteResult {
-
-    let type_err = derr!((fname.0.loc, "First parameter of a cmd_printer function needs to be a &StructType"));
+    let type_err = derr!((
+        fname.0.loc,
+        "First parameter of a cmd_printer function needs to be a &StructType"
+    ));
 
     if func.signature.parameters.is_empty() {
         return type_err;
@@ -948,43 +953,36 @@ pub fn handle_function_cmd_printer_directive(
     };
 
     if func.signature.return_type.value == Type_::Unit {
-        return derr!((func.signature.return_type.loc, "a cmd_printer function must return a value to be printed"));
+        return derr!((
+            func.signature.return_type.loc,
+            "a cmd_printer function must return a value to be printed"
+        ));
     }
 
     let (mi, sdef, sname) = match &base.value {
-        BaseType_::Apply(_, typename, _) => {
-            match &typename.value {
-                TypeName_::ModuleType(mi, sname) => {
-                    if let Some(module) = c.program.modules.get(mi) {
-                        let sdef_opt = module.structs.get(sname);
-                        if let Some(sdef) = sdef_opt {
-                            (mi.clone(), sdef.clone(), sname.clone())
-                        }
-                        else {
-                            return type_err;
-                        }
-                    }
-                    else {
+        BaseType_::Apply(_, typename, _) => match &typename.value {
+            TypeName_::ModuleType(mi, sname) => {
+                if let Some(module) = c.program.modules.get(mi) {
+                    let sdef_opt = module.structs.get(sname);
+                    if let Some(sdef) = sdef_opt {
+                        (mi.clone(), sdef.clone(), sname.clone())
+                    } else {
                         return type_err;
                     }
-                }
-                _ => {
+                } else {
                     return type_err;
                 }
             }
-        }
+            _ => {
+                return type_err;
+            }
+        },
         _ => {
             return type_err;
         }
     };
 
-    c.add_printer_method(
-        &mi,
-        &sname,
-        &sdef,
-        &fname.0,
-        &func.signature,
-    );
+    c.add_printer_method(&mi, &sname, &sdef, &fname.0, &func.signature);
 
     Ok(())
 }
@@ -1134,9 +1132,7 @@ pub fn handle_function_directives(
                     w.new_line();
                     handle_function_cmd_printer_directive(fname, f, w, c)?;
                 }
-                _ => {
-                    return derr!((attr.loc, "the 'cmd_printer' attribute cannot be assigned"))
-                }
+                _ => return derr!((attr.loc, "the 'cmd_printer' attribute cannot be assigned")),
             },
             "query" => match &attr.value {
                 Attribute_::Name(_) => {

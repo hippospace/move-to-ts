@@ -72,8 +72,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         .filter_map(|(name, package)| {
             if name == &root_package.source_package.package.name {
                 None
-            }
-            else if name.to_string().contains("AptosExperimental") {
+            } else if name.to_string().contains("AptosExperimental") {
                 // TODO: AptosExperimental needs to be dropped
                 None
             } else {

@@ -1,5 +1,6 @@
 import { HexString } from "aptos"
 import { MoveStructTag } from "aptos/dist/generated";
+import { StructInfoType } from "./parserRepo";
 import { assert } from "./utils";
 
 export enum AtomicTypeTag{
@@ -39,6 +40,17 @@ export class StructTag {
       generic_type_params: this.typeParams.map(getTypeTagFullname,)
     };
     */
+  }
+}
+
+export class SimpleStructTag extends StructTag {
+  constructor(public structInfo: StructInfoType, typeParams: TypeTag[] = []) {
+    super(
+      structInfo.moduleAddress,
+      structInfo.moduleName,
+      structInfo.structName,
+      typeParams,
+    );
   }
 }
 
