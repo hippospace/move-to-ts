@@ -662,17 +662,6 @@ pub fn handle_struct_method_directive(
                     },
                 ));
                 w.writeln("}");
-
-                // generate printer for cli
-                if func.signature.return_type.value != Type_::Unit {
-                    c.add_printer_method(
-                        &c.current_module.unwrap(),
-                        sname,
-                        sdef,
-                        fname,
-                        &func.signature,
-                    );
-                }
             }
             _ => {
                 return derr!((
@@ -921,6 +910,68 @@ pub fn handle_function_cmd_directive(
     Ok(())
 }
 
+pub fn handle_function_cmd_printer_directive(
+    fname: &FunctionName,
+    func: &Function,
+    _w: &mut TsgenWriter,
+    c: &mut Context,
+) -> WriteResult {
+
+    let type_err = derr!((fname.0.loc, "First parameter of a cmd_printer function needs to be a &StructType"));
+
+    if func.signature.parameters.is_empty() {
+        return type_err;
+    }
+
+    let printed_type = &func.signature.parameters[0].1;
+
+    let base = match &printed_type.value {
+        SingleType_::Base(b) => b,
+        SingleType_::Ref(_, b) => b,
+    };
+
+    if func.signature.return_type.value == Type_::Unit {
+        return derr!((func.signature.return_type.loc, "a cmd_printer function must return a value to be printed"));
+    }
+
+    let (mi, sdef, sname) = match &base.value {
+        BaseType_::Apply(_, typename, _) => {
+            match &typename.value {
+                TypeName_::ModuleType(mi, sname) => {
+                    if let Some(module) = c.program.modules.get(mi) {
+                        let sdef_opt = module.structs.get(sname);
+                        if let Some(sdef) = sdef_opt {
+                            (mi.clone(), sdef.clone(), sname.clone())
+                        }
+                        else {
+                            return type_err;
+                        }
+                    }
+                    else {
+                        return type_err;
+                    }
+                }
+                _ => {
+                    return type_err;
+                }
+            }
+        }
+        _ => {
+            return type_err;
+        }
+    };
+
+    c.add_printer_method(
+        &mi,
+        &sname,
+        &sdef,
+        &fname.0,
+        &func.signature,
+    );
+
+    Ok(())
+}
+
 pub fn write_query_function(
     fname: &FunctionName,
     f: &Function,
@@ -1059,6 +1110,15 @@ pub fn handle_function_directives(
                 }
                 Attribute_::Assigned(_, _) => {
                     return derr!((attr.loc, "the 'cmd' attribute cannot be assigned"))
+                }
+            },
+            "cmd_printer" => match &attr.value {
+                Attribute_::Name(_) => {
+                    w.new_line();
+                    handle_function_cmd_printer_directive(fname, f, w, c)?;
+                }
+                _ => {
+                    return derr!((attr.loc, "the 'cmd_printer' attribute cannot be assigned"))
                 }
             },
             "query" => match &attr.value {
