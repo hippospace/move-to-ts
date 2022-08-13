@@ -1,10 +1,11 @@
 # move-to-ts
 
 A Move-to-TypeScript transpiler & AptosVM emulator. Helps you:
-- run arbitrary Move code in a TS/JS environment
+- Interact with your Aptos contract using auto-generated TypeScript SDK
+- Interact with your Aptos contract using auto-generated CLI utility
 - run arbitrary Move code in simulation (using realtime fullnode data), and return the serialized output value
-- auto-generate TypeScript SDK
-- auto-generate CLI utilities
+
+For complete guide & documentation, please refer to [gitbook](https://hippo-labs.gitbook.io/dev/move-to-ts/move-to-typescript-transpiler).
 
 
 # Attributes
