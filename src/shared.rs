@@ -541,3 +541,14 @@ pub fn extract_attribute_value_string(attr: &Attribute) -> Option<String> {
         _ => None,
     }
 }
+
+pub fn is_typename_string(typename: &TypeName) -> bool {
+    match &typename.value {
+        TypeName_::ModuleType(mi, sname) => {
+            let address = format_address_hex(mi.value.address);
+            let short_name = format!("{}::{}::{}", address, mi.value.module, sname);
+            short_name == "0x1::string::String"
+        }
+        _ => false,
+    }
+}

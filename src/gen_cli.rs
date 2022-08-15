@@ -14,6 +14,29 @@ use move_ir_types::location::Loc;
 use std::collections::BTreeSet;
 use std::fmt;
 
+pub fn check_allowed_structs_for_entry_function(
+    name: &String,
+    mi: &ModuleIdent,
+    sname: &StructName,
+    loc: Loc,
+) -> TermResult {
+
+    let address = format_address_hex(mi.value.address);
+
+    let short_name = format!("{}::{}::{}", address, mi.value.module, sname);
+
+    if short_name == "0x1::string::String" {
+        Ok(format!("strToU8({})", name))
+    }
+    else {
+        derr!((
+            loc,
+            "This struct type cannot be used at entry function invocation"
+        ))
+    }
+
+}
+
 pub fn vector_type_ts_parser(name: &String, element_type: &BaseType) -> TermResult {
     match &element_type.value {
         BaseType_::Param(_tparam) => {
@@ -24,11 +47,8 @@ pub fn vector_type_ts_parser(name: &String, element_type: &BaseType) -> TermResu
             ))
         }
         BaseType_::Apply(_, typename, _) => match &typename.value {
-            TypeName_::ModuleType(_, _) => {
-                derr!((
-                    element_type.loc,
-                    "struct types cannot be used at entry function invocation"
-                ))
+            TypeName_::ModuleType(mi, sname) => {
+                check_allowed_structs_for_entry_function(name, mi, sname, element_type.loc)
             }
             TypeName_::Builtin(builtin) => match &builtin.value {
                 BuiltinTypeName_::U8 => Ok(format!("strToU8({})", name)),
@@ -56,11 +76,8 @@ pub fn stype_to_ts_parser(name: &String, loc: Loc, stype: &SingleType) -> TermRe
             ))
         }
         BaseType_::Apply(_, typename, targs) => match &typename.value {
-            TypeName_::ModuleType(_, _) => {
-                derr!((
-                    stype.loc,
-                    "struct types cannot be used at entry function invocation"
-                ))
+            TypeName_::ModuleType(mi, sname) => {
+                check_allowed_structs_for_entry_function(name, mi, sname, stype.loc)
             }
             TypeName_::Builtin(builtin) => match &builtin.value {
                 BuiltinTypeName_::U8 => Ok(format!("u8({})", name)),

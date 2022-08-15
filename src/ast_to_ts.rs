@@ -1389,10 +1389,24 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
             }
         }
     } else {
-        derr!((
+        let err = derr!((
             ty.loc,
             "This type is not supported as parameter of script function"
-        ))
+        ));
+        match &ty.value {
+            SingleType_::Base(base) => match &base.value {
+                BaseType_::Apply(_, typename, _) => {
+                    if is_typename_string(typename) {
+                        Ok(format!("$.payloadArg({})", name))
+                    }
+                    else {
+                        err
+                    }
+                }
+                _ => err,
+            }
+            _ => err,
+        }
     }
 }
 

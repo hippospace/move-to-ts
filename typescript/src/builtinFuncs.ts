@@ -4,6 +4,7 @@ import { U8, U64, U128, UnsignedInt, takeBigInt } from "./builtinTypes";
 import { HexString } from "aptos";
 import stringify from "json-stable-stringify";
 import { StructInfoType } from "./parserRepo";
+import { ActualStringClass } from "./nativeFuncs";
 
 export function abortCode(code: any) {
   if (code instanceof U64) {
@@ -263,6 +264,16 @@ export function payloadArg(val: any) {
   }
   else if (typeof val === 'boolean') {
     return val
+  }
+  else if(val.typeTag instanceof StructTag) {
+    const tag = val.typeTag as StructTag;
+    if (tag.address.toShortString() === '0x1' && tag.module === 'string' && tag.name === 'String') {
+      const strVal = val as ActualStringClass;
+      return strToU8(u8str(strVal.bytes));
+    }
+    else {
+      throw new Error(`Unexpected struct type: ${tag.getFullname()}`);
+    }
   }
   else {
     throw new Error(`Unexpected value type: ${typeof val}`);
