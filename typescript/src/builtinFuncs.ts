@@ -268,8 +268,9 @@ export function payloadArg(val: any) {
   else if(val.typeTag instanceof StructTag) {
     const tag = val.typeTag as StructTag;
     if (tag.address.toShortString() === '0x1' && tag.module === 'string' && tag.name === 'String') {
-      const strVal = val as ActualStringClass;
-      return strToU8(u8str(strVal.bytes));
+      const stringVal = val as ActualStringClass;
+      const strVal = u8str(stringVal.bytes);
+      return strVal;
     }
     else {
       throw new Error(`Unexpected struct type: ${tag.getFullname()}`);
@@ -312,7 +313,7 @@ export function moveValueToOpenApiObject(val: any, typeTag: TypeTag): any {
       throw new Error("Expected a struct value");
     }
     // special handler for ASCII
-    if (typeTag.getFullname() === '0x1::ASCII::String') {
+    if (typeTag.getFullname() === '0x1::string::String') {
       const bytes = val.bytes as U8[];
       return u8str(bytes);
     }

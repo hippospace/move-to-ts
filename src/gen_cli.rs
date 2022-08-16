@@ -26,7 +26,10 @@ pub fn check_allowed_structs_for_entry_function(
     let short_name = format!("{}::{}::{}", address, mi.value.module, sname);
 
     if short_name == "0x1::string::String" {
-        Ok(format!("strToU8({})", name))
+        Ok(format!(
+            "new ActualStringClass({{bytes: strToU8({})}}, parseTypeTagOrThrow('0x1::string::String'))",
+            name
+        ))
     }
     else {
         derr!((
@@ -34,7 +37,6 @@ pub fn check_allowed_structs_for_entry_function(
             "This struct type cannot be used at entry function invocation"
         ))
     }
-
 }
 
 pub fn vector_type_ts_parser(name: &String, element_type: &BaseType) -> TermResult {
@@ -528,7 +530,7 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
     let filename = "cli.ts".to_string();
     let content = format!(
         r###"
-import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, print, strToU8, u8str, DummyCache }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, print, strToU8, u8str, DummyCache, ActualStringClass }} from "@manahippo/move-to-ts";
 import {{ AptosAccount, AptosClient, HexString, Types }} from "aptos";
 import {{ Command }} from "commander";
 import {{ getProjectRepo }} from "./";
