@@ -236,6 +236,13 @@ impl Context {
         });
     }
 
+    pub fn has_query(&self, mi: &ModuleIdent, fname: &FunctionName) -> bool {
+        self.queries
+            .iter()
+            .find(|params| params.mi == *mi && params.fname == *fname)
+            .is_some()
+    }
+
     pub fn add_printer_method(
         &mut self,
         mi: &ModuleIdent,
@@ -497,8 +504,7 @@ pub fn base_type_to_typetag(base_ty: &BaseType, c: &mut Context) -> TermResult {
                             format!(", {}", tparams)
                         }
                     ))
-                }
-                else {
+                } else {
                     Ok(format!(
                         "new StructTag(new HexString({}), {}, {}, {})",
                         quote(&address),

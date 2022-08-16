@@ -180,7 +180,7 @@ pub fn write_load_parsers(
 }
 
 pub fn write_app(
-    _mident: &ModuleIdent,
+    mident: &ModuleIdent,
     module: &ModuleDefinition,
     w: &mut TsgenWriter,
     c: &mut Context,
@@ -289,8 +289,16 @@ pub fn write_app(
             "  const payload = buildPayload_{}({}{}{});",
             fname, args, separator, tags
         ));
-        w.writeln("  return $.sendPayloadTx(this.client, _account, payload, _maxGas)");
+        w.writeln("  return $.sendPayloadTx(this.client, _account, payload, _maxGas);");
         w.writeln("}");
+
+        // query sender
+        if c.has_query(mident, &fname) {
+            w.writeln(format!(
+                "get query_{}() {{ return make_query_{}(this); }}",
+                fname, fname
+            ));
+        }
     }
 
     w.decrease_indent();
@@ -1016,8 +1024,11 @@ pub fn write_query_function(
         .map(|(v, _)| v.to_string())
         .collect::<Vec<_>>();
 
+    let mut has_tags = false;
+
     if !f.signature.type_parameters.is_empty() {
         param_list.push("$p".to_string());
+        has_tags = true;
     }
 
     let move_to_err = derr!((return_type.loc, "Expect move_to to contain a struct type"));
@@ -1052,6 +1063,35 @@ pub fn write_query_function(
     w.decrease_indent();
     w.writeln("}");
 
+    // write query function for App interface
+    w.writeln(format!("function make_{}(app: App) {{", query_fname));
+    w.increase_indent();
+
+    w.writeln("function maker(");
+    w.increase_indent();
+
+    w.writeln("account: AptosAccount,");
+    write_parameters(&f.signature, w, c, true, false)?;
+    w.writeln("$p: TypeTag[],");
+
+    w.decrease_indent();
+    w.writeln(") {");
+
+    if !has_tags {
+        param_list.push("$p".to_string());
+    }
+    w.writeln(format!(
+        "  return {}(app.client, account, app.repo, {})",
+        query_fname,
+        param_list.join(", ")
+    ));
+
+    w.writeln("}");
+
+    w.writeln("return maker;");
+
+    w.decrease_indent();
+    w.writeln("}");
     Ok(())
 }
 
@@ -1398,13 +1438,12 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
                 BaseType_::Apply(_, typename, _) => {
                     if is_typename_string(typename) {
                         Ok(format!("$.payloadArg({})", name))
-                    }
-                    else {
+                    } else {
                         err
                     }
                 }
                 _ => err,
-            }
+            },
             _ => err,
         }
     }

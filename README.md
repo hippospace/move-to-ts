@@ -65,7 +65,7 @@ Example in Move (taken from aptos-registry):
 Generated CLI usage:
 ```
 $ yarn cli
-Usage: move-ts-cli [options] [command]
+Usage: yarn cli [options] [command]
 
 Options:
   -c, --config <path>                                                                                                path to your aptos config.yml (generated with "aptos init")
