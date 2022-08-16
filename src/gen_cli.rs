@@ -372,7 +372,7 @@ pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Dia
     let cmd_func_name = format!("{}_{}", query.mi.value.module, query.fname);
     let command_name = format!(
         "{}:query-{}",
-        query.mi.value.module,
+        query.mi.value.module.to_string().replace("_", "-"),
         query.fname.to_string().replace("_", "-")
     );
 
