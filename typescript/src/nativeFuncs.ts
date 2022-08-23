@@ -53,7 +53,7 @@ export function aptos_std_event_write_to_event_store(guid: U8[], count: U64, msg
   // NOP
 }
 
-export function std_hash_sip_hash(v: any, $c: AptosDataCache, _tags: TypeTag[]): U64 {
+export function aptos_std_aptos_hash_sip_hash(bytes: U8[], $c: AptosDataCache): U64 {
   throw new Error("Not implemented");
 }
 
@@ -347,7 +347,6 @@ export class UpgradePolicy
 
 }
 
-
 export function aptos_framework_code_request_publish(owner: HexString, expected_modules: ActualStringClass[], bundle: U8[][], policy: U8, $c: AptosDataCache) {
   throw new Error("Not Implemented");
 }
@@ -356,42 +355,54 @@ function u8ArrayToKeyString(u8array: U8[]): string {
   return u8array.map(u => u.value.toJSNumber().toString(16)).join();
 }
 
-export function aptos_std_signature_ed25519_validate_pubkey(pubkey: U8[], $c: AptosDataCache): boolean {
+export function aptos_std_bls12381_aggregate_pubkeys_internal(pubkeys: any, $c: AptosDataCache): [U8[], boolean] {
   throw new Error("Not implemented");
 }
 
-export function aptos_std_signature_bls12381_validate_pubkey(pubkey: U8[], $c: AptosDataCache): boolean {
+export function aptos_std_bls12381_aggregate_signatures_internal(signatures: any, $c: AptosDataCache): [U8[], boolean] {
   throw new Error("Not implemented");
 }
 
-export function aptos_std_signature_bls12381_verify_signature(signature: U8[], public_key: U8[], mesage: U8[], $c: AptosDataCache): boolean {
+export function aptos_std_bls12381_validate_pubkey_internal(pubkey: U8[], $c: AptosDataCache): boolean {
   throw new Error("Not implemented");
 }
 
-export function aptos_std_signature_bls12381_verify_proof_of_possession(public_key: U8[], proof_of_posession: U8[], $c: AptosDataCache): boolean {
+export function aptos_std_bls12381_signature_subgroup_check_internal(signature: any, $c: AptosDataCache): boolean {
   throw new Error("Not implemented");
 }
 
-interface IOption {
-  vec: any[];
-  typeTag: TypeTag;
-  loadFullState(app: AppType): Promise<void>;
-  __app: AppType | null;
-}
-
-export function aptos_std_signature_bls12381_aggregate_pop_verified_pubkeys(public_keys: U8[][], $c: AptosDataCache): IOption {
+export function aptos_std_bls12381_verify_aggregate_signature_internal(a: any, b: any, c: any, $c: AptosDataCache): boolean {
   throw new Error("Not implemented");
 }
 
+export function aptos_std_bls12381_verify_multisignature_internal(a: any, b: any, c: any, $c: AptosDataCache): boolean {
+  throw new Error("Not implemented");
+}
 
-export function aptos_std_signature_ed25519_verify(signature: U8[], pubkey: U8[], message: U8[], $c: AptosDataCache): boolean {
+export function aptos_std_bls12381_verify_normal_signature_internal(signature: U8[], public_key: U8[], mesage: U8[], $c: AptosDataCache): boolean {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_bls12381_verify_proof_of_possession_internal(public_key: U8[], proof_of_posession: U8[], $c: AptosDataCache): boolean {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_bls12381_verify_signature_share_internal(a: any, b: any, c: any, $c: AptosDataCache): boolean {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_ed25519_public_key_validate_internal(pubkey: U8[], $c: AptosDataCache): boolean {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_ed25519_signature_verify_strict_internal(signature: U8[], pubkey: U8[], message: U8[], $c: AptosDataCache): boolean {
   const ec = new elliptic.eddsa("ed25519");
   const keyString = u8ArrayToKeyString(pubkey);
   const key = ec.keyFromPublic(keyString);
   return key.verify(u8ArrayToKeyString(message), u8ArrayToKeyString(signature));
 }
 
-export function aptos_std_signature_secp256k1_ecdsa_recover(message: U8[], recovery_id: U8, signature: U8[], $c: AptosDataCache): [U8[], boolean] {
+export function aptos_std_secp256k1_ecdsa_recover(message: U8[], recovery_id: U8, signature: U8[], $c: AptosDataCache): [U8[], boolean] {
   throw new Error("Not implemented");
 }
 

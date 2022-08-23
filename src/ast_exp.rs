@@ -16,8 +16,7 @@ impl AstTsPrinter for Exp {
         use UnannotatedExp_ as E;
         match &exp.value {
             E::Unit { case: _ } => {
-                unreachable!("Cannot output Unit as value");
-                //derr!((exp.loc, "Cannot output Unit as value"))
+                derr!((exp.loc, "Cannot output Unit as value"))
             }
             E::Value(v) => Ok(v.term(c)?),
             E::Move {

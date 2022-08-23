@@ -532,7 +532,7 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
     let filename = "cli.ts".to_string();
     let content = format!(
         r###"
-import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, print, strToU8, u8str, DummyCache, ActualStringClass }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, print, strToU8, u8str, DummyCache, ActualStringClass, sendPayloadTx }} from "@manahippo/move-to-ts";
 import {{ AptosAccount, AptosClient, HexString, Types }} from "aptos";
 import {{ Command }} from "commander";
 import {{ getProjectRepo }} from "./";
@@ -564,20 +564,6 @@ export const readConfig = (program: Command) => {{
   const account = new AptosAccount(privateKey.toUint8Array());
   console.log(`Using address ${{account.address().hex()}}`);
   return {{client, account}};
-}}
-
-export async function sendPayloadTx(
-  client: AptosClient,
-  account: AptosAccount,
-  payload: Types.TransactionPayload,
-  max_gas=1000
-){{
-  const txnRequest = await client.generateTransaction(account.address(), payload, {{max_gas_amount: `${{max_gas}}`}});
-  const signedTxn = await client.signTransaction(account, txnRequest);
-  const txnResult = await client.submitTransaction(signedTxn);
-  await client.waitForTransaction(txnResult.hash);
-  const txDetails = (await client.getTransactionByHash(txnResult.hash)) as Types.UserTransaction;
-  console.log(txDetails);
 }}
 
 const program = new Command();

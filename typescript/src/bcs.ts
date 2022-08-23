@@ -89,6 +89,39 @@ export function serializeMoveValue(serializer: BCS.Serializer, v: any, tag: Type
   }
 }
 
+export function serializeMoveValueWithoutTag(serializer: BCS.Serializer, value: any) {
+  if (value instanceof U8) {
+    serializeMoveValue(serializer, value, AtomicTypeTag.U8);
+  } 
+  else if (value instanceof U64) {
+    serializeMoveValue(serializer, value, AtomicTypeTag.U64);
+  }
+  else if (value instanceof U128) {
+    serializeMoveValue(serializer, value, AtomicTypeTag.U128);
+  }
+  else if (typeof value === 'boolean') {
+    serializeMoveValue(serializer, value, AtomicTypeTag.Bool);
+  }
+  else if (value instanceof HexString) {
+    serializeMoveValue(serializer, value, AtomicTypeTag.Address);
+  }
+  // struct
+  else if ((value as unknown as any).typeTag instanceof StructTag) {
+    const tag = (value as unknown as any).typeTag as StructTag;
+    serializeStruct(serializer, value, tag);
+  }
+  // vector
+  else if (value instanceof Array) {
+    serializer.serializeU32AsUleb128(value.length);
+    for(const element of value) {
+      serializeMoveValueWithoutTag(serializer, element);
+    }
+  }
+  else {
+    throw new Error(`Unrecognized value type: ${value}`);
+  }
+}
+
 
 /*
 BCS deserialization of Move values

@@ -441,15 +441,15 @@ pub fn handle_special_structs(
             match &ty.value {
                 BaseType_::Apply(_, typename, _) => match &typename.value {
                     TypeName_::ModuleType(_, _) => {
-                        w.writeln(format!("await this.{}.loadFullState(app);", name));
+                        w.writeln(format!("await this.{}.loadFullState(app);", rename(name)));
                     }
                     _ => {}
                 },
                 BaseType_::Param(_) => {
                     w.writeln(format!(
                         "if (this.{}.typeTag instanceof StructTag) {{await this.{}.loadFullState(app);}}",
-                        name,
-                        name
+                        rename(name),
+                        rename(name)
                     ));
                 }
                 _ => {}
@@ -1324,11 +1324,12 @@ impl AstTsPrinter for (FunctionName, &Function) {
                     w.writeln("const typeParamStrings = [] as string[];");
                 }
                 w.writeln("return $.buildPayload(");
-                // function_name
-                w.writeln(format!(
-                    "  \"{}::{}::{}\",",
-                    address, mident.value.module, name
-                ));
+                // address
+                w.writeln(format!("  new HexString(\"{}\"),", address));
+                // moduleName
+                w.writeln(format!("  \"{}\",", mident.value.module));
+                // funcName
+                w.writeln(format!("  \"{}\",", name));
                 // type arguments
                 w.writeln("  typeParamStrings,");
                 // arguments
@@ -1336,11 +1337,8 @@ impl AstTsPrinter for (FunctionName, &Function) {
                     w.writeln("  []");
                 } else {
                     w.writeln("  [");
-                    for (pname, ptype) in params_no_signers.iter() {
-                        w.writeln(format!(
-                            "    {},",
-                            get_ts_handler_for_script_function_param(pname, ptype)?,
-                        ));
+                    for (pname, _) in params_no_signers.iter() {
+                        w.writeln(format!("    {},", pname,));
                     }
                     w.writeln("  ]");
                 }

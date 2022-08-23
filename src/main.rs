@@ -9,7 +9,7 @@ pub mod utils;
 
 use crate::gen_cli::generate_cli;
 use crate::gen_ui::{gen_public_html, generate_ui};
-use crate::shared::is_same_package;
+use crate::shared::{format_address_hex, is_same_package};
 use crate::utils::{generate_index, generate_topmost_index};
 use clap::Parser;
 use move_command_line_common::address::NumericalAddress;
@@ -72,14 +72,17 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         .filter_map(|(name, package)| {
             if name == &root_package.source_package.package.name {
                 None
-            } else if name.to_string().contains("AptosExperimental") {
-                // TODO: AptosExperimental needs to be dropped
-                None
             } else {
-                let paths = format!("{}/sources", package.package_path.to_string_lossy());
+                let pkg_name = package.package_path.to_string_lossy();
+                let mut paths = vec![format!("{}/sources", pkg_name)];
+                if config.test {
+                    if package.package_path.join("tests").is_dir() {
+                        paths.push(format!("{}/tests", pkg_name))
+                    }
+                }
                 let path = PackagePaths {
                     name: Some(*name),
-                    paths: vec![paths],
+                    paths,
                     named_address_map: named_address_mapping.clone(),
                 };
                 Some(path)
@@ -143,6 +146,14 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     };
     let mut ctx = Context::new(config, hlir_program.clone());
     for (mident, mdef) in hlir_program.modules.key_cloned_iter() {
+        // skip problematic modules under aptos_framework::aggregator*
+        let mod_name = mident.value.module.to_string();
+        if format_address_hex(mident.value.address) == "0x1"
+            && (mod_name.contains("aggregator") || mod_name.contains("secp256k1"))
+        {
+            continue;
+        }
+
         // 2
         let result = ast_to_ts::translate_module(mident, mdef, &mut ctx);
 

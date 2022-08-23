@@ -1,78 +1,68 @@
-import { AptosClient, AptosAccount, Types } from "aptos";
-import { Transaction, UserTransaction, WriteSetChange_WriteResource } from "aptos/dist/generated";
-import { AptosParserRepo, StructInfoType } from "./parserRepo";
-import { StructTag } from "./typeTag";
+import { AptosClient, AptosAccount, Types, TxnBuilderTypes, HexString, BCS } from "aptos";
+import { TypeTagParser } from "aptos/dist/transaction_builder/builder_utils";
+import { UserTransaction, WriteSetChange_WriteResource } from "aptos/dist/generated";
+import { AccountAddress, Identifier, ModuleId, EntryFunction } from "aptos/dist/transaction_builder/aptos_types";
+import { AptosParserRepo } from "./parserRepo";
+import { AtomicTypeTag, StructTag, TypeTag } from "./typeTag";
+import { U128, U64, U8 } from "./builtinTypes";
+import { ActualStringClass, serializeMoveValue, serializeMoveValueWithoutTag, serializeVector } from ".";
 
-export async function sendAndWait(
-  client: AptosClient,
-  account: AptosAccount,
-  funcname: string,
-  typeArguments: string[],
-  args: any[]
-): Promise<Types.UserTransaction> {
-  const payload = buildPayload(funcname, typeArguments, args);
-  const txnRequest = await client.generateTransaction(account.address(), payload);
-  const signedTxn = await client.signTransaction(account, txnRequest);
-  const txnResult = await client.submitTransaction(signedTxn);
-  await client.waitForTransaction(txnResult.hash);
-  const txDetails = (await client.getTransactionByHash(txnResult.hash)) as Types.UserTransaction;
-  return txDetails;
-}
+type AcceptedScriptFuncArgType = any[] | U8 | U64 | U128 | HexString | boolean | ActualStringClass;
 
 export function buildPayload(
-  funcname: string,
+  moduleAddress: HexString,
+  moduleName: string,
+  funcName: string,
   typeArguments: string[],
-  args: any[]
-): Types.TransactionPayload {
-  /*
-  const parts = funcname.split("::");
-  if(parts.length !== 3) {
-    throw new Error(`Bad funcname: ${funcname}`);
-  }
-  const moduleId = {
-    address: parts[0],
-    name: parts[1],
-  }
-  const funcId = {
-    module: moduleId,
-    name: parts[2],
-  }
-  */
-  return {
-    type: "script_function_payload",
-    function: funcname,
-    type_arguments: typeArguments,
-    arguments: args,
-  }
+  args: AcceptedScriptFuncArgType[],
+): TxnBuilderTypes.TransactionPayloadEntryFunction {
+
+  const bytes = args.map(arg => {
+    const serializer = new BCS.Serializer();
+    serializeMoveValueWithoutTag(serializer, arg);
+    return serializer.getBytes();
+  });
+
+  
+  const scriptFunction = new EntryFunction(
+    new ModuleId(new AccountAddress(moduleAddress.toUint8Array()), new Identifier(moduleName)),
+    new Identifier(funcName),
+    typeArguments.map(str => new TypeTagParser(str).parseTypeTag()),
+    bytes,
+  );
+  return new TxnBuilderTypes.TransactionPayloadEntryFunction(scriptFunction);
 }
 
 export async function sendPayloadTx(
   client: AptosClient, 
   account: AptosAccount, 
-  payload: Types.TransactionPayload, 
+  payload: TxnBuilderTypes.TransactionPayload, 
   max_gas=1000
 ){
   console.log("Building tx...");
-  const txnRequest = await client.generateTransaction(account.address(), payload, {max_gas_amount: `${max_gas}`});
-  console.log("Built tx");
-  const signedTxn = await client.signTransaction(account, txnRequest);
+  // RawTransaction
+  const rawTxn = await client.generateRawTransaction(account.address(), payload, {maxGasAmount: BigInt(max_gas)});
+  // Signed BCS representation
+  const bcsTxn = AptosClient.generateBCSTransaction(account, rawTxn);
   console.log("Submitting...");
-  const txnResult = await client.submitTransaction(signedTxn);
+  const txnResult = await client.submitSignedBCSTransaction(bcsTxn);
   console.log("Submitted");
   await client.waitForTransaction(txnResult.hash);
   console.log("Confirmed");
   const txDetails = (await client.getTransactionByHash(txnResult.hash)) as Types.UserTransaction;
   console.log(txDetails);
+  return txDetails;
 }
 
 export async function simulatePayloadTx(
   client: AptosClient, 
   account: AptosAccount, 
-  payload: Types.TransactionPayload, 
+  payload: TxnBuilderTypes.TransactionPayload, 
   max_gas=1000
 ){
-  const txnRequest = await client.generateTransaction(account.address(), payload, {max_gas_amount: `${max_gas}`});
-  const outputs = await client.simulateTransaction(account, txnRequest);
+  const rawTxn = await client.generateRawTransaction(account.address(), payload, {maxGasAmount: BigInt(max_gas)});
+  const bcsTxn = AptosClient.generateBCSSimulation(account, rawTxn);
+  const outputs = await client.submitBCSSimulation(bcsTxn);
   return outputs[0];
 }
 
