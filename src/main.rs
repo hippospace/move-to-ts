@@ -24,6 +24,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::rc::Rc;
+use move_compiler::expansion::ast::Value_::Address;
 
 fn write_file(root_path: &PathBuf, pair: (String, String)) {
     let (filename, content) = pair;
@@ -148,8 +149,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     for (mident, mdef) in hlir_program.modules.key_cloned_iter() {
         // skip problematic modules under aptos_framework::aggregator*
         let mod_name = mident.value.module.to_string();
-        if format_address_hex(mident.value.address) == "0x1"
-            && (mod_name.contains("aggregator") || mod_name.contains("secp256k1"))
+        if format_address_hex(mident.value.address) == "0x1" && mod_name.contains("secp256k1")
         {
             continue;
         }

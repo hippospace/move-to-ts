@@ -138,7 +138,15 @@ pub fn is_same_package(a1: Address, a2: Address) -> bool {
     match a1 {
         // Address eq implementation ignores name, but we cannot ignore that
         Address::Numerical(name, num) => match a2 {
-            Address::Numerical(name2, num2) => name == name2 && num == num2,
+            Address::Numerical(name2, num2) => {
+                // FIXME temporary patch to get around aptos_framework namespacing error
+                if num.value.eq(&NumericalAddress::parse_str("0x1").unwrap()) {
+                    num == num2
+                }
+                else {
+                    name == name2 && num == num2
+                }
+            },
             _ => false,
         },
         Address::NamedUnassigned(_) => a1 == a2,
@@ -325,13 +333,26 @@ pub fn comma_term<T, F: Fn(T, &mut Context) -> TermResult>(
     comma_term_opt(items, c, f, true)
 }
 
-pub fn format_address(address: Address) -> String {
+pub fn format_address_(address: Address, use_stdlib: bool) -> String {
     // this one prefers Name if it exists
     match address {
-        Address::Numerical(Some(name), _) => format!("{}", &name),
+        Address::Numerical(Some(name), addr) => {
+            // FIXME: this is a temporary fix needed to address the wrongly quoted namespaces in
+            // aptos_framework
+            if use_stdlib && addr.value.eq(&NumericalAddress::parse_str("0x1").unwrap()) {
+                "stdlib".to_string()
+            }
+            else {
+                format!("{}", &name)
+            }
+        },
         Address::Numerical(None, numerical_address) => format!("X{}", &numerical_address),
         Address::NamedUnassigned(name) => format!("{}", &name),
     }
+}
+
+pub fn format_address(address: Address) -> String {
+    format_address_(address, true)
 }
 
 pub fn format_address_hex(address: Address) -> String {

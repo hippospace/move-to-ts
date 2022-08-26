@@ -67,7 +67,7 @@ pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (Stri
   "dependencies": {{
     "aptos": "^1.3.7",
     "big-integer": "^1.6.51",{}
-    "@manahippo/move-to-ts": "^0.1.24"
+    "@manahippo/move-to-ts": "^0.1.28"
   }}
 }}
 "###,
@@ -334,7 +334,7 @@ export class TypedTable<K=any, V=any> {
   }
 
   async loadEntryRaw(client: AptosClient, key: K): Promise<any> {
-    return await client.getTableItem(this.table.handle.value.toString(), {
+    return await client.getTableItem(this.table.handle.toString(), {
       key_type: $.getTypeTagFullname(this.keyTag),
       value_type: $.getTypeTagFullname(this.valueTag),
       key: $.moveValueToOpenApiObject(key, this.keyTag),
@@ -378,7 +378,7 @@ export class TypedIterableTable<K=any, V=any> {
   }
 
   async loadEntryRaw(client: AptosClient, key: K): Promise<any> {
-    return await client.getTableItem(this.table.inner.inner.handle.value.toString(), {
+    return await client.getTableItem(this.table.inner.inner.handle.toString(), {
       key_type: $.getTypeTagFullname(this.keyTag),
       value_type: $.getTypeTagFullname(this.iterValueTag),
       key: $.moveValueToOpenApiObject(key, this.keyTag),
@@ -394,8 +394,8 @@ export class TypedIterableTable<K=any, V=any> {
     const result: [K, V][] = [];
     const dummyCache = new $.DummyCache();
     let next = this.table.head;
-    while(next && await Std.Option.is_some_(next, dummyCache, [this.keyTag])) {
-      const key = await Std.Option.borrow_(next, dummyCache, [this.keyTag]) as K;
+    while(next && await Option.is_some_(next, dummyCache, [this.keyTag])) {
+      const key = await Option.borrow_(next, dummyCache, [this.keyTag]) as K;
       const iterVal = await this.loadEntry(client, repo, key);
       const value = iterVal.val as V;
       result.push([key, value]);

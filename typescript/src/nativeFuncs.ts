@@ -35,16 +35,27 @@ export function aptos_framework_util_from_bytes(bytes: U8[], $c: AptosDataCache,
   return result;
 }
 
+export function aptos_std_any_from_bytes(bytes: U8[], $c: AptosDataCache, tags: TypeTag[]): any {
+  if (tags.length !== 1) {
+    throw new Error(`Expected 1 TypeTag in tags but received: ${tags.length}`);
+  }
+  const array = new Uint8Array(bytes.map(u => u.toJsNumber()));
+  const deserializer = new BCS.Deserializer(array);
+  const result = deserializeMoveValue(deserializer, tags[0]);
+  return result;
+}
+
+
 /*
 native functions from Std
 */
 
 
-export function std_debug_print(v: any, $c: AptosDataCache, _: TypeTag[]) {
+export function aptos_std_debug_print(v: any, $c: AptosDataCache, _: TypeTag[]) {
   console.log(JSON.stringify(v, null, 2));
 }
 
-export function std_debug_print_stack_trace($c: AptosDataCache) {
+export function aptos_std_debug_print_stack_trace($c: AptosDataCache) {
   // NOP
 }
 
@@ -220,10 +231,6 @@ export function aptos_framework_aggregator_read(aggregator: any, $c: any): U128 
 }
 
 export function aptos_framework_aggregator_sub(aggregator: any, value: any, $c: any) {
-  throw new Error("Not Implemented");
-}
-
-export function aptos_framework_aggregator_factory_new_aggregator(aggregator_factory: any, limit: any, $c: any) {
   throw new Error("Not Implemented");
 }
 
@@ -407,7 +414,7 @@ export function aptos_std_secp256k1_ecdsa_recover(message: U8[], recovery_id: U8
 }
 
 
-export function aptos_std_table_new_table_handle($c: AptosDataCache, tags: TypeTag[]): U128 {
+export function aptos_std_table_new_table_handle($c: AptosDataCache, tags: TypeTag[]): HexString {
   return $c.table_new_handle();
 }
 
@@ -441,6 +448,88 @@ export function aptos_std_table_drop_unchecked_box(table: ITable, $c: AptosDataC
 
 export function aptos_framework_transaction_context_get_script_hash($c: AptosDataCache): U8[] {
   throw new Error("Not Implemented");
+}
+
+export class ActualUsage 
+{
+  static moduleAddress = new HexString("0x1");
+  static moduleName = "state_storage";
+  __app: AppType | null = null;
+  static structName: string = "Usage";
+  static typeParameters: TypeParamDeclType[] = [
+
+  ];
+  static fields: FieldDeclType[] = [
+  { name: "items", typeTag: AtomicTypeTag.U64 },
+  { name: "bytes", typeTag: AtomicTypeTag.U64 }];
+
+  items: U64;
+  bytes: U64;
+
+  constructor(proto: any, public typeTag: TypeTag) {
+    this.items = proto['items'] as U64;
+    this.bytes = proto['bytes'] as U64;
+  }
+
+  static UsageParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : ActualUsage {
+    const proto = parseStructProto(data, typeTag, repo, ActualUsage);
+    return new ActualUsage(proto, typeTag);
+  }
+
+  static getTag(): StructTag {
+    return new StructTag(ActualUsage.moduleAddress, ActualUsage.moduleName, "Usage", []);
+  }
+  async loadFullState(app: AppType) {
+    this.__app = app;
+  }
+
+}
+
+export function aptos_framework_state_storage_get_state_storage_usage_only_at_epoch_beginning($c: any): ActualUsage {
+  throw new Error('Not Implemented');
+}
+
+export class ActualAggregator 
+{
+  static moduleAddress = new HexString("0x1");
+  static moduleName = "aggregator";
+  __app: AppType | null = null;
+  static structName: string = "Aggregator";
+  static typeParameters: TypeParamDeclType[] = [
+
+  ];
+  static fields: FieldDeclType[] = [
+  { name: "handle", typeTag: AtomicTypeTag.Address },
+  { name: "key", typeTag: AtomicTypeTag.Address },
+  { name: "limit", typeTag: AtomicTypeTag.U128 }];
+
+  handle: HexString;
+  key: HexString;
+  limit: U128;
+
+  constructor(proto: any, public typeTag: TypeTag) {
+    this.handle = proto['handle'] as HexString;
+    this.key = proto['key'] as HexString;
+    this.limit = proto['limit'] as U128;
+  }
+
+  static AggregatorParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : ActualAggregator {
+    const proto = parseStructProto(data, typeTag, repo, ActualAggregator);
+    return new ActualAggregator(proto, typeTag);
+  }
+
+  static getTag(): StructTag {
+    return new StructTag(ActualAggregator.moduleAddress, ActualAggregator.moduleName, "Aggregator", []);
+  }
+  async loadFullState(app: AppType) {
+    this.__app = app;
+  }
+
+}
+
+
+export function aptos_framework_aggregator_factory_new_aggregator(p1: any, p2: any, p3: any): ActualAggregator {
+  throw new Error('Not Implemented');
 }
 
 export interface ITypeInfo {

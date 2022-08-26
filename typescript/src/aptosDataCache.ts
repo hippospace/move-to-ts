@@ -8,7 +8,7 @@ import { DeleteResource, WriteResource } from "aptos/dist/generated";
 
 
 export interface ITable {
-  handle: U128;
+  handle: HexString;
   typeTag: TypeTag;
   loadFullState(app: AppType): Promise<void>;
   __app: AppType | null;
@@ -34,7 +34,7 @@ export interface AptosDataCache {
   borrow_global_mut_async<T>(_tag: TypeTag, _address: HexString): Promise<T>;
 
   // Table
-  table_new_handle(): U128;
+  table_new_handle(): HexString;
   table_add_box(table: ITable, key: any, value: IBox): void;
   table_borrow_box(table: ITable, key: any): IBox;
   table_borrow_box_mut(table: ITable, key: any): IBox;
@@ -78,7 +78,7 @@ export class DummyCache implements AptosDataCache {
     return this.borrow_global_mut(_tag, _address);
   }
   // table
-  table_new_handle(): U128 {
+  table_new_handle(): HexString {
     throw new Error("DummyCache does not support table_new_handle");
   }
   table_add_box(table: ITable, key: any, value: IBox){
@@ -223,7 +223,7 @@ export class AptosLocalCache implements AptosDataCache {
     return this.borrow_global_mut(_tag, _address);
   }
   // table
-  table_get_or_create(handle: bigInt.BigInteger): Map<string, any> {
+  table_get_or_create(handle: HexString): Map<string, any> {
     const table = this.tables.get(handle.toString());
     if (table) {
       return table;
@@ -233,15 +233,17 @@ export class AptosLocalCache implements AptosDataCache {
       return newTable;
     }
   }
-  table_new_handle(): U128 {
-    const handle = this.nextTableHandle++;
+  table_new_handle(): HexString {
+    const handleIdx = this.nextTableHandle++ + 0x10000000;
+    const handleStr = `${handleIdx.toString(16)}`;
+    const handle = new HexString(handleStr);
     const table: Map<string, IBox> = new Map();
     this.tables.set(handle.toString(), table);
-    return new U128(bigInt(handle));
+    return handle;
   }
 
   table_add_box(table: ITable, key: any, value: IBox) {
-    const tableMap = this.table_get_or_create(table.handle.value);
+    const tableMap = this.table_get_or_create(table.handle);
     const stringKey = stringify(key);
     if (tableMap.has(stringKey)) {
       throw new Error("key already exists");
@@ -249,7 +251,7 @@ export class AptosLocalCache implements AptosDataCache {
     tableMap.set(stringKey, value);
   }
   table_borrow_box(table: ITable, key: any): IBox {
-    const tableMap = this.table_get_or_create(table.handle.value);
+    const tableMap = this.table_get_or_create(table.handle);
     const stringKey = stringify(key);
     const value = tableMap.get(stringKey);
     if (!value) {
@@ -261,12 +263,12 @@ export class AptosLocalCache implements AptosDataCache {
     return this.table_borrow_box(table, key);
   }
   table_contains_box(table: ITable, key: any): boolean {
-    const tableMap = this.table_get_or_create(table.handle.value);
+    const tableMap = this.table_get_or_create(table.handle);
     const stringKey = stringify(key);
     return tableMap.has(stringKey);
   }
   table_remove_box(table: ITable, key: any): IBox {
-    const tableMap = this.table_get_or_create(table.handle.value);
+    const tableMap = this.table_get_or_create(table.handle);
     const stringKey = stringify(key);
     const entry = tableMap.get(stringKey);
     if (!entry) {

@@ -395,12 +395,11 @@ pub fn handle_special_structs(
     }
     let mut already_written_load_full_state = false;
     let mident = c.current_module.unwrap();
-    let package_name = format_address(mident.value.address);
-    if package_name == "std" {
+    let package_name = format_address_hex(mident.value.address);
+    if package_name == "0x1" {
         if mident.value.module.to_string() == "string" && name.to_string() == "String" {
             w.writeln("str(): string { return $.u8str(this.bytes); }");
         }
-    } else if package_name == "aptos_std" {
         if mident.value.module.to_string() == "iterable_table"
             && name.to_string() == "IterableTable"
         {
@@ -1250,7 +1249,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 let mident = c.current_module.unwrap();
                 let native_name = format!(
                     "return $.{}_{}_{}",
-                    format_address(mident.value.address),
+                    format_address_(mident.value.address, false),
                     mident.value.module,
                     name
                 );
@@ -1277,7 +1276,12 @@ impl AstTsPrinter for (FunctionName, &Function) {
                     }
                 );
                 w.short_block(|w| {
-                    w.writeln(format!("{}({}$c{});", native_name, args_comma, comma_tags));
+                    if mident.value.module.to_string().contains("ristretto") {
+                        w.writeln("throw 'Not Implemented';".to_string());
+                    }
+                    else {
+                        w.writeln(format!("{}({}$c{});", native_name, args_comma, comma_tags));
+                    }
                     Ok(())
                 })?;
             }
