@@ -5,6 +5,7 @@ import { HexString } from "aptos";
 import stringify from "json-stable-stringify";
 import { StructInfoType } from "./parserRepo";
 import { ActualStringClass } from "./nativeFuncs";
+import { AccountAddress } from "aptos/dist/transaction_builder/aptos_types";
 
 export function abortCode(code: any) {
   if (code instanceof U64) {
@@ -256,14 +257,23 @@ export function payloadArg(val: any) {
       return val.value.toString();
     }
     else {
-      throw new Error("Only expect U8, U64, or U128 for integer types");
+      throw new Error("Only expect U8, U64, or U128 for UnsignedInt types");
     }
+  }
+  else if (Array.isArray(val) && val.every(v => v instanceof U8)) {
+    // For U8[]
+    return u8ArrayArg(val);
   }
   else if (val instanceof HexString) {
     return val.toShortString();
   }
-  else if (typeof val === 'boolean') {
+  else if (['boolean', 'string', 'number', 'bigint'].includes(typeof val)) {
+    // 1. return as it is for js primitive types
+    // 2. to make sure function payloadArg is idempotent when called more than once
     return val
+  }
+  else if (val instanceof AccountAddress) {
+    return val;
   }
   else if(val.typeTag instanceof StructTag) {
     const tag = val.typeTag as StructTag;
@@ -277,7 +287,7 @@ export function payloadArg(val: any) {
     }
   }
   else {
-    throw new Error(`Unexpected value type: ${typeof val}`);
+    throw new Error(`Unexpected value ${val}`);
   }
 }
 
