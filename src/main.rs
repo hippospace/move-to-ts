@@ -24,7 +24,6 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::rc::Rc;
-use move_compiler::expansion::ast::Value_::Address;
 
 fn write_file(root_path: &PathBuf, pair: (String, String)) {
     let (filename, content) = pair;

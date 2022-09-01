@@ -259,6 +259,7 @@ pub fn write_app(
         if func.signature.type_parameters.len() > 0 {
             w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
         }
+        w.writeln("  isJSON = false,");
         let tags = if func.signature.type_parameters.is_empty() {
             ""
         } else {
@@ -269,10 +270,15 @@ pub fn write_app(
         } else {
             ", "
         };
+        let possibly_comma = if args.is_empty() && tags.is_empty() {
+            ""
+        } else {
+            ", "
+        };
         w.writeln(") {");
         w.writeln(format!(
-            "  return buildPayload_{}({}{}{});",
-            fname, args, separator, tags
+            "  return buildPayload_{}({}{}{}{}isJSON);",
+            fname, args, separator, tags, possibly_comma,
         ));
         w.writeln("}");
 
@@ -284,10 +290,11 @@ pub fn write_app(
             w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
         }
         w.writeln("  _maxGas = 1000,");
+        w.writeln("  _isJSON = false,");
         w.writeln(") {");
         w.writeln(format!(
-            "  const payload = buildPayload_{}({}{}{});",
-            fname, args, separator, tags
+            "  const payload = buildPayload_{}({}{}{}{}_isJSON);",
+            fname, args, separator, tags, possibly_comma
         ));
         w.writeln("  return $.sendPayloadTx(this.client, _account, payload, _maxGas);");
         w.writeln("}");
@@ -1007,7 +1014,7 @@ pub fn write_query_function(
 
     // params
     w.writeln("client: AptosClient,");
-    w.writeln("account: AptosAccount,");
+    w.writeln("fetcher: $.SimulationKeys,");
     w.writeln("repo: AptosParserRepo,");
     write_parameters(&f.signature, w, c, true, false)?;
     w.writeln("$p: TypeTag[],");
@@ -1053,7 +1060,7 @@ pub fn write_query_function(
     ));
     let output_tag = base_type_to_typetag(return_type, c)?;
     w.writeln(format!("const outputTypeTag = {};", output_tag));
-    w.writeln("const output = await $.simulatePayloadTx(client, account, payload);");
+    w.writeln("const output = await $.simulatePayloadTx(client, fetcher, payload);");
     w.writeln(format!(
         "return $.takeSimulationValue<{}>(output, outputTypeTag, repo)",
         output_struct_name
@@ -1069,7 +1076,7 @@ pub fn write_query_function(
     w.writeln("function maker(");
     w.increase_indent();
 
-    w.writeln("account: AptosAccount,");
+    w.writeln("fetcher: $.SimulationKeys,");
     write_parameters(&f.signature, w, c, true, false)?;
     w.writeln("$p: TypeTag[],");
 
@@ -1080,7 +1087,7 @@ pub fn write_query_function(
         param_list.push("$p".to_string());
     }
     w.writeln(format!(
-        "  return {}(app.client, account, app.repo, {})",
+        "  return {}(app.client, fetcher, app.repo, {})",
         query_fname,
         param_list.join(", ")
     ));
@@ -1309,6 +1316,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
             if num_tparams > 0 {
                 w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
             }
+            w.writeln("  isJSON = false,");
             // marks returnType or void
             w.write(") ");
             // body:
@@ -1338,14 +1346,15 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 w.writeln("  typeParamStrings,");
                 // arguments
                 if params_no_signers.is_empty() {
-                    w.writeln("  []");
+                    w.writeln("  [],");
                 } else {
                     w.writeln("  [");
                     for (pname, _) in params_no_signers.iter() {
                         w.writeln(format!("    {},", pname,));
                     }
-                    w.writeln("  ]");
+                    w.writeln("  ],");
                 }
+                w.writeln("  isJSON,");
                 w.writeln(");");
                 Ok(())
             })?;

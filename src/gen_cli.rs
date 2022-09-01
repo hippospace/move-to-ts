@@ -381,7 +381,7 @@ pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Dia
 const {} = async ({}) => {{
   const {{client, account}} = readConfig(program);
   const repo = getProjectRepo();
-  const value = await {}(client, account, repo, {}{}[{}])
+  const value = await {}(client, getSimulationKeys(account), repo, {}{}[{}])
   print(value);
 }}
 
@@ -532,7 +532,7 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
     let filename = "cli.ts".to_string();
     let content = format!(
         r###"
-import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, print, strToU8, u8str, DummyCache, ActualStringClass, sendPayloadTx }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, print, strToU8, u8str, DummyCache, ActualStringClass, sendPayloadTx, getSimulationKeys }} from "@manahippo/move-to-ts";
 import {{ AptosAccount, AptosClient, HexString, Types }} from "aptos";
 import {{ Command }} from "commander";
 import {{ getProjectRepo }} from "./";
