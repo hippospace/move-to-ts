@@ -6,6 +6,7 @@ import { AptosParserRepo } from "./parserRepo";
 import { StructTag } from "./typeTag";
 import { U128, U64, U8 } from "./builtinTypes";
 import { ActualStringClass, payloadArg, serializeMoveValueWithoutTag } from ".";
+import {SubmitTransactionRequest} from "aptos/src/generated/models/SubmitTransactionRequest";
 
 type AcceptedScriptFuncArgType = any[] | U8 | U64 | U128 | HexString | boolean | ActualStringClass;
 
@@ -122,7 +123,16 @@ export async function simulatePayloadTx(
       signature: HexString.fromUint8Array(new Uint8Array(64)).hex(),
     };
 
-    const request = { ...txn, signature: transactionSignature };
+    const request = {
+      sender: keys.address.hex(),
+      sequence_number: txn.sequence_number.toString(),
+      max_gas_amount: txn.max_gas_amount.toString(),
+      gas_unit_price: txn.gas_unit_price.toString(),
+      expiration_timestamp_secs: txn.expiration_timestamp_secs.toString(),
+      payload: pld,
+      signature: transactionSignature,
+
+    };
     const outputs = await client.client.transactions.simulateTransaction(request);
     return outputs[0];
   }
