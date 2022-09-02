@@ -1,12 +1,11 @@
 import { AptosClient, AptosAccount, Types, TxnBuilderTypes, HexString, BCS, TransactionBuilderEd25519 } from "aptos";
 import { TypeTagParser } from "aptos/dist/transaction_builder/builder_utils";
-import { $TransactionPayload_EntryFunctionPayload, TransactionPayload_EntryFunctionPayload, TransactionSignature, UserTransaction, WriteSetChange_WriteResource } from "aptos/dist/generated";
+import { TransactionPayload_EntryFunctionPayload, TransactionSignature, UserTransaction, WriteSetChange_WriteResource } from "aptos/dist/generated";
 import { AccountAddress, Identifier, ModuleId, EntryFunction } from "aptos/dist/transaction_builder/aptos_types";
 import { AptosParserRepo } from "./parserRepo";
 import { StructTag } from "./typeTag";
 import { U128, U64, U8 } from "./builtinTypes";
 import { ActualStringClass, payloadArg, serializeMoveValueWithoutTag } from ".";
-import {SubmitTransactionRequest} from "aptos/src/generated/models/SubmitTransactionRequest";
 
 type AcceptedScriptFuncArgType = any[] | U8 | U64 | U128 | HexString | boolean | ActualStringClass;
 
