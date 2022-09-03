@@ -2,21 +2,19 @@ import bigInt from "big-integer";
 
 interface IntInterface<T> {
   value: bigInt.BigInteger;
-  make(value: bigInt.BigInteger) : T;
+  make(value: bigInt.BigInteger): T;
 }
 
-
-export function takeBigInt(from: UnsignedInt<any> | bigInt.BigInteger | string | number): bigInt.BigInteger {
-  if (typeof from === 'string') {
+export function takeBigInt(
+  from: UnsignedInt<any> | bigInt.BigInteger | string | number
+): bigInt.BigInteger {
+  if (typeof from === "string") {
     return bigInt(from);
-  }
-  else if (typeof from === 'number') {
+  } else if (typeof from === "number") {
     return bigInt(from);
-  }
-  else if (from instanceof UnsignedInt) {
+  } else if (from instanceof UnsignedInt) {
     return from.value;
-  }
-  else {
+  } else {
     return from;
   }
 }
@@ -28,13 +26,12 @@ export class UnsignedInt<T extends IntInterface<T>> {
     this.checkBounds();
   }
 
-  checkBounds() {
-  }
+  checkBounds() {}
   make(value: bigInt.BigInteger) {
     return new UnsignedInt<T>(value);
   }
 
-  copy() : UnsignedInt<T> {
+  copy(): UnsignedInt<T> {
     return this.make(this.value);
   }
 
@@ -142,7 +139,7 @@ export class U64 extends UnsignedInt<U64> {
 
 export class U128 extends UnsignedInt<U128> {
   static MIN = bigInt(0);
-  static MAX = bigInt("340282366920938463463374607431768211455")
+  static MAX = bigInt("340282366920938463463374607431768211455");
 
   make(value: bigInt.BigInteger) {
     return new U128(value);

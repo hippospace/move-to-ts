@@ -1,10 +1,16 @@
-import { TypeTag, StructTag, VectorTag, AtomicTypeTag, substituteTypeParams } from "./typeTag";
-import bigInt, { isInstance } from "big-integer";
-import { U8, U64, U128, UnsignedInt, takeBigInt } from "./builtinTypes";
+import {
+  TypeTag,
+  StructTag,
+  VectorTag,
+  AtomicTypeTag,
+  substituteTypeParams,
+} from "./typeTag.js";
+import bigInt from "big-integer";
+import { U8, U64, U128, UnsignedInt, takeBigInt } from "./builtinTypes.js";
 import { HexString } from "aptos";
 import stringify from "json-stable-stringify";
-import { StructInfoType } from "./parserRepo";
-import { ActualStringClass } from "./nativeFuncs";
+import { StructInfoType } from "./parserRepo.js";
+import { ActualStringClass } from "./nativeFuncs.js";
 
 export function abortCode(code: any) {
   if (code instanceof U64) {
@@ -20,15 +26,21 @@ export function assert(cond: boolean, error: any) {
   }
 }
 
-export function u8(from: UnsignedInt<any> | bigInt.BigInteger | string | number) {
+export function u8(
+  from: UnsignedInt<any> | bigInt.BigInteger | string | number
+) {
   return new U8(takeBigInt(from));
 }
 
-export function u64(from: UnsignedInt<any> | bigInt.BigInteger | string | number) {
+export function u64(
+  from: UnsignedInt<any> | bigInt.BigInteger | string | number
+) {
   return new U64(takeBigInt(from));
 }
 
-export function u128(from: UnsignedInt<any> | bigInt.BigInteger | string | number) {
+export function u128(
+  from: UnsignedInt<any> | bigInt.BigInteger | string | number
+) {
   return new U128(takeBigInt(from));
 }
 
@@ -116,17 +128,13 @@ export function copy<T>(val: T): T {
   if (val instanceof HexString) {
     // address & signer are immutable
     return val;
-  }
-  else if (typeof val === 'boolean') {
-    return val
-  }
-  else if (val instanceof UnsignedInt) {
+  } else if (typeof val === "boolean") {
+    return val;
+  } else if (val instanceof UnsignedInt) {
     return val.copy() as unknown as T;
-  }
-  else if (val instanceof Array) {
-    return val.map(ele => copy(ele)) as unknown as T;
-  }
-  else if (v.typeTag instanceof StructTag) {
+  } else if (val instanceof Array) {
+    return val.map((ele) => copy(ele)) as unknown as T;
+  } else if (v.typeTag instanceof StructTag) {
     let proto = Object();
     const structInfo = v.constructor as StructInfoType;
     for (const field of structInfo.fields) {
@@ -135,47 +143,41 @@ export function copy<T>(val: T): T {
     }
     let copied = new structInfo(proto, v.typeTag);
     return copied;
-  }
-  else {
+  } else {
     throw new Error(`Unreachable: ${val}`);
   }
 }
 
 function printerReplacer(key: string, val: any) {
-  if (key === 'typeTag' || key === '__app') {
+  if (key === "typeTag" || key === "__app") {
     return undefined;
   }
   if (val instanceof HexString) {
     return val.toShortString();
-  }
-  else if (typeof val === 'boolean') {
+  } else if (typeof val === "boolean") {
     return val;
-  }
-  else if (typeof val === 'string') {
+  } else if (typeof val === "string") {
     return val;
-  }
-  else if (val instanceof UnsignedInt) {
+  } else if (val instanceof UnsignedInt) {
     if (val instanceof U8) {
       return val.toJsNumber();
-    }
-    else {
+    } else {
       return val.value.toString();
     }
-  }
-  else if (val instanceof Array) {
+  } else if (val instanceof Array) {
     // optimize for U8[]?
     return val;
-  }
-  else if (val.typeTag instanceof StructTag) {
+  } else if (val.typeTag instanceof StructTag) {
     // check for String
     const tag = val.typeTag as StructTag;
     const tagFullname = tag.getFullname();
-    if (tagFullname === '0x1::string::String') {
+    if (tagFullname === "0x1::string::String") {
       const bytes = val.bytes as U8[];
       return u8str(bytes);
-    }
-    else if (tagFullname === '0x1::type_info::TypeInfo') {
-      const account_address = (val.account_address as HexString).toShortString();
+    } else if (tagFullname === "0x1::type_info::TypeInfo") {
+      const account_address = (
+        val.account_address as HexString
+      ).toShortString();
       const module_name = u8str(val.module_name as U8[]);
       const struct_name = u8str(val.struct_name as U8[]);
       const type = `${account_address}::${module_name}::${struct_name}`;
@@ -184,13 +186,11 @@ function printerReplacer(key: string, val: any) {
         account_address,
         module_name,
         struct_name,
-      }
-    }
-    else {
+      };
+    } else {
       return val;
     }
-  }
-  else {
+  } else {
     throw new Error(`Unreachable: ${val}`);
   }
 }
@@ -205,43 +205,39 @@ export function set(lhs: any, rhs: any) {
       throw new Error("Expect both lhs and rhs to be HexString!");
     }
     (lhs as unknown as any).hexString = (rhs as unknown as any).hexString;
-  }
-  else if (typeof lhs === 'boolean') {
+  } else if (typeof lhs === "boolean") {
     throw new Error("Mutating boolean value by reference not supported");
-  }
-  else if (lhs instanceof UnsignedInt) {
+  } else if (lhs instanceof UnsignedInt) {
     if (!(rhs instanceof UnsignedInt)) {
       throw new Error("Expect both lhs and rhs to be UnsignedInt!");
     }
     lhs.$set(rhs);
-  }
-  else if (lhs instanceof Array) {
+  } else if (lhs instanceof Array) {
     if (!(rhs instanceof Array)) {
       throw new Error("Expect both lhs and rhs to be array type!");
     }
     // clear then copy by value
     lhs.length = 0;
-    for(const val of rhs) {
+    for (const val of rhs) {
       lhs.push(copy(val));
     }
-  }
-  else if (lhs.typeTag instanceof StructTag) {
+  } else if (lhs.typeTag instanceof StructTag) {
     // struct set
     const structInfo = lhs.constructor as StructInfoType;
-    for(const field of structInfo.fields) {
+    for (const field of structInfo.fields) {
       lhs[field.name] = copy(rhs[field.name]);
     }
   }
 }
 
 export function u8str(array: U8[]): string {
-  const u8array = new Uint8Array(array.map(u => u.toJsNumber()));
+  const u8array = new Uint8Array(array.map((u) => u.toJsNumber()));
   return new TextDecoder().decode(u8array);
 }
 
 export function strToU8(str: string): U8[] {
   const result: U8[] = [];
-  for(let i = 0; i < str.length; i++) {
+  for (let i = 0; i < str.length; i++) {
     result.push(u8(str.charCodeAt(i)));
   }
   return result;
@@ -251,49 +247,44 @@ export function payloadArg(val: any) {
   if (val instanceof UnsignedInt) {
     if (val instanceof U8) {
       return val.toJsNumber();
-    }
-    else if (val instanceof U64 || val instanceof U128) {
+    } else if (val instanceof U64 || val instanceof U128) {
       return val.value.toString();
-    }
-    else {
+    } else {
       throw new Error("Only expect U8, U64, or U128 for integer types");
     }
-  }
-  else if (val instanceof HexString) {
+  } else if (val instanceof HexString) {
     return val.toShortString();
-  }
-  else if (typeof val === 'boolean') {
-    return val
-  }
-  else if(val.typeTag instanceof StructTag) {
+  } else if (typeof val === "boolean") {
+    return val;
+  } else if (val.typeTag instanceof StructTag) {
     const tag = val.typeTag as StructTag;
-    if (tag.address.toShortString() === '0x1' && tag.module === 'string' && tag.name === 'String') {
+    if (
+      tag.address.toShortString() === "0x1" &&
+      tag.module === "string" &&
+      tag.name === "String"
+    ) {
       const stringVal = val as ActualStringClass;
       const strVal = u8str(stringVal.bytes);
       return strVal;
-    }
-    else {
+    } else {
       throw new Error(`Unexpected struct type: ${tag.getFullname()}`);
     }
-  }
-  else {
+  } else {
     throw new Error(`Unexpected value type: ${typeof val}`);
   }
 }
 
 export function u8ArrayArg(val: U8[]): string {
-  const uint8array = new Uint8Array(Array.from(val.map(u => u.toJsNumber())));
+  const uint8array = new Uint8Array(Array.from(val.map((u) => u.toJsNumber())));
   return HexString.fromUint8Array(uint8array).hex();
 }
 
 export function moveValueToOpenApiObject(val: any, typeTag: TypeTag): any {
   if (val instanceof U8) {
     return val.toJsNumber();
-  }
-  else if (val instanceof U64 || val instanceof U128)  {
+  } else if (val instanceof U64 || val instanceof U128) {
     return val.value.toString();
-  }
-  else if (val instanceof HexString) {
+  } else if (val instanceof HexString) {
     return val.hex();
   }
   // vector
@@ -305,15 +296,15 @@ export function moveValueToOpenApiObject(val: any, typeTag: TypeTag): any {
     if (typeTag.elementType === AtomicTypeTag.U8) {
       return u8ArrayArg(val);
     }
-    return val.map(ele => moveValueToOpenApiObject(ele, typeTag.elementType));
+    return val.map((ele) => moveValueToOpenApiObject(ele, typeTag.elementType));
   }
   // object / struct
-  else if (typeof val === 'object') {
+  else if (typeof val === "object") {
     if (!(typeTag instanceof StructTag)) {
       throw new Error("Expected a struct value");
     }
     // special handler for ASCII
-    if (typeTag.getFullname() === '0x1::string::String') {
+    if (typeTag.getFullname() === "0x1::string::String") {
       const bytes = val.bytes as U8[];
       return u8str(bytes);
     }
@@ -325,8 +316,7 @@ export function moveValueToOpenApiObject(val: any, typeTag: TypeTag): any {
       result[name] = moveValueToOpenApiObject(val[field.name], fieldTag);
     }
     return result;
-  }
-  else {
+  } else {
     throw new Error("Unreachable");
   }
 }
