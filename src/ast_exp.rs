@@ -51,7 +51,7 @@ impl AstTsPrinter for Exp {
                         },
                     },
                     Type_::Unit => {
-                        return derr!((exp.loc, "Cannot copy Unit"));
+                        derr!((exp.loc, "Cannot copy Unit"))
                     }
                     Type_::Multiple(_) => explicit_copy,
                 }
@@ -102,11 +102,11 @@ impl AstTsPrinter for Exp {
                 }
             }
             E::BorrowLocal(_, v) => {
-                Ok(format!("{}", rename(v)))
+                Ok(rename(v))
                 //Ok(rename(v))
             }
             E::Cast(e, ty) => {
-                return Ok(format!("{}({})", builtin_cast_name(&ty, c)?, e.term(c)?));
+                Ok(format!("{}({})", builtin_cast_name(ty, c)?, e.term(c)?))
             }
             E::Spec(_, _) => Ok("".to_string()),
             // FIXME: is this really how freeze should behave?
@@ -607,7 +607,7 @@ pub fn handle_binop_for_base_type(
                             Ok(format!("!$.deep_eq({}, {})", lhs.term(c)?, rhs.term(c)?))
                         }
                         _ => {
-                            return derr!((binop.loc, "Operation not supported on struct"));
+                            derr!((binop.loc, "Operation not supported on struct"))
                         }
                     }
                 }

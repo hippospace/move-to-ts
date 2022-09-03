@@ -75,10 +75,8 @@ fn build(path: &Path, config: &MoveToTsOptions) {
             } else {
                 let pkg_name = package.package_path.to_string_lossy();
                 let mut paths = vec![format!("{}/sources", pkg_name)];
-                if config.test {
-                    if package.package_path.join("tests").is_dir() {
-                        paths.push(format!("{}/tests", pkg_name))
-                    }
+                if config.test && package.package_path.join("tests").is_dir() {
+                    paths.push(format!("{}/tests", pkg_name))
                 }
                 let path = PackagePaths {
                     name: Some(*name),
@@ -187,7 +185,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         let (filename, content) = gen_public_html();
         write_file(
             &build_root_path.join("public"),
-            (filename.clone(), content.clone()),
+            (filename, content),
         );
     }
 

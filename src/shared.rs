@@ -228,17 +228,17 @@ impl Context {
         desc: Option<String>,
     ) {
         self.cmds.push(CmdParams {
-            mi: mi.clone(),
-            fname: fname.clone(),
+            mi: *mi,
+            fname: *fname,
             func: func.clone(),
-            desc: desc,
+            desc,
         });
     }
 
     pub fn add_query(&mut self, mi: &ModuleIdent, fname: &FunctionName, func: &Function) {
         self.queries.push(CmdParams {
-            mi: mi.clone(),
-            fname: fname.clone(),
+            mi: *mi,
+            fname: *fname,
             func: func.clone(),
             desc: None,
         });
@@ -247,8 +247,7 @@ impl Context {
     pub fn has_query(&self, mi: &ModuleIdent, fname: &FunctionName) -> bool {
         self.queries
             .iter()
-            .find(|params| params.mi == *mi && params.fname == *fname)
-            .is_some()
+            .any(|params| params.mi == *mi && params.fname == *fname)
     }
 
     pub fn add_printer_method(
@@ -260,10 +259,10 @@ impl Context {
         sig: &FunctionSignature,
     ) {
         self.printer_methods.push((
-            mi.clone(),
-            sname.clone(),
+            *mi,
+            *sname,
             sdef.clone(),
-            fname.clone(),
+            *fname,
             sig.clone(),
         ));
     }
@@ -276,15 +275,15 @@ impl Context {
         field_name: &Name,
     ) {
         self.all_shows_iter_tables.push((
-            mi.clone(),
-            sname.clone(),
+            *mi,
+            *sname,
             sdef.clone(),
-            field_name.clone(),
+            *field_name,
         ));
     }
 
     pub fn is_async(&self) -> bool {
-        return self.config.asynchronous;
+        self.config.asynchronous
     }
 }
 

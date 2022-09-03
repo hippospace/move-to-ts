@@ -180,16 +180,16 @@ pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic>
         "{}({}{})",
         payload_builder,
         param_names_no_signer
-            .clone()
+            
             .iter()
             .map(|pname| format!("{}_", pname))
             .join(", "),
-        if cmd.func.signature.type_parameters.len() == 0 {
+        if cmd.func.signature.type_parameters.is_empty() {
             "".to_string()
         } else {
             format!(
                 "{}[{}]",
-                if param_names_no_signer.len() > 0 {
+                if !param_names_no_signer.is_empty() {
                     ", "
                 } else {
                     ""
@@ -205,8 +205,8 @@ pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic>
     let func_name = format!("{}_{}", miname, cmd.fname);
     let command_name = format!(
         "{}:{}",
-        miname.to_string().replace("_", "-"),
-        cmd.fname.to_string().replace("_", "-")
+        miname.to_string().replace('_', "-"),
+        cmd.fname.to_string().replace('_', "-")
     );
     let description = cmd.desc.clone().unwrap_or_default();
     let action_body = format!(
@@ -296,7 +296,7 @@ pub fn generate_printer(
     }
 
     let cmd_func_name = format!("{}_{}", sname, fname);
-    let command_name = format!("{}:{}", sname, fname.to_string().replace("_", "-"));
+    let command_name = format!("{}:{}", sname, fname.to_string().replace('_', "-"));
 
     let body = format!(
         r###"
@@ -372,8 +372,8 @@ pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Dia
     let cmd_func_name = format!("{}_{}", query.mi.value.module, query.fname);
     let command_name = format!(
         "{}:query-{}",
-        query.mi.value.module.to_string().replace("_", "-"),
-        query.fname.to_string().replace("_", "-")
+        query.mi.value.module.to_string().replace('_', "-"),
+        query.fname.to_string().replace('_', "-")
     );
 
     let body = format!(
@@ -432,7 +432,7 @@ pub fn generate_iter_table_printer(
         .map(|tp| (format!("  .argument('<TYPE_{}>')", tp.param.user_specified_name)))
         .join("\n");
 
-    let command_name = action_name.to_string().replace("_", "-");
+    let command_name = action_name.replace('_', "-");
 
     let body = format!(
         r###"
@@ -456,7 +456,7 @@ program
   .action({})
 "###,
         action_name,
-        if type_param_decls.len() > 0 {
+        if !type_param_decls.is_empty() {
             format!(", {}", type_param_decls)
         } else {
             "".to_string()
@@ -465,7 +465,7 @@ program
         type_tags_inner,
         field_name,
         command_name,
-        if arguments.len() > 0 {
+        if !arguments.is_empty() {
             format!("\n{}", arguments)
         } else {
             "".to_ascii_lowercase()
