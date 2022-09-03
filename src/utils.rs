@@ -129,9 +129,9 @@ pub fn rename(name: &impl fmt::Display) -> String {
             if name_str.starts_with("%#") {
                 // replace temporaries
                 format!("temp${}", name_str.split_at(2).1)
-            } else if name_str.contains("#") {
+            } else if name_str.contains('#') {
                 // normalize shadowed variable names
-                name_str.replace("#", "__")
+                name_str.replace('#', "__")
             } else {
                 name_str
             }
@@ -183,7 +183,7 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         .iter()
         .map(|mi| {
             let cap_name = capitalize(&mi.value.module);
-            return format!("  {} : {}.App", mi.value.module, cap_name);
+            format!("  {} : {}.App", mi.value.module, cap_name)
         })
         .join("\n");
 
@@ -191,10 +191,10 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         .iter()
         .map(|mi| {
             let cap_name = capitalize(&mi.value.module);
-            return format!(
+            format!(
                 "    this.{} = new {}.App(client, repo, cache);",
                 mi.value.module, cap_name
-            );
+            )
         })
         .join("\n");
 
@@ -261,17 +261,17 @@ pub fn generate_topmost_index(packages: &Vec<&String>) -> (String, String) {
     let app_fields = packages
         .iter()
         .map(|p| {
-            return format!("  {} : {}.App", p, p);
+            format!("  {} : {}.App", p, p)
         })
         .join("\n");
 
     let app_field_inits = packages
         .iter()
         .map(|p| {
-            return format!(
+            format!(
                 "    this.{} = new {}.App(client, this.parserRepo, this.cache);",
                 p, p
-            );
+            )
         })
         .join("\n");
 
