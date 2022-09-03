@@ -146,8 +146,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     for (mident, mdef) in hlir_program.modules.key_cloned_iter() {
         // skip problematic modules under aptos_framework::aggregator*
         let mod_name = mident.value.module.to_string();
-        if format_address_hex(mident.value.address) == "0x1" && mod_name.contains("secp256k1")
-        {
+        if format_address_hex(mident.value.address) == "0x1" && mod_name.contains("secp256k1") {
             continue;
         }
 
@@ -183,10 +182,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         }
 
         let (filename, content) = gen_public_html();
-        write_file(
-            &build_root_path.join("public"),
-            (filename, content),
-        );
+        write_file(&build_root_path.join("public"), (filename, content));
     }
 
     // 6

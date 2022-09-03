@@ -142,11 +142,10 @@ pub fn is_same_package(a1: Address, a2: Address) -> bool {
                 // FIXME temporary patch to get around aptos_framework namespacing error
                 if num.value.eq(&NumericalAddress::parse_str("0x1").unwrap()) {
                     num == num2
-                }
-                else {
+                } else {
                     name == name2 && num == num2
                 }
-            },
+            }
             _ => false,
         },
         Address::NamedUnassigned(_) => a1 == a2,
@@ -258,13 +257,8 @@ impl Context {
         fname: &Name,
         sig: &FunctionSignature,
     ) {
-        self.printer_methods.push((
-            *mi,
-            *sname,
-            sdef.clone(),
-            *fname,
-            sig.clone(),
-        ));
+        self.printer_methods
+            .push((*mi, *sname, sdef.clone(), *fname, sig.clone()));
     }
 
     pub fn add_show_iter_table(
@@ -274,12 +268,8 @@ impl Context {
         sdef: &StructDefinition,
         field_name: &Name,
     ) {
-        self.all_shows_iter_tables.push((
-            *mi,
-            *sname,
-            sdef.clone(),
-            *field_name,
-        ));
+        self.all_shows_iter_tables
+            .push((*mi, *sname, sdef.clone(), *field_name));
     }
 
     pub fn is_async(&self) -> bool {
@@ -340,11 +330,10 @@ pub fn format_address_(address: Address, use_stdlib: bool) -> String {
             // aptos_framework
             if use_stdlib && addr.value.eq(&NumericalAddress::parse_str("0x1").unwrap()) {
                 "stdlib".to_string()
-            }
-            else {
+            } else {
                 format!("{}", &name)
             }
-        },
+        }
         Address::Numerical(None, numerical_address) => format!("X{}", &numerical_address),
         Address::NamedUnassigned(name) => format!("{}", &name),
     }

@@ -105,9 +105,7 @@ impl AstTsPrinter for Exp {
                 Ok(rename(v))
                 //Ok(rename(v))
             }
-            E::Cast(e, ty) => {
-                Ok(format!("{}({})", builtin_cast_name(ty, c)?, e.term(c)?))
-            }
+            E::Cast(e, ty) => Ok(format!("{}({})", builtin_cast_name(ty, c)?, e.term(c)?)),
             E::Spec(_, _) => Ok("".to_string()),
             // FIXME: is this really how freeze should behave?
             E::Freeze(e) => e.term(c),

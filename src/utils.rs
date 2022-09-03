@@ -260,9 +260,7 @@ pub fn generate_topmost_index(packages: &Vec<&String>) -> (String, String) {
 
     let app_fields = packages
         .iter()
-        .map(|p| {
-            format!("  {} : {}.App", p, p)
-        })
+        .map(|p| format!("  {} : {}.App", p, p))
         .join("\n");
 
     let app_field_inits = packages

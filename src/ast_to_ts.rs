@@ -1277,8 +1277,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 w.short_block(|w| {
                     if mident.value.module.to_string().contains("ristretto") {
                         w.writeln("throw 'Not Implemented';");
-                    }
-                    else {
+                    } else {
                         w.writeln(format!("{}({}$c{});", native_name, args_comma, comma_tags));
                     }
                     Ok(())
@@ -1477,9 +1476,7 @@ pub fn get_ts_handler_for_vector_in_vector(inner_ty: &BaseType) -> TermResult {
 pub fn is_base_type_signer(ty: &BaseType) -> bool {
     match &ty.value {
         BaseType_::Apply(_, typename, _) => match &typename.value {
-            TypeName_::Builtin(builtin) => {
-                builtin.value == BuiltinTypeName_::Signer
-            }
+            TypeName_::Builtin(builtin) => builtin.value == BuiltinTypeName_::Signer,
             _ => false,
         },
         _ => false,

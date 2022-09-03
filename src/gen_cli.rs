@@ -180,7 +180,6 @@ pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic>
         "{}({}{})",
         payload_builder,
         param_names_no_signer
-            
             .iter()
             .map(|pname| format!("{}_", pname))
             .join(", "),
