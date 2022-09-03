@@ -1,5 +1,5 @@
 import { HexString } from "aptos";
-import { BCS } from "aptos/dist/transaction_builder";
+import { BCS } from "aptos";
 import { U128, U64, U8 } from "./builtinTypes.js";
 import { u128, u64, u8 } from "./builtinFuncs.js";
 import {

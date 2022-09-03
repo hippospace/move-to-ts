@@ -21,7 +21,7 @@ import {
   TypeParamDeclType,
 } from "./parserRepo.js";
 import { strToU8, u64, u8str } from "./builtinFuncs.js";
-import { BCS } from "aptos/dist/transaction_builder";
+import { BCS } from "aptos";
 import { deserializeMoveValue, serializeMoveValue } from "./bcs.js";
 
 /*

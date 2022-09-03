@@ -7,7 +7,6 @@ import {
   TypeTag,
 } from "./typeTag.js";
 import stringify from "json-stable-stringify";
-import { DeleteResource, WriteResource } from "aptos/dist/generated";
 
 export interface ITable {
   handle: HexString;
@@ -504,7 +503,7 @@ export class AptosResourceCache {
     if (txn.success && txn.hash !== "0x0") {
       for (const change of txn.changes) {
         if (change.type === "write_resource") {
-          const write = change as WriteResource;
+          const write = change as Types.WriteResource;
           const typeTag = parseMoveStructTag(write.data.type);
           const resourceKey = this.getResourceKey(
             new HexString(write.address),
@@ -515,7 +514,7 @@ export class AptosResourceCache {
             this.updateResource(resourceKey, newValue);
           }
         } else if (change.type === "delete_resource") {
-          const del = change as DeleteResource;
+          const del = change as Types.DeleteResource;
           const typeTag = parseMoveStructTag(del.resource);
           const resourceKey = this.getResourceKey(
             new HexString(del.address),
