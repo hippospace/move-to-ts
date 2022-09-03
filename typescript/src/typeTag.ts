@@ -1,5 +1,4 @@
-import { HexString } from "aptos"
-import { MoveStructTag } from "aptos/dist/generated";
+import { HexString, Types } from "aptos"
 import { StructInfoType } from "./parserRepo";
 import { assert } from "./utils";
 
@@ -30,7 +29,7 @@ export class StructTag {
     return `${this.address.hex()}::${this.module}::${this.name}`;
   }
 
-  getAptosMoveTypeTag(): MoveStructTag {
+  getAptosMoveTypeTag(): Types.MoveStructTag {
     return this.getFullname();
     /*
     return {
@@ -252,7 +251,7 @@ export function parseTypeTagOrThrow(name: string): TypeTag {
   return tag;
 }
 
-export function parseMoveStructTag(moveTag: MoveStructTag): StructTag {
+export function parseMoveStructTag(moveTag: Types.MoveStructTag): StructTag {
   const result = parseTypeTagOrThrow(moveTag);
   if (!(result instanceof StructTag)) {
     throw new Error(`Expected a StructTag but instead received: ${moveTag}`);

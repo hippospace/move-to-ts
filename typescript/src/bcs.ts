@@ -1,5 +1,4 @@
-import { HexString } from "aptos";
-import { BCS } from "aptos/dist/transaction_builder";
+import { BCS, HexString } from "aptos";
 import { StructInfoType, U128, U64, U8 } from ".";
 import { u128, u64, u8 } from "./builtinFuncs";
 import { AtomicTypeTag, SimpleStructTag, StructTag, substituteTypeParams, TypeParamIdx, TypeTag, VectorTag } from "./typeTag";

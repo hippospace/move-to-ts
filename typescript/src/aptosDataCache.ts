@@ -4,7 +4,6 @@ import { U128, U64 } from "./builtinTypes";
 import { AptosParserRepo, StructInfoType } from "./parserRepo";
 import { getTypeTagFullname, parseMoveStructTag, parseTypeTagOrThrow, StructTag, TypeTag } from "./typeTag";
 import stringify from "json-stable-stringify";
-import { DeleteResource, WriteResource } from "aptos/dist/generated";
 
 
 export interface ITable {
@@ -450,7 +449,7 @@ export class AptosResourceCache {
     if (txn.success && txn.hash !== '0x0') {
       for(const change of txn.changes) {
         if(change.type === 'write_resource' ) {
-          const write = change as WriteResource;
+          const write = change as Types.WriteResource;
           const typeTag = parseMoveStructTag(write.data.type);
           const resourceKey = this.getResourceKey(new HexString(write.address), typeTag);
           if (resourceKey in this.cachedResources) {
@@ -460,7 +459,7 @@ export class AptosResourceCache {
 
         }
         else if (change.type === 'delete_resource') {
-          const del = change as DeleteResource;
+          const del = change as Types.DeleteResource;
           const typeTag = parseMoveStructTag(del.resource);
           const resourceKey = this.getResourceKey(new HexString(del.address), typeTag);
           if (resourceKey in this.cachedResources) {
