@@ -1,4 +1,4 @@
-import { HexString } from "aptos";
+import { BCS, HexString } from "aptos";
 import { AptosDataCache, IBox, ITable, AppType } from "./aptosDataCache";
 import { U128, U64, U8 } from "./builtinTypes";
 import { AtomicTypeTag, getTypeParamsString, getTypeTagFullname, parseTypeTagOrThrow, StructTag, TypeTag, VectorTag } from "./typeTag";
@@ -8,7 +8,6 @@ import bigInt from "big-integer";
 import * as elliptic from "elliptic";
 import { AptosParserRepo, FieldDeclType, parseStructProto, TypeParamDeclType } from "./parserRepo";
 import { strToU8, u64, u8str } from "./builtinFuncs";
-import { BCS } from "aptos/dist/transaction_builder";
 import { deserializeMoveValue, serializeMoveValue } from "./bcs";
 
 /*

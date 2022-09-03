@@ -1,12 +1,11 @@
 import { AptosClient, AptosAccount, Types, TxnBuilderTypes, HexString, BCS, TransactionBuilderEd25519 } from "aptos";
 import { TypeTagParser } from "aptos/dist/transaction_builder/builder_utils";
-import { TransactionPayload_EntryFunctionPayload, TransactionSignature, UserTransaction, WriteSetChange_WriteResource } from "aptos/dist/generated";
-import { AccountAddress, Identifier, ModuleId, EntryFunction } from "aptos/dist/transaction_builder/aptos_types";
 import { AptosParserRepo } from "./parserRepo";
 import { StructTag } from "./typeTag";
 import { U128, U64, U8 } from "./builtinTypes";
 import { ActualStringClass, payloadArg, serializeMoveValueWithoutTag } from ".";
 
+const { AccountAddress, Identifier, ModuleId, EntryFunction } = TxnBuilderTypes
 type AcceptedScriptFuncArgType = any[] | U8 | U64 | U128 | HexString | boolean | ActualStringClass;
 
 export function buildPayload(
@@ -16,7 +15,7 @@ export function buildPayload(
   typeArguments: string[],
   args: AcceptedScriptFuncArgType[],
   isJSON = false,
-): TxnBuilderTypes.TransactionPayloadEntryFunction | TransactionPayload_EntryFunctionPayload {
+): TxnBuilderTypes.TransactionPayloadEntryFunction | Types.TransactionPayload_EntryFunctionPayload {
 
   if (isJSON) {
     // JSON
@@ -49,7 +48,7 @@ export function buildPayload(
 export async function sendPayloadTx(
   client: AptosClient, 
   account: AptosAccount, 
-  payload: TxnBuilderTypes.TransactionPayload | TransactionPayload_EntryFunctionPayload, 
+  payload: TxnBuilderTypes.TransactionPayload | Types.TransactionPayload_EntryFunctionPayload, 
   max_gas=1000
 ){
   // send BCS transaction
@@ -71,7 +70,7 @@ export async function sendPayloadTx(
   // send JSON transaction
   else {
     console.log("Building tx...");
-    const pld = payload as TransactionPayload_EntryFunctionPayload;
+    const pld = payload as Types.TransactionPayload_EntryFunctionPayload;
     // RawTransaction
     const txn = await client.generateTransaction(account.address(), pld, {max_gas_amount: max_gas.toString()});
     // Signed json representation
@@ -103,7 +102,7 @@ export function getSimulationKeys(account: AptosAccount): SimulationKeys {
 export async function simulatePayloadTx(
   client: AptosClient, 
   keys: SimulationKeys,
-  payload: TxnBuilderTypes.TransactionPayload | TransactionPayload_EntryFunctionPayload, 
+  payload: TxnBuilderTypes.TransactionPayload | Types.TransactionPayload_EntryFunctionPayload, 
   max_gas=1000
 ){
   if (payload instanceof TxnBuilderTypes.TransactionPayload) {
@@ -113,9 +112,9 @@ export async function simulatePayloadTx(
     return outputs[0];
   }
   else {
-    const pld = payload as TransactionPayload_EntryFunctionPayload;
+    const pld = payload as Types.TransactionPayload_EntryFunctionPayload;
     const txn = await client.generateTransaction(keys.address, pld, {max_gas_amount: max_gas.toString()});
-    const transactionSignature: TransactionSignature = {
+    const transactionSignature: Types.TransactionSignature = {
       type: "ed25519_signature",
       public_key: keys.pubkey.hex(),
       // use invalid signature for simulation
@@ -148,7 +147,7 @@ export function generateBCSSimulation(pubkey: HexString, rawTxn: TxnBuilderTypes
   return txnBuilder.sign(rawTxn);
 }
 
-export function takeSimulationValue<T>(tx: UserTransaction, tag: StructTag, repo: AptosParserRepo): T {
+export function takeSimulationValue<T>(tx: Types.UserTransaction, tag: StructTag, repo: AptosParserRepo): T {
   if (!tx.success) {
     console.log(tx);
     throw new Error("Simulation failed");
@@ -157,7 +156,7 @@ export function takeSimulationValue<T>(tx: UserTransaction, tag: StructTag, repo
     if (change.type !== 'write_resource') {
       return false;
     }
-    const wr = change as WriteSetChange_WriteResource;
+    const wr = change as Types.WriteSetChange_WriteResource;
     return wr.data.type === tag.getAptosMoveTypeTag();
   })
   if (valueData.length === 0) {
@@ -166,6 +165,6 @@ export function takeSimulationValue<T>(tx: UserTransaction, tag: StructTag, repo
   if (valueData.length > 1) {
     throw new Error("Found multiple output resource");
   }
-  const wr = valueData[0] as WriteSetChange_WriteResource;
+  const wr = valueData[0] as Types.WriteSetChange_WriteResource;
   return repo.parse(wr.data.data, tag) as T;
 }
