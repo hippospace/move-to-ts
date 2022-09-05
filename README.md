@@ -203,8 +203,8 @@ OPTIONS:
     -p, --path <PACKAGE_PATH>
             Path to a package which the command should be run with respect to [default: .]
 
-    -t, --gen-test
-            generate #[test] functions
+    -t, --test-address <TEST_ADDRESS>
+            generate #[test] functions [default: ]
 
     -u, --gen-ui
             

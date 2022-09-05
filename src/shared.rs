@@ -72,8 +72,8 @@ pub struct MoveToTsOptions {
     )]
     pub output_path: PathBuf,
     /// generate #[test] functions
-    #[clap(long = "gen-test", short = 't')]
-    pub test: bool,
+    #[clap(long = "test-address", short = 't', default_value = "")]
+    pub test_address: String,
     #[clap(long = "gen-cli", short = 'c')]
     pub cli: bool,
     #[clap(long = "gen-ui", short = 'u')]

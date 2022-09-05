@@ -9,7 +9,7 @@ pub mod utils;
 
 use crate::gen_cli::generate_cli;
 use crate::gen_ui::{gen_public_html, generate_ui};
-use crate::shared::{format_address_hex, is_same_package};
+use crate::shared::{format_address, format_address_hex, is_same_package};
 use crate::utils::{generate_index, generate_topmost_index};
 use clap::Parser;
 use move_command_line_common::address::NumericalAddress;
@@ -75,7 +75,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
             } else {
                 let pkg_name = package.package_path.to_string_lossy();
                 let mut paths = vec![format!("{}/sources", pkg_name)];
-                if config.test && package.package_path.join("tests").is_dir() {
+                if !config.test_address.is_empty() && package.package_path.join("tests").is_dir() {
                     paths.push(format!("{}/tests", pkg_name))
                 }
                 let path = PackagePaths {
@@ -101,7 +101,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
 
     source_package_paths.append(&mut dependencies);
 
-    let flags = if config.test {
+    let flags = if !config.test_address.is_empty() {
         Flags::testing()
     } else {
         Flags::empty()
@@ -159,7 +159,9 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         write_file(&build_root_path.join("src"), (filename, content));
 
         // 4 tests
-        if config.test && !ctx.tests.is_empty() {
+        let test_matches = config.test_address == "all"
+            || format_address(mident.value.address) == config.test_address;
+        if test_matches && !ctx.tests.is_empty() {
             let test_res = ast_tests::generate_tests(&mut ctx);
             let (filename, content) = unwrap_or_report_diagnostics(&files, test_res);
             write_file(&build_root_path.join("src/tests"), (filename, content));
@@ -197,7 +199,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         write_file(&build_root_path, (filename, content));
 
         // jest.config.js
-        if config.test {
+        if !config.test_address.is_empty() {
             let (filename, content) = utils::generate_jest_config();
             write_file(&build_root_path, (filename, content));
         }

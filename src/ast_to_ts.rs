@@ -1191,7 +1191,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
         let (name, func) = self;
         let is_entry = func.entry.is_some();
-        if c.config.test {
+        if !c.config.test_address.is_empty() {
             let is_test = check_test(name, func, c)?;
             if is_test {
                 w.writeln("// #[test]");
