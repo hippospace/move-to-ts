@@ -21,7 +21,7 @@ use move_package::compilation::package_layout::CompiledPackageLayout;
 use move_package::source_package::layout::SourcePackageLayout;
 use shared::{Context, MoveToTsOptions};
 use std::collections::BTreeMap;
-use std::path::{Path};
+use std::path::Path;
 use std::process;
 use std::rc::Rc;
 
