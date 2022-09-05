@@ -66,15 +66,15 @@ export type TypeTag = AtomicTypeTag | VectorTag | StructTag | TypeParamIdx;
 
 export function getTypeTagFullname(typeTag: TypeTag): string {
   if (typeTag instanceof VectorTag) {
-    const vecTag = typeTag as VectorTag;
+    const vecTag = typeTag;
     return `vector<${getTypeTagFullname(vecTag.elementType)}>`;
   } else if (typeTag instanceof StructTag) {
-    const structTag = typeTag as StructTag;
+    const structTag = typeTag;
     return structTag.getFullname();
   } else if (typeTag instanceof TypeParamIdx) {
     return `$tv${typeTag.index}`;
   } else {
-    const atomicTag = typeTag as AtomicTypeTag;
+    const atomicTag = typeTag;
     return atomicTag;
   }
 }
@@ -83,12 +83,12 @@ export function getTypeTagParamlessName(typeTag: TypeTag): string {
   if (typeTag instanceof VectorTag) {
     return `vector`;
   } else if (typeTag instanceof StructTag) {
-    const structTag = typeTag as StructTag;
+    const structTag = typeTag;
     return structTag.getParamlessName();
   } else if (typeTag instanceof TypeParamIdx) {
     return `$tv${typeTag.index}`;
   } else {
-    const atomicTag = typeTag as AtomicTypeTag;
+    const atomicTag = typeTag;
     return atomicTag;
   }
 }
@@ -124,6 +124,7 @@ export function parseQualifiedStructTag(
     const afterLeftBracket = withoutModule.substr(leftBracketIdx + 1);
     const typeParams: TypeTag[] = [];
     let [result, remaining] = parseTypeTag(afterLeftBracket);
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       if (result === null) {
         throw new Error(`Badly formatted struct name: ${name}`);
@@ -173,7 +174,7 @@ export function parseVectorTag(name: string): [null | VectorTag, string] {
   if (!name.startsWith("vector<")) {
     return [null, name];
   }
-  let [elementType, remaining] = parseTypeTag(name.substr(7));
+  const [elementType, remaining] = parseTypeTag(name.substr(7));
   if (elementType === null || !remaining.startsWith(">")) {
     throw new Error(`Badly formatted vector type name: ${name}`);
   }
@@ -257,7 +258,7 @@ export function parseMoveStructTag(moveTag: Types.MoveStructTag): StructTag {
   if (!(result instanceof StructTag)) {
     throw new Error(`Expected a StructTag but instead received: ${moveTag}`);
   }
-  return result as StructTag;
+  return result;
   // MoveStructTag was for a while a struct
   // const params = moveTag.generic_type_params.map(parseTypeTagOrThrow);
   // return new StructTag(new HexString(moveTag.address), moveTag.module, moveTag.name, params);
@@ -276,7 +277,7 @@ export function substituteTypeParams(
   typeParams: TypeTag[]
 ): TypeTag {
   if (toSubstitute instanceof StructTag) {
-    let params = toSubstitute.typeParams.map((p) =>
+    const params = toSubstitute.typeParams.map((p) =>
       substituteTypeParams(p, typeParams)
     );
     return new StructTag(
@@ -292,7 +293,7 @@ export function substituteTypeParams(
     );
     return new VectorTag(innerSubbed);
   } else if (toSubstitute instanceof TypeParamIdx) {
-    let subbed = typeParams[toSubstitute.index];
+    const subbed = typeParams[toSubstitute.index];
     if (!subbed) {
       throw new Error(
         `Did not find param ${toSubstitute.index} in ${JSON.stringify(

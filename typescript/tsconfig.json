@@ -21,5 +21,6 @@
     "noErrorTruncation": true,
 
     "skipLibCheck": true
-  }
+  },
+  "include": ["src/", ".eslintrc.cjs"]
 }

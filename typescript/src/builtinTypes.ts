@@ -26,7 +26,9 @@ export class UnsignedInt<T extends IntInterface<T>> {
     this.checkBounds();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   checkBounds() {}
+
   make(value: bigInt.BigInteger) {
     return new UnsignedInt<T>(value);
   }
