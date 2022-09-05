@@ -8,6 +8,7 @@ import {
 } from "./typeTag.js";
 import stringify from "json-stable-stringify";
 
+
 export interface ITable {
   handle: HexString;
   typeTag: TypeTag;

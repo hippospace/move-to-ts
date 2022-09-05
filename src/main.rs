@@ -21,11 +21,11 @@ use move_package::compilation::package_layout::CompiledPackageLayout;
 use move_package::source_package::layout::SourcePackageLayout;
 use shared::{Context, MoveToTsOptions};
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use std::process;
 use std::rc::Rc;
 
-fn write_file(root_path: &PathBuf, pair: (String, String)) {
+fn write_file(root_path: &Path, pair: (String, String)) {
     let (filename, content) = pair;
     let path_to_save = root_path.join(filename);
     let parent = path_to_save.parent().unwrap();
@@ -75,10 +75,8 @@ fn build(path: &Path, config: &MoveToTsOptions) {
             } else {
                 let pkg_name = package.package_path.to_string_lossy();
                 let mut paths = vec![format!("{}/sources", pkg_name)];
-                if config.test {
-                    if package.package_path.join("tests").is_dir() {
-                        paths.push(format!("{}/tests", pkg_name))
-                    }
+                if config.test && package.package_path.join("tests").is_dir() {
+                    paths.push(format!("{}/tests", pkg_name))
                 }
                 let path = PackagePaths {
                     name: Some(*name),
@@ -148,8 +146,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     for (mident, mdef) in hlir_program.modules.key_cloned_iter() {
         // skip problematic modules under aptos_framework::aggregator*
         let mod_name = mident.value.module.to_string();
-        if format_address_hex(mident.value.address) == "0x1" && mod_name.contains("secp256k1")
-        {
+        if format_address_hex(mident.value.address) == "0x1" && mod_name.contains("secp256k1") {
             continue;
         }
 
@@ -185,10 +182,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         }
 
         let (filename, content) = gen_public_html();
-        write_file(
-            &build_root_path.join("public"),
-            (filename.clone(), content.clone()),
-        );
+        write_file(&build_root_path.join("public"), (filename, content));
     }
 
     // 6

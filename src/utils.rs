@@ -129,9 +129,9 @@ pub fn rename(name: &impl fmt::Display) -> String {
             if name_str.starts_with("%#") {
                 // replace temporaries
                 format!("temp${}", name_str.split_at(2).1)
-            } else if name_str.contains("#") {
+            } else if name_str.contains('#') {
                 // normalize shadowed variable names
-                name_str.replace("#", "__")
+                name_str.replace('#', "__")
             } else {
                 name_str
             }
@@ -148,7 +148,7 @@ pub fn capitalize(name: &impl fmt::Display) -> String {
     }
 }
 
-pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (String, String) {
+pub fn generate_index(package_name: &String, modules: &[&ModuleIdent]) -> (String, String) {
     let filename = format!("{}/index.ts", package_name);
     let exports = modules
         .iter()
@@ -183,7 +183,7 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         .iter()
         .map(|mi| {
             let cap_name = capitalize(&mi.value.module);
-            return format!("  {} : {}.App", mi.value.module, cap_name);
+            format!("  {} : {}.App", mi.value.module, cap_name)
         })
         .join("\n");
 
@@ -191,10 +191,10 @@ pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (St
         .iter()
         .map(|mi| {
             let cap_name = capitalize(&mi.value.module);
-            return format!(
+            format!(
                 "    this.{} = new {}.App(client, repo, cache);",
                 mi.value.module, cap_name
-            );
+            )
         })
         .join("\n");
 
@@ -239,7 +239,7 @@ export class App {{
     (filename, content)
 }
 
-pub fn generate_topmost_index(packages: &Vec<&String>) -> (String, String) {
+pub fn generate_topmost_index(packages: &[&String]) -> (String, String) {
     let filename = "index.ts".to_string();
     let exports = packages
         .iter()
@@ -260,18 +260,16 @@ pub fn generate_topmost_index(packages: &Vec<&String>) -> (String, String) {
 
     let app_fields = packages
         .iter()
-        .map(|p| {
-            return format!("  {} : {}.App", p, p);
-        })
+        .map(|p| format!("  {} : {}.App", p, p))
         .join("\n");
 
     let app_field_inits = packages
         .iter()
         .map(|p| {
-            return format!(
+            format!(
                 "    this.{} = new {}.App(client, this.parserRepo, this.cache);",
                 p, p
-            );
+            )
         })
         .join("\n");
 

@@ -142,11 +142,10 @@ pub fn is_same_package(a1: Address, a2: Address) -> bool {
                 // FIXME temporary patch to get around aptos_framework namespacing error
                 if num.value.eq(&NumericalAddress::parse_str("0x1").unwrap()) {
                     num == num2
-                }
-                else {
+                } else {
                     name == name2 && num == num2
                 }
-            },
+            }
             _ => false,
         },
         Address::NamedUnassigned(_) => a1 == a2,
@@ -228,17 +227,17 @@ impl Context {
         desc: Option<String>,
     ) {
         self.cmds.push(CmdParams {
-            mi: mi.clone(),
-            fname: fname.clone(),
+            mi: *mi,
+            fname: *fname,
             func: func.clone(),
-            desc: desc,
+            desc,
         });
     }
 
     pub fn add_query(&mut self, mi: &ModuleIdent, fname: &FunctionName, func: &Function) {
         self.queries.push(CmdParams {
-            mi: mi.clone(),
-            fname: fname.clone(),
+            mi: *mi,
+            fname: *fname,
             func: func.clone(),
             desc: None,
         });
@@ -247,8 +246,7 @@ impl Context {
     pub fn has_query(&self, mi: &ModuleIdent, fname: &FunctionName) -> bool {
         self.queries
             .iter()
-            .find(|params| params.mi == *mi && params.fname == *fname)
-            .is_some()
+            .any(|params| params.mi == *mi && params.fname == *fname)
     }
 
     pub fn add_printer_method(
@@ -259,13 +257,8 @@ impl Context {
         fname: &Name,
         sig: &FunctionSignature,
     ) {
-        self.printer_methods.push((
-            mi.clone(),
-            sname.clone(),
-            sdef.clone(),
-            fname.clone(),
-            sig.clone(),
-        ));
+        self.printer_methods
+            .push((*mi, *sname, sdef.clone(), *fname, sig.clone()));
     }
 
     pub fn add_show_iter_table(
@@ -275,16 +268,12 @@ impl Context {
         sdef: &StructDefinition,
         field_name: &Name,
     ) {
-        self.all_shows_iter_tables.push((
-            mi.clone(),
-            sname.clone(),
-            sdef.clone(),
-            field_name.clone(),
-        ));
+        self.all_shows_iter_tables
+            .push((*mi, *sname, sdef.clone(), *field_name));
     }
 
     pub fn is_async(&self) -> bool {
-        return self.config.asynchronous;
+        self.config.asynchronous
     }
 }
 
@@ -341,11 +330,10 @@ pub fn format_address_(address: Address, use_stdlib: bool) -> String {
             // aptos_framework
             if use_stdlib && addr.value.eq(&NumericalAddress::parse_str("0x1").unwrap()) {
                 "stdlib".to_string()
-            }
-            else {
+            } else {
                 format!("{}", &name)
             }
-        },
+        }
         Address::Numerical(None, numerical_address) => format!("X{}", &numerical_address),
         Address::NamedUnassigned(name) => format!("{}", &name),
     }
@@ -558,7 +546,8 @@ pub fn extract_attribute_value_string(attr: &Attribute) -> Option<String> {
         Attribute_::Assigned(_, v) => match &v.value {
             AttributeValue_::Value(value) => match &value.value {
                 EV::Bytearray(bytes) => {
-                    let str_val = String::from_utf8(bytes.clone()).unwrap_or(String::from(""));
+                    let str_val =
+                        String::from_utf8(bytes.clone()).unwrap_or_else(|_| String::from(""));
                     Some(str_val)
                 }
                 _ => None,

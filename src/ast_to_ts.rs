@@ -256,7 +256,7 @@ pub fn write_app(
         // payload builder
         w.writeln(format!("payload_{}(", fname));
         write_parameters(&func.signature, w, c, true, false)?;
-        if func.signature.type_parameters.len() > 0 {
+        if !func.signature.type_parameters.is_empty() {
             w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
         }
         w.writeln("  isJSON = false,");
@@ -286,7 +286,7 @@ pub fn write_app(
         w.writeln(format!("async {}(", fname));
         w.writeln("  _account: AptosAccount,");
         write_parameters(&func.signature, w, c, true, false)?;
-        if func.signature.type_parameters.len() > 0 {
+        if !func.signature.type_parameters.is_empty() {
             w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
         }
         w.writeln("  _maxGas = 1000,");
@@ -341,15 +341,11 @@ pub fn write_simplify_constant_block(
     c: &mut Context,
 ) -> WriteResult {
     if block.len() == 1 {
-        match &block[0].value {
-            Statement_::Command(cmd) => match &cmd.value {
-                Command_::Return { from_user: _, exp } => {
-                    w.write(exp.term(c)?);
-                    return Ok(());
-                }
-                _ => (),
-            },
-            _ => (),
+        if let Statement_::Command(cmd) = &block[0].value {
+            if let Command_::Return { from_user: _, exp } = &cmd.value {
+                w.write(exp.term(c)?);
+                return Ok(());
+            }
         }
     }
     // write block as lambda
@@ -393,7 +389,7 @@ impl AstTsPrinter for StructTypeParameter {
 
 pub fn handle_special_structs(
     name: &StructName,
-    fields: &Vec<(Field, BaseType)>,
+    fields: &[(Field, BaseType)],
     w: &mut TsgenWriter,
     c: &mut Context,
 ) -> WriteResult {
@@ -445,12 +441,11 @@ pub fn handle_special_structs(
         w.increase_indent();
         for (name, ty) in fields.iter() {
             match &ty.value {
-                BaseType_::Apply(_, typename, _) => match &typename.value {
-                    TypeName_::ModuleType(_, _) => {
+                BaseType_::Apply(_, typename, _) => {
+                    if let TypeName_::ModuleType(_, _) = &typename.value {
                         w.writeln(format!("await this.{}.loadFullState(app);", rename(name)));
                     }
-                    _ => {}
-                },
+                }
                 BaseType_::Param(_) => {
                     w.writeln(format!(
                         "if (this.{}.typeTag instanceof StructTag) {{await this.{}.loadFullState(app);}}",
@@ -495,7 +490,7 @@ pub fn handle_struct_show_iter_table_directive(
                 };
 
                 let field_opt = fields
-                    .into_iter()
+                    .iter()
                     .find(|(f_name, _)| f_name.to_string() == field_name.to_string());
 
                 if field_opt.is_none() {
@@ -544,10 +539,8 @@ pub fn handle_struct_show_iter_table_directive(
                     "async getIterTableEntries_{}(client: AptosClient, repo: AptosParserRepo) {{",
                     field_name
                 ));
-                w.writeln(format!("  const cache = new DummyCache();"));
-                w.writeln(format!(
-                    "  const tags = (this.typeTag as StructTag).typeParams;"
-                ));
+                w.writeln("  const cache = new DummyCache();");
+                w.writeln("  const tags = (this.typeTag as StructTag).typeParams;");
                 w.writeln(format!(
                     "  const iterTableField = {}.fields.filter(f=>f.name === '{}')[0]",
                     sname, field_name
@@ -556,9 +549,7 @@ pub fn handle_struct_show_iter_table_directive(
                     "  const typedIterTable = this.{}.toTypedIterTable<{},{}>(iterTableField);",
                     field_name, key_ts_type, value_ts_type,
                 ));
-                w.writeln(format!(
-                    "  return await typedIterTable.fetchAll(client, repo);"
-                ));
+                w.writeln("  return await typedIterTable.fetchAll(client, repo);");
                 w.writeln("}");
             }
             _ => {
@@ -606,7 +597,7 @@ pub fn validate_method(
         }
     }
     // check it has at least one parameter of sdef's type
-    if sig.parameters.len() < 1 {
+    if sig.parameters.is_empty() {
         return err;
     }
     let base = match &sig.parameters[0].1.value {
@@ -674,12 +665,8 @@ pub fn handle_struct_method_directive(
                 w.writeln(format!("{}{}(", async_modifier, fname));
                 write_parameters(&func.signature, w, c, false, true)?;
                 w.writeln(") {");
-                w.writeln(format!(
-                    "  const cache = this.__app?.cache || new AptosLocalCache();"
-                ));
-                w.writeln(format!(
-                    "  const tags = (this.typeTag as StructTag).typeParams;"
-                ));
+                w.writeln("  const cache = this.__app?.cache || new AptosLocalCache();");
+                w.writeln("  const tags = (this.typeTag as StructTag).typeParams;");
                 let args_str = func.signature.parameters[1..]
                     .iter()
                     .map(|(v, _)| v.to_string())
@@ -837,7 +824,7 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                         w.new_line();
                         w.writeln("static async loadByApp(app: $.AppType, address: HexString, typeParams: TypeTag[]) {");
                         w.writeln(format!("  const result = await app.repo.loadResource(app.client, address, {}, typeParams);", name));
-                        w.writeln(format!("  await result.loadFullState(app)"));
+                        w.writeln("  await result.loadFullState(app)");
                         w.writeln(format!("  return result as unknown as {};", name));
                         w.write("}");
                     }
@@ -865,10 +852,10 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                     }
 
                     // 7. additional util funcs
-                    handle_special_structs(&name, fields, w, c)?;
+                    handle_special_structs(name, fields, w, c)?;
 
                     // 8. attribute directives
-                    handle_struct_directives(&name, sdef, w, c)?;
+                    handle_struct_directives(name, sdef, w, c)?;
 
                 }
             };
@@ -979,7 +966,7 @@ pub fn handle_function_cmd_printer_directive(
                 if let Some(module) = c.program.modules.get(mi) {
                     let sdef_opt = module.structs.get(sname);
                     if let Some(sdef) = sdef_opt {
-                        (mi.clone(), sdef.clone(), sname.clone())
+                        (*mi, sdef.clone(), *sname)
                     } else {
                         return type_err;
                     }
@@ -1128,7 +1115,7 @@ pub fn handle_function_query_directive(
             if body.is_empty() {
                 return derr!((f.body.loc, "the query attribute can only be used on entry functions with a move_to<X>(signer, x); as the final statement"));
             }
-            let last_stmt = body.get(body.len() - 1).unwrap();
+            let last_stmt = body.back().unwrap();
             let err  = derr!((last_stmt.loc, "the query attribute can only be used on entry functions with a move_to<X>(signer, x); as the final statement"));
             match &last_stmt.value {
                 Statement_::Command(command) => match &command.value {
@@ -1284,9 +1271,8 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 );
                 w.short_block(|w| {
                     if mident.value.module.to_string().contains("ristretto") {
-                        w.writeln("throw 'Not Implemented';".to_string());
-                    }
-                    else {
+                        w.writeln("throw 'Not Implemented';");
+                    } else {
                         w.writeln(format!("{}({}$c{});", native_name, args_comma, comma_tags));
                     }
                     Ok(())
@@ -1463,7 +1449,7 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
 pub fn get_ts_handler_for_vector_in_vector(inner_ty: &BaseType) -> TermResult {
     if let Ok((builtin, inner_ty_args)) = extract_builtin_from_base_type(inner_ty) {
         match builtin {
-            BuiltinTypeName_::U8 => Ok(format!("array => $.u8ArrayArg(array)")),
+            BuiltinTypeName_::U8 => Ok("array => $.u8ArrayArg(array)".to_string()),
             BuiltinTypeName_::Bool
             | BuiltinTypeName_::Address
             | BuiltinTypeName_::U64
@@ -1485,9 +1471,7 @@ pub fn get_ts_handler_for_vector_in_vector(inner_ty: &BaseType) -> TermResult {
 pub fn is_base_type_signer(ty: &BaseType) -> bool {
     match &ty.value {
         BaseType_::Apply(_, typename, _) => match &typename.value {
-            TypeName_::Builtin(builtin) => {
-                return builtin.value == BuiltinTypeName_::Signer;
-            }
+            TypeName_::Builtin(builtin) => builtin.value == BuiltinTypeName_::Signer,
             _ => false,
         },
         _ => false,
@@ -1554,11 +1538,10 @@ pub fn identify_declared_vars_in_lvalue(lvalue: &LValue, declared: &mut BTreeSet
 
 pub fn identify_declared_vars_in_cmd(cmd: &Command, declared: &mut BTreeSet<String>) {
     use Command_ as C;
-    match &cmd.value {
-        C::Assign(lvalues, _) => lvalues.iter().for_each(|lvalue| {
+    if let C::Assign(lvalues, _) = &cmd.value {
+        lvalues.iter().for_each(|lvalue| {
             identify_declared_vars_in_lvalue(lvalue, declared);
-        }),
-        _ => (),
+        })
     }
 }
 
@@ -1594,7 +1577,7 @@ pub fn identify_declared_vars_in_block(block: &Block, undeclared: &mut BTreeSet<
 
 pub fn write_func_body(
     block: &Block,
-    new_vars: &Vec<Var>,
+    new_vars: &[Var],
     w: &mut TsgenWriter,
     c: &mut Context,
 ) -> WriteResult {
@@ -1609,7 +1592,7 @@ pub fn write_func_body(
         .filter(|var| !declared_vars.contains(&var.to_string()))
         .collect::<Vec<_>>();
 
-    if undeclared.len() > 0 {
+    if !undeclared.is_empty() {
         w.writeln(format!(
             "let {};",
             undeclared
@@ -1664,7 +1647,7 @@ impl AstTsPrinter for Statement {
                     // if-block is non-empty
                     w.write(format!("if ({}) ", cond.term(c)?));
                     if_block.write_ts(w, c)?;
-                    if else_block.len() > 0 {
+                    if !else_block.is_empty() {
                         w.write("else");
                         else_block.write_ts(w, c)?;
                     }
@@ -1678,7 +1661,7 @@ impl AstTsPrinter for Statement {
             S::While { cond, block } => {
                 let (pre_block, cond_exp) = cond;
                 // FIXME need to handle the empty case
-                let has_pre_block = pre_block.len() > 0;
+                let has_pre_block = !pre_block.is_empty();
                 w.write(format!(
                     "while ({}) ",
                     if has_pre_block {

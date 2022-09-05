@@ -152,12 +152,12 @@ pub fn write_command(cmd: &CmdParams, w: &mut TsgenWriter) -> TermResult {
         "const payload = {}({}{});",
         payload_builder,
         param_names_no_signer.join(", "),
-        if cmd.func.signature.type_parameters.len() == 0 {
+        if cmd.func.signature.type_parameters.is_empty() {
             "".to_string()
         } else {
             format!(
                 "{}[{}]",
-                if param_names_no_signer.len() > 0 {
+                if !param_names_no_signer.is_empty() {
                     ", "
                 } else {
                     ""
@@ -180,7 +180,7 @@ pub fn write_command(cmd: &CmdParams, w: &mut TsgenWriter) -> TermResult {
 pub fn write_module(
     package_name: &String,
     module_name: &String,
-    cmds: &Vec<&CmdParams>,
+    cmds: &[&CmdParams],
     all_imported_packages: &mut BTreeSet<String>,
     w: &mut TsgenWriter,
 ) -> WriteResult {
@@ -207,7 +207,7 @@ pub fn write_module(
 
 pub fn write_package(
     name: &String,
-    module_cmds: &Vec<(&String, &Vec<&CmdParams>)>,
+    module_cmds: &[(&String, &Vec<&CmdParams>)],
     all_imported_packages: &mut BTreeSet<String>,
     w: &mut TsgenWriter,
 ) -> WriteResult {
@@ -217,7 +217,7 @@ pub fn write_package(
 
     w.writeln("modules: [");
     w.increase_indent();
-    for (module, cmds) in module_cmds.into_iter() {
+    for (module, cmds) in module_cmds.iter() {
         write_module(name, module, cmds, all_imported_packages, w)?;
     }
     w.decrease_indent();
@@ -483,7 +483,7 @@ export async function sendPayloadTx(
         .map(|pname| format!("import * as {}$_ from './{}';", pname, pname))
         .join("\n");
 
-    let index_tsx = format!("{}\n{}", imports, writer.to_string());
+    let index_tsx = format!("{}\n{}", imports, writer);
 
     let index_css = r###"
 body {
@@ -548,7 +548,7 @@ code {
 }
 "###;
     Ok(vec![
-        ("index.tsx".to_string(), index_tsx.to_string()),
+        ("index.tsx".to_string(), index_tsx),
         ("index.css".to_string(), index_css.to_string()),
     ])
 }
