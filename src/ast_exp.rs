@@ -65,7 +65,16 @@ impl AstTsPrinter for Exp {
                 // BuiltinCall
                 Ok((bf, rhs).term(c)?)
             }
-            E::Vector(_, _, _, elems) => Ok(elems.term(c)?),
+            E::Vector(_, size, element_ty, elems) => {
+                if *size == 0 {
+                    // when size === 0, elems is Unit, which we do not support output as value
+                    Ok(format!("[] as {}[]", base_type_to_tstype(element_ty, c)?))
+                } else if *size == 1 {
+                    Ok(format!("[{}]", elems.term(c)?))
+                } else {
+                    Ok(elems.term(c)?)
+                }
+            }
             E::Pack(s, _tys, fields) => {
                 // ["Pack", "StructFullname", typeParams, fields]
                 // construct a new struct/class value using proto constructor
