@@ -546,7 +546,8 @@ pub fn extract_attribute_value_string(attr: &Attribute) -> Option<String> {
         Attribute_::Assigned(_, v) => match &v.value {
             AttributeValue_::Value(value) => match &value.value {
                 EV::Bytearray(bytes) => {
-                    let str_val = String::from_utf8(bytes.clone()).unwrap_or(String::from(""));
+                    let str_val =
+                        String::from_utf8(bytes.clone()).unwrap_or_else(|_| String::from(""));
                     Some(str_val)
                 }
                 _ => None,

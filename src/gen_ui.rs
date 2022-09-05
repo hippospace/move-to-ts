@@ -180,7 +180,7 @@ pub fn write_command(cmd: &CmdParams, w: &mut TsgenWriter) -> TermResult {
 pub fn write_module(
     package_name: &String,
     module_name: &String,
-    cmds: &Vec<&CmdParams>,
+    cmds: &[&CmdParams],
     all_imported_packages: &mut BTreeSet<String>,
     w: &mut TsgenWriter,
 ) -> WriteResult {
@@ -207,7 +207,7 @@ pub fn write_module(
 
 pub fn write_package(
     name: &String,
-    module_cmds: &Vec<(&String, &Vec<&CmdParams>)>,
+    module_cmds: &[(&String, &Vec<&CmdParams>)],
     all_imported_packages: &mut BTreeSet<String>,
     w: &mut TsgenWriter,
 ) -> WriteResult {

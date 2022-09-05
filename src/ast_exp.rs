@@ -380,7 +380,7 @@ impl AstTsPrinter for Vec<LValue> {
     }
 }
 
-pub fn is_empty_lvalue_list(lvalues: &Vec<LValue>) -> bool {
+pub fn is_empty_lvalue_list(lvalues: &[LValue]) -> bool {
     if lvalues.is_empty() {
         true
     } else {

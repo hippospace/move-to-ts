@@ -341,15 +341,11 @@ pub fn write_simplify_constant_block(
     c: &mut Context,
 ) -> WriteResult {
     if block.len() == 1 {
-        match &block[0].value {
-            Statement_::Command(cmd) => match &cmd.value {
-                Command_::Return { from_user: _, exp } => {
-                    w.write(exp.term(c)?);
-                    return Ok(());
-                }
-                _ => (),
-            },
-            _ => (),
+        if let Statement_::Command(cmd) = &block[0].value {
+            if let Command_::Return { from_user: _, exp } = &cmd.value {
+                w.write(exp.term(c)?);
+                return Ok(());
+            }
         }
     }
     // write block as lambda
@@ -393,7 +389,7 @@ impl AstTsPrinter for StructTypeParameter {
 
 pub fn handle_special_structs(
     name: &StructName,
-    fields: &Vec<(Field, BaseType)>,
+    fields: &[(Field, BaseType)],
     w: &mut TsgenWriter,
     c: &mut Context,
 ) -> WriteResult {
@@ -445,12 +441,11 @@ pub fn handle_special_structs(
         w.increase_indent();
         for (name, ty) in fields.iter() {
             match &ty.value {
-                BaseType_::Apply(_, typename, _) => match &typename.value {
-                    TypeName_::ModuleType(_, _) => {
+                BaseType_::Apply(_, typename, _) => {
+                    if let TypeName_::ModuleType(_, _) = &typename.value {
                         w.writeln(format!("await this.{}.loadFullState(app);", rename(name)));
                     }
-                    _ => {}
-                },
+                }
                 BaseType_::Param(_) => {
                     w.writeln(format!(
                         "if (this.{}.typeTag instanceof StructTag) {{await this.{}.loadFullState(app);}}",
@@ -1543,11 +1538,10 @@ pub fn identify_declared_vars_in_lvalue(lvalue: &LValue, declared: &mut BTreeSet
 
 pub fn identify_declared_vars_in_cmd(cmd: &Command, declared: &mut BTreeSet<String>) {
     use Command_ as C;
-    match &cmd.value {
-        C::Assign(lvalues, _) => lvalues.iter().for_each(|lvalue| {
+    if let C::Assign(lvalues, _) = &cmd.value {
+        lvalues.iter().for_each(|lvalue| {
             identify_declared_vars_in_lvalue(lvalue, declared);
-        }),
-        _ => (),
+        })
     }
 }
 
@@ -1583,7 +1577,7 @@ pub fn identify_declared_vars_in_block(block: &Block, undeclared: &mut BTreeSet<
 
 pub fn write_func_body(
     block: &Block,
-    new_vars: &Vec<Var>,
+    new_vars: &[Var],
     w: &mut TsgenWriter,
     c: &mut Context,
 ) -> WriteResult {

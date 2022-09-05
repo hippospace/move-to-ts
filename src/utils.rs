@@ -148,7 +148,7 @@ pub fn capitalize(name: &impl fmt::Display) -> String {
     }
 }
 
-pub fn generate_index(package_name: &String, modules: &Vec<&ModuleIdent>) -> (String, String) {
+pub fn generate_index(package_name: &String, modules: &[&ModuleIdent]) -> (String, String) {
     let filename = format!("{}/index.ts", package_name);
     let exports = modules
         .iter()
@@ -239,7 +239,7 @@ export class App {{
     (filename, content)
 }
 
-pub fn generate_topmost_index(packages: &Vec<&String>) -> (String, String) {
+pub fn generate_topmost_index(packages: &[&String]) -> (String, String) {
     let filename = "index.ts".to_string();
     let exports = packages
         .iter()
