@@ -135,13 +135,13 @@ export function copy<T>(val: T): T {
   } else if (val instanceof Array) {
     return val.map((ele) => copy(ele)) as unknown as T;
   } else if (v.typeTag instanceof StructTag) {
-    let proto = Object();
+    const proto = Object();
     const structInfo = v.constructor as StructInfoType;
     for (const field of structInfo.fields) {
       const fname = field.name;
       proto[fname] = copy(v[fname]);
     }
-    let copied = new structInfo(proto, v.typeTag);
+    const copied = new structInfo(proto, v.typeTag);
     return copied;
   } else {
     throw new Error(`Unreachable: ${val}`);

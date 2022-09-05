@@ -150,7 +150,7 @@ export async function simulatePayloadTx(
     const outputs = await client.submitBCSSimulation(bcsTxn);
     return outputs[0];
   } else {
-    const pld = payload as Types.TransactionPayload_EntryFunctionPayload;
+    const pld = payload;
     const txn = await client.generateTransaction(keys.address, pld, {
       max_gas_amount: max_gas.toString(),
     });
@@ -184,7 +184,6 @@ export function generateBCSSimulation(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const txnBuilder = new TransactionBuilderEd25519(
     (_signingMessage: TxnBuilderTypes.SigningMessage) => {
-      // @ts-ignore
       const invalidSigBytes = new Uint8Array(64);
       return new TxnBuilderTypes.Ed25519Signature(invalidSigBytes);
     },

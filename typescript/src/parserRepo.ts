@@ -81,7 +81,7 @@ export function parseStructProto(
   }
 
   // check all keys exist
-  let proto: any = {};
+  const proto: any = {};
   for (const fieldDecl of struct.fields) {
     const fieldName = fieldDecl.name;
     if (!(fieldName in data)) {
@@ -194,7 +194,7 @@ export function BoolParser(
       `BoolParser expects bool type as data but received: ${typeof data}`
     );
   }
-  return data as boolean;
+  return data;
 }
 
 export function AddressParser(
@@ -330,7 +330,7 @@ export class AptosParserRepo {
     address: HexString,
     containerTypeTag: TypeTag,
     field: string,
-    query?: { start?: BigInt; limit?: number }
+    query?: { start?: bigint; limit?: number }
   ) {
     if (!(containerTypeTag instanceof StructTag)) {
       throw new Error(
@@ -341,7 +341,7 @@ export class AptosParserRepo {
     }
     const events = await client.getEventsByEventHandle(
       address,
-      (containerTypeTag as StructTag).getAptosMoveTypeTag(),
+      containerTypeTag.getAptosMoveTypeTag(),
       field,
       query
     );

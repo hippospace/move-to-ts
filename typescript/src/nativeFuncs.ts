@@ -357,7 +357,7 @@ export function aptos_framework_account_create_signer(
 class ModuleMetadata {
   static moduleAddress = new HexString("0x1");
   static moduleName = "code";
-  static structName: string = "ModuleMetadata";
+  static structName = "ModuleMetadata";
   static typeParameters: TypeParamDeclType[] = [];
   static fields: FieldDeclType[] = [
     {
@@ -395,13 +395,14 @@ class ModuleMetadata {
     return new ModuleMetadata(proto, typeTag);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   async loadFullState(app: AppType) {}
 }
 
 export class PackageMetadata {
   static moduleAddress = new HexString("0x1");
   static moduleName = "code";
-  static structName: string = "PackageMetadata";
+  static structName = "PackageMetadata";
   static typeParameters: TypeParamDeclType[] = [];
   static fields: FieldDeclType[] = [
     {
@@ -447,13 +448,14 @@ export class PackageMetadata {
     return new PackageMetadata(proto, typeTag);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   async loadFullState(app: AppType) {}
 }
 
 export class UpgradePolicy {
   static moduleAddress = new HexString("0x1");
   static moduleName = "code";
-  static structName: string = "UpgradePolicy";
+  static structName = "UpgradePolicy";
   static typeParameters: TypeParamDeclType[] = [];
   static fields: FieldDeclType[] = [
     { name: "policy", typeTag: AtomicTypeTag.U8 },
@@ -476,6 +478,7 @@ export class UpgradePolicy {
     return new UpgradePolicy(proto, typeTag);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   async loadFullState(app: AppType) {}
 }
 
@@ -672,7 +675,7 @@ export class ActualUsage {
   static moduleAddress = new HexString("0x1");
   static moduleName = "state_storage";
   __app: AppType | null = null;
-  static structName: string = "Usage";
+  static structName = "Usage";
   static typeParameters: TypeParamDeclType[] = [];
   static fields: FieldDeclType[] = [
     { name: "items", typeTag: AtomicTypeTag.U64 },
@@ -719,7 +722,7 @@ export class ActualAggregator {
   static moduleAddress = new HexString("0x1");
   static moduleName = "aggregator";
   __app: AppType | null = null;
-  static structName: string = "Aggregator";
+  static structName = "Aggregator";
   static typeParameters: TypeParamDeclType[] = [];
   static fields: FieldDeclType[] = [
     { name: "handle", typeTag: AtomicTypeTag.Address },
@@ -778,7 +781,7 @@ export interface ITypeInfo {
 class ActualTypeInfoClass {
   static moduleAddress = new HexString("0x1");
   static moduleName = "type_info";
-  static structName: string = "TypeInfo";
+  static structName = "TypeInfo";
   static typeParameters: TypeParamDeclType[] = [];
   static fields: FieldDeclType[] = [
     { name: "account_address", typeTag: AtomicTypeTag.Address },
@@ -820,7 +823,7 @@ class ActualTypeInfoClass {
 export class ActualStringClass {
   static moduleAddress = new HexString("0x1");
   static moduleName = "string";
-  static structName: string = "String";
+  static structName = "String";
   static typeParameters: TypeParamDeclType[] = [];
   static fields: FieldDeclType[] = [
     { name: "bytes", typeTag: new VectorTag(AtomicTypeTag.U8) },

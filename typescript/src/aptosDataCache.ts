@@ -8,7 +8,6 @@ import {
 } from "./typeTag.js";
 import stringify from "json-stable-stringify";
 
-
 export interface ITable {
   handle: HexString;
   typeTag: TypeTag;
@@ -151,7 +150,7 @@ class AccountCache {
     try {
       const resource = await client.getAccountResource(
         this.address,
-        (tag as StructTag).getAptosMoveTypeTag()
+        tag.getAptosMoveTypeTag()
       );
       return repo.parse(resource.data, tag);
     } catch (e) {
@@ -213,7 +212,7 @@ export class AptosLocalCache implements AptosDataCache {
     account.set(tag, resource);
   }
   move_from<T>(tag: TypeTag, address: HexString): T {
-    let account = this.accounts.get(address.hex());
+    const account = this.accounts.get(address.hex());
     if (!account) {
       throw new Error(
         `Resource ${getTypeTagFullname(
@@ -224,7 +223,7 @@ export class AptosLocalCache implements AptosDataCache {
     return account.move_from(tag);
   }
   borrow_global<T>(tag: TypeTag, address: HexString): T {
-    let account = this.accounts.get(address.hex());
+    const account = this.accounts.get(address.hex());
     if (!account) {
       throw new Error(
         `Resource ${getTypeTagFullname(
