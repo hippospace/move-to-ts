@@ -1,8 +1,11 @@
 import { AptosClient, HexString, Types } from "aptos";
-import bigInt from "big-integer";
-import { U128, U64 } from "./builtinTypes";
-import { AptosParserRepo, StructInfoType } from "./parserRepo";
-import { getTypeTagFullname, parseMoveStructTag, parseTypeTagOrThrow, StructTag, TypeTag } from "./typeTag";
+import { AptosParserRepo, StructInfoType } from "./parserRepo.js";
+import {
+  getTypeTagFullname,
+  parseMoveStructTag,
+  StructTag,
+  TypeTag,
+} from "./typeTag.js";
 import stringify from "json-stable-stringify";
 
 
@@ -27,7 +30,11 @@ export interface AptosDataCache {
   borrow_global<T>(tag: TypeTag, address: HexString): T;
   borrow_global_mut<T>(tag: TypeTag, address: HexString): T;
   exists_async(_tag: TypeTag, _address: HexString): Promise<boolean>;
-  move_to_async(_tag: TypeTag, _address: HexString, _resource: any): Promise<void>;
+  move_to_async(
+    _tag: TypeTag,
+    _address: HexString,
+    _resource: any
+  ): Promise<void>;
   move_from_async<T>(_tag: TypeTag, _address: HexString): Promise<T>;
   borrow_global_async<T>(_tag: TypeTag, _address: HexString): Promise<T>;
   borrow_global_mut_async<T>(_tag: TypeTag, _address: HexString): Promise<T>;
@@ -64,7 +71,11 @@ export class DummyCache implements AptosDataCache {
   async exists_async(_tag: TypeTag, _address: HexString): Promise<boolean> {
     return this.exists(_tag, _address);
   }
-  async move_to_async(_tag: TypeTag, _address: HexString, _resource: any): Promise<void> {
+  async move_to_async(
+    _tag: TypeTag,
+    _address: HexString,
+    _resource: any
+  ): Promise<void> {
     return this.move_to(_tag, _address, _resource);
   }
   async move_from_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
@@ -73,14 +84,17 @@ export class DummyCache implements AptosDataCache {
   async borrow_global_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
     return this.borrow_global(_tag, _address);
   }
-  async borrow_global_mut_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
+  async borrow_global_mut_async<T>(
+    _tag: TypeTag,
+    _address: HexString
+  ): Promise<T> {
     return this.borrow_global_mut(_tag, _address);
   }
   // table
   table_new_handle(): HexString {
     throw new Error("DummyCache does not support table_new_handle");
   }
-  table_add_box(table: ITable, key: any, value: IBox){
+  table_add_box(table: ITable, key: any, value: IBox) {
     throw new Error("DummyCache does not support table_add_box");
   }
   table_borrow_box(table: ITable, key: any): IBox {
@@ -113,11 +127,10 @@ class AccountCache {
     return this.resources.has(getTypeTagFullname(tag));
   }
   async has_async(tag: TypeTag, repo: AptosParserRepo, client: AptosClient) {
-    try{
+    try {
       await this.get_async(tag, repo, client);
       return true;
-    }
-    catch (e) {
+    } catch (e) {
       return false;
     }
   }
@@ -125,26 +138,36 @@ class AccountCache {
     const fullname = getTypeTagFullname(tag);
     const resource = this.resources.get(fullname);
     if (!resource) {
-      throw new Error(`Account ${this.address.hex()} does not have resource: ${fullname}`);
+      throw new Error(
+        `Account ${this.address.hex()} does not have resource: ${fullname}`
+      );
     }
     return resource;
   }
   async get_async(tag: TypeTag, repo: AptosParserRepo, client: AptosClient) {
-    if(!(tag instanceof StructTag)) {
+    if (!(tag instanceof StructTag)) {
       throw new Error(`Expected StructTag`);
     }
-    try{
-      const resource = await client.getAccountResource(this.address, (tag as StructTag).getAptosMoveTypeTag());
+    try {
+      const resource = await client.getAccountResource(
+        this.address,
+        (tag as StructTag).getAptosMoveTypeTag()
+      );
       return repo.parse(resource.data, tag);
-    }
-    catch(e) {
-      throw new Error(`Account ${this.address.hex()} does not have resource ${getTypeTagFullname(tag)}`);
+    } catch (e) {
+      throw new Error(
+        `Account ${this.address.hex()} does not have resource ${getTypeTagFullname(
+          tag
+        )}`
+      );
     }
   }
   set(tag: TypeTag, resource: any) {
     const fullname = getTypeTagFullname(tag);
     if (this.has(tag)) {
-      throw new Error(`Account ${this.address.hex()} already has resource: ${fullname}`);
+      throw new Error(
+        `Account ${this.address.hex()} already has resource: ${fullname}`
+      );
     }
     this.resources.set(fullname, resource);
   }
@@ -152,13 +175,14 @@ class AccountCache {
     const fullname = getTypeTagFullname(tag);
     const resource = this.resources.get(fullname);
     if (!resource) {
-      throw new Error(`Account ${this.address.hex()} does not have resource: ${fullname}`);
+      throw new Error(
+        `Account ${this.address.hex()} does not have resource: ${fullname}`
+      );
     }
     this.resources.delete(fullname);
     return resource;
   }
 }
-
 
 // caches all data locally and never attempts to retrieve anything from chain
 // only suited for running tests
@@ -191,14 +215,22 @@ export class AptosLocalCache implements AptosDataCache {
   move_from<T>(tag: TypeTag, address: HexString): T {
     let account = this.accounts.get(address.hex());
     if (!account) {
-      throw new Error(`Resource ${getTypeTagFullname(tag)} does not exist for ${address.hex()}`);
+      throw new Error(
+        `Resource ${getTypeTagFullname(
+          tag
+        )} does not exist for ${address.hex()}`
+      );
     }
     return account.move_from(tag);
   }
   borrow_global<T>(tag: TypeTag, address: HexString): T {
     let account = this.accounts.get(address.hex());
     if (!account) {
-      throw new Error(`Resource ${getTypeTagFullname(tag)} does not exist for ${address.hex()}`);
+      throw new Error(
+        `Resource ${getTypeTagFullname(
+          tag
+        )} does not exist for ${address.hex()}`
+      );
     }
     return account.get(tag) as unknown as T;
   }
@@ -209,7 +241,11 @@ export class AptosLocalCache implements AptosDataCache {
   async exists_async(_tag: TypeTag, _address: HexString): Promise<boolean> {
     return this.exists(_tag, _address);
   }
-  async move_to_async(_tag: TypeTag, _address: HexString, _resource: any): Promise<void> {
+  async move_to_async(
+    _tag: TypeTag,
+    _address: HexString,
+    _resource: any
+  ): Promise<void> {
     return this.move_to(_tag, _address, _resource);
   }
   async move_from_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
@@ -218,7 +254,10 @@ export class AptosLocalCache implements AptosDataCache {
   async borrow_global_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
     return this.borrow_global(_tag, _address);
   }
-  async borrow_global_mut_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
+  async borrow_global_mut_async<T>(
+    _tag: TypeTag,
+    _address: HexString
+  ): Promise<T> {
     return this.borrow_global_mut(_tag, _address);
   }
   // table
@@ -286,10 +325,7 @@ export class AptosLocalCache implements AptosDataCache {
 
 // caches data locally, and attempts to fetch from chain when needed
 export class AptosSyncedCache extends AptosLocalCache {
-  constructor(
-    public repo: AptosParserRepo, 
-    public client: AptosClient,
-  ) {
+  constructor(public repo: AptosParserRepo, public client: AptosClient) {
     super();
   }
   // asynchronous builtins
@@ -301,7 +337,11 @@ export class AptosSyncedCache extends AptosLocalCache {
     }
     return account.has_async(tag, this.repo, this.client);
   }
-  async move_to_async(tag: TypeTag, address: HexString, resource: any): Promise<void> {
+  async move_to_async(
+    tag: TypeTag,
+    address: HexString,
+    resource: any
+  ): Promise<void> {
     throw new Error("move_to not supported by AptosSyncedCache");
   }
   async move_from_async<T>(tag: TypeTag, address: HexString): Promise<T> {
@@ -313,37 +353,39 @@ export class AptosSyncedCache extends AptosLocalCache {
       account = new AccountCache(address);
       this.accounts.set(address.hex(), account);
     }
-    return await account.get_async(tag, this.repo, this.client) as unknown as T;
+    return (await account.get_async(
+      tag,
+      this.repo,
+      this.client
+    )) as unknown as T;
   }
-  async borrow_global_mut_async<T>(tag: TypeTag, address: HexString): Promise<T> {
+  async borrow_global_mut_async<T>(
+    tag: TypeTag,
+    address: HexString
+  ): Promise<T> {
     return this.borrow_global_async<T>(tag, address);
   }
 }
 
-
-export type UpdateType = 'update' | 'delete';
+export type UpdateType = "update" | "delete";
 export type ListenerType = {
-  id: string; 
+  id: string;
   callback: (type: UpdateType, value: any) => void;
-}
-
-
-
-
+};
 
 export class AptosResourceCache {
   // maps ResourceKey to the resource object
   public cachedResources: Record<string, any>;
   // record how various resources were loaded, so that we can replay these requests when refreshing
-  public resourceKeyToLoadParams: Record<string, [StructInfoType, HexString, TypeTag[]]>;
+  public resourceKeyToLoadParams: Record<
+    string,
+    [StructInfoType, HexString, TypeTag[]]
+  >;
   // maps ResourceKey to a list of listeners
   public updateListener: Record<string, ListenerType[]>;
   // the set of addresses that are completely loaded
   public watchedAddresses: Set<HexString>;
-  constructor(
-    public client: AptosClient,
-    public repo: AptosParserRepo,
-  ) {
+  constructor(public client: AptosClient, public repo: AptosParserRepo) {
     this.cachedResources = {};
     this.updateListener = {};
     this.watchedAddresses = new Set();
@@ -353,18 +395,32 @@ export class AptosResourceCache {
   /*
   Load a specific resource
   */
-  async load<T extends StructInfoType>(struct: T, address: HexString, typeParams: TypeTag[], listener: ListenerType | null)  {
-    const loaded = await this.repo.loadResource(this.client, address, struct, typeParams);
-    const typeTag = new StructTag(struct.moduleAddress, struct.moduleName, struct.structName, typeParams);
+  async load<T extends StructInfoType>(
+    struct: T,
+    address: HexString,
+    typeParams: TypeTag[],
+    listener: ListenerType | null
+  ) {
+    const loaded = await this.repo.loadResource(
+      this.client,
+      address,
+      struct,
+      typeParams
+    );
+    const typeTag = new StructTag(
+      struct.moduleAddress,
+      struct.moduleName,
+      struct.structName,
+      typeParams
+    );
     const resourceKey = this.getResourceKey(address, typeTag);
     if (resourceKey in this.cachedResources) {
       this.updateResource(resourceKey, loaded);
-    }
-    else {
+    } else {
       this.cachedResources[resourceKey] = loaded;
     }
     this.resourceKeyToLoadParams[resourceKey] = [struct, address, typeParams];
-    if(listener) {
+    if (listener) {
       this.addListenerForResource(resourceKey, listener);
     }
     return loaded;
@@ -376,23 +432,21 @@ export class AptosResourceCache {
   async loadAccount(address: HexString, listener: ListenerType | null) {
     const resources = await this.client.getAccountResources(address);
     const loadedResourceKeys = [];
-    for(const resource of resources) {
+    for (const resource of resources) {
       const typeTag = parseMoveStructTag(resource.type);
-      try{
+      try {
         const value = this.repo.parse(resource.data, typeTag);
         const resourceKey = this.getResourceKey(address, typeTag);
         if (resourceKey in this.cachedResources) {
           this.updateResource(resourceKey, value);
-        }
-        else {
+        } else {
           this.cachedResources[resourceKey] = value;
         }
         loadedResourceKeys.push(resourceKey);
         if (listener) {
           this.addListenerForResource(resourceKey, listener);
         }
-      }
-      catch(e) {
+      } catch (e) {
         console.log(`Failed to parse resource of type: ${resource.type}`);
       }
     }
@@ -409,14 +463,15 @@ export class AptosResourceCache {
     2. refresh the rest one-by-one
     */
     const loaded = new Set<string>();
-    for(const address of this.watchedAddresses) {
-      for(const resourceKey of await this.loadAccount(address, null)) {
+    for (const address of this.watchedAddresses) {
+      for (const resourceKey of await this.loadAccount(address, null)) {
         loaded.add(resourceKey);
       }
     }
-    for(const resourceKey in this.cachedResources) {
-      if(!loaded.has(resourceKey)) {
-        const [struct, address, typeParams] = this.resourceKeyToLoadParams[resourceKey];
+    for (const resourceKey in this.cachedResources) {
+      if (!loaded.has(resourceKey)) {
+        const [struct, address, typeParams] =
+          this.resourceKeyToLoadParams[resourceKey];
         await this.load(struct, address, typeParams, null);
         loaded.add(resourceKey);
       }
@@ -427,11 +482,11 @@ export class AptosResourceCache {
   Add listener for a particular ResourceKey
   */
   addListenerForResource(resourceKey: string, listener: ListenerType) {
-    if(!(resourceKey in this.updateListener)) {
+    if (!(resourceKey in this.updateListener)) {
       this.updateListener[resourceKey] = [];
     }
-    for(const registeredListener of this.updateListener[resourceKey]) {
-      if(registeredListener.id === listener.id) {
+    for (const registeredListener of this.updateListener[resourceKey]) {
+      if (registeredListener.id === listener.id) {
         return;
       }
     }
@@ -446,22 +501,26 @@ export class AptosResourceCache {
   need to refresh the cache.
   */
   updateFromTransactionResult(txn: Types.UserTransaction) {
-    if (txn.success && txn.hash !== '0x0') {
-      for(const change of txn.changes) {
-        if(change.type === 'write_resource' ) {
+    if (txn.success && txn.hash !== "0x0") {
+      for (const change of txn.changes) {
+        if (change.type === "write_resource") {
           const write = change as Types.WriteResource;
           const typeTag = parseMoveStructTag(write.data.type);
-          const resourceKey = this.getResourceKey(new HexString(write.address), typeTag);
+          const resourceKey = this.getResourceKey(
+            new HexString(write.address),
+            typeTag
+          );
           if (resourceKey in this.cachedResources) {
             const newValue = this.repo.parse(write.data.data, typeTag);
             this.updateResource(resourceKey, newValue);
           }
-
-        }
-        else if (change.type === 'delete_resource') {
+        } else if (change.type === "delete_resource") {
           const del = change as Types.DeleteResource;
           const typeTag = parseMoveStructTag(del.resource);
-          const resourceKey = this.getResourceKey(new HexString(del.address), typeTag);
+          const resourceKey = this.getResourceKey(
+            new HexString(del.address),
+            typeTag
+          );
           if (resourceKey in this.cachedResources) {
             this.deleteResource(resourceKey);
           }
@@ -477,8 +536,8 @@ export class AptosResourceCache {
     this.cachedResources[resourceKey] = value;
     const listeners = this.updateListener[resourceKey];
     if (listeners) {
-      for(const listener of listeners) {
-        listener.callback('update', value);
+      for (const listener of listeners) {
+        listener.callback("update", value);
       }
     }
   }
@@ -490,8 +549,8 @@ export class AptosResourceCache {
     delete this.cachedResources[resourceKey];
     const listeners = this.updateListener[resourceKey];
     if (listeners) {
-      for(const listener of listeners) {
-        listener.callback('delete', null);
+      for (const listener of listeners) {
+        listener.callback("delete", null);
       }
     }
   }
