@@ -4,10 +4,9 @@
   "license": "MIT",
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
-    "test": "node dist/esm/tests/index.js test"
+    "test": "node dist/cjs/tests/index.js test"
   },
   "sideEffects": false,
-  "type": "module",
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
