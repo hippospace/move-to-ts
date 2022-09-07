@@ -45,6 +45,7 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
         "import * as $ from \"@manahippo/move-to-ts\";".to_string(),
         "import {AptosDataCache, AptosParserRepo, DummyCache, AptosLocalCache} from \"@manahippo/move-to-ts\";".to_string(),
         "import {U8, U64, U128} from \"@manahippo/move-to-ts\";".to_string(),
+        "import {u8, u64, u128} from \"@manahippo/move-to-ts\";".to_string(),
         "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
         "import {AtomicTypeTag, StructTag, TypeTag, VectorTag, SimpleStructTag} from \"@manahippo/move-to-ts\";"
             .to_string(),
