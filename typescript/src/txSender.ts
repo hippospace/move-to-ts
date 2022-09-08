@@ -7,18 +7,17 @@ import {
   BCS,
   TransactionBuilderEd25519,
 } from "aptos";
-import { TypeTagParser } from "aptos/dist/transaction_builder/builder_utils.js";
+import { TypeTagParser } from "aptos/dist/transaction_builder/builder_utils";
 
 const { AccountAddress, Identifier, ModuleId, EntryFunction } = TxnBuilderTypes;
 
-import { AptosParserRepo } from "./parserRepo.js";
-import { StructTag } from "./typeTag.js";
-import { U128, U64, U8 } from "./builtinTypes.js";
-import {
-  ActualStringClass,
-  payloadArg,
-  serializeMoveValueWithoutTag,
-} from "./index.js";
+import { AptosParserRepo } from "./parserRepo";
+import { StructTag } from "./typeTag";
+import { U128, U64, U8 } from "./builtinTypes";
+import {payloadArg} from "./builtinFuncs";
+import {ActualStringClass} from "./nativeFuncs";
+import {serializeMoveValueWithoutTag} from "./bcs";
+
 
 type AcceptedScriptFuncArgType =
   | any[]

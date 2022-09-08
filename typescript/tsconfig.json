@@ -13,7 +13,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "outDir": "./dist/esm",
+    "outDir": "./dist",
 
     "strict": true,
     "noFallthroughCasesInSwitch": true,

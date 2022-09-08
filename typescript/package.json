@@ -3,14 +3,17 @@
   "version": "0.2.12",
   "license": "MIT",
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
-    "test": "node dist/cjs/tests/index.js test"
+    "build": "rm -rf dist && rollup -c" ,
+    "build-test": "rm -rf tests && rollup -c rollup.config.test.js" ,
+    "test": "yarn build-test && node tests/test.cjs test && node tests/test.mjs test",
+    "test-cjs": "yarn build-rollup-test && node tests/test.cjs test",
+    "test-mjs": "yarn build-rollup-test && node tests/test.mjs test"
   },
   "sideEffects": false,
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
     }
   },
   "main": "dist/cjs/index.js",
@@ -21,6 +24,7 @@
     "dist"
   ],
   "devDependencies": {
+    "@rollup/plugin-typescript": "^8.5.0",
     "@types/elliptic": "^6.4.14",
     "@types/json-stable-stringify": "^1.0.34",
     "@types/node": "^17.0.31",

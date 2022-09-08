@@ -1,5 +1,5 @@
-import { AtomicTypeTag, getTypeTagFullname, parseTypeTag } from "../typeTag.js";
-import { assert, print } from "../utils.js";
+import { AtomicTypeTag, getTypeTagFullname, parseTypeTag } from "../typeTag";
+import { assert, print } from "../utils";
 
 export function test() {
   function testAtomicTags() {

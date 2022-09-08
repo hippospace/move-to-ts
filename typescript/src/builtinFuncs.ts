@@ -4,13 +4,13 @@ import {
   VectorTag,
   AtomicTypeTag,
   substituteTypeParams,
-} from "./typeTag.js";
+} from "./typeTag";
 import bigInt from "big-integer";
-import { U8, U64, U128, UnsignedInt, takeBigInt } from "./builtinTypes.js";
+import { U8, U64, U128, UnsignedInt, takeBigInt } from "./builtinTypes";
 import { HexString } from "aptos";
 import stringify from "json-stable-stringify";
-import { StructInfoType } from "./parserRepo.js";
-import { ActualStringClass } from "./nativeFuncs.js";
+import { StructInfoType } from "./parserRepo";
+import { ActualStringClass } from "./nativeFuncs";
 
 export function abortCode(code: any) {
   if (code instanceof U64) {

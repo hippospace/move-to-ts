@@ -1,4 +1,4 @@
-import { test } from "./typeTagTests.js";
+import { test } from "./typeTagTests";
 
 const main = async () => {
   const [, , fname] = process.argv;

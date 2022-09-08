@@ -1,11 +1,11 @@
 import { AptosClient, HexString, Types } from "aptos";
-import { AptosParserRepo, StructInfoType } from "./parserRepo.js";
+import { AptosParserRepo, StructInfoType } from "./parserRepo";
 import {
   getTypeTagFullname,
   parseMoveStructTag,
   StructTag,
   TypeTag,
-} from "./typeTag.js";
+} from "./typeTag";
 import stringify from "json-stable-stringify";
 
 

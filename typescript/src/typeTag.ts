@@ -1,7 +1,7 @@
 import { HexString } from "aptos";
 import { Types } from "aptos";
-import { StructInfoType } from "./parserRepo.js";
-import { assert } from "./utils.js";
+import { StructInfoType } from "./parserRepo";
+import { assert } from "./utils";
 
 export enum AtomicTypeTag {
   Bool = "bool",
