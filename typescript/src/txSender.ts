@@ -7,7 +7,7 @@ import {
   BCS,
   TransactionBuilderEd25519,
 } from "aptos";
-import { TypeTagParser } from "aptos/dist/transaction_builder/builder_utils";
+import { TypeTagParser } from "./builder_utils";
 
 const { AccountAddress, Identifier, ModuleId, EntryFunction } = TxnBuilderTypes;
 
