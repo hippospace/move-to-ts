@@ -6,11 +6,11 @@ import {
   VectorTag,
   parseTypeTagOrThrow,
   substituteTypeParams,
-} from "./typeTag.js";
+} from "./typeTag";
 import { AptosClient, HexString } from "aptos";
 import bigInt from "big-integer";
-import { U128, U64, U8 } from "./builtinTypes.js";
-import { strToU8, u8 } from "./builtinFuncs.js";
+import { U128, U64, U8 } from "./builtinTypes";
+import { strToU8, u8 } from "./builtinFuncs";
 
 export type TypeParamDeclType = {
   name: string;

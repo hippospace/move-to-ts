@@ -1,6 +1,6 @@
 import { HexString } from "aptos";
-import { AptosDataCache, IBox, ITable, AppType } from "./aptosDataCache.js";
-import { U128, U64, U8 } from "./builtinTypes.js";
+import { AptosDataCache, IBox, ITable, AppType } from "./aptosDataCache";
+import { U128, U64, U8 } from "./builtinTypes";
 import {
   AtomicTypeTag,
   getTypeParamsString,
@@ -9,7 +9,7 @@ import {
   StructTag,
   TypeTag,
   VectorTag,
-} from "./typeTag.js";
+} from "./typeTag";
 import * as sha from "sha.js";
 import { SHA3 } from "sha3";
 import bigInt from "big-integer";
@@ -19,10 +19,10 @@ import {
   FieldDeclType,
   parseStructProto,
   TypeParamDeclType,
-} from "./parserRepo.js";
-import { strToU8, u64, u8str } from "./builtinFuncs.js";
+} from "./parserRepo";
+import { strToU8, u64, u8str } from "./builtinFuncs";
 import { BCS } from "aptos";
-import { deserializeMoveValue, serializeMoveValue } from "./bcs.js";
+import { deserializeMoveValue, serializeMoveValue } from "./bcs";
 
 /*
 native functions for BCS serialization/deserialization

@@ -1,7 +1,7 @@
 import { HexString } from "aptos";
 import { BCS } from "aptos";
-import { U128, U64, U8 } from "./builtinTypes.js";
-import { u128, u64, u8 } from "./builtinFuncs.js";
+import { U128, U64, U8 } from "./builtinTypes";
+import { u128, u64, u8 } from "./builtinFuncs";
 import {
   AtomicTypeTag,
   SimpleStructTag,
@@ -10,8 +10,8 @@ import {
   TypeParamIdx,
   TypeTag,
   VectorTag,
-} from "./typeTag.js";
-import { StructInfoType } from "./parserRepo.js";
+} from "./typeTag";
+import { StructInfoType } from "./parserRepo";
 
 /*
 BCS serialization of Move values
