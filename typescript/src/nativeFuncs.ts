@@ -97,6 +97,37 @@ export function aptos_std_event_write_to_event_store(
   // NOP
 }
 
+export function aptos_std_multi_ed25519_signature_verify_strict_internal(
+    multisignature: U8[],
+    public_key: U8[],
+    message: U8[],
+    $c: AptosDataCache,
+): boolean {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_multi_ed25519_public_key_validate_internal(
+    bytes: U8[],
+    $c: AptosDataCache,
+): boolean {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_from_bcs_from_bytes(
+    bytes: U8[],
+    $c: AptosDataCache,
+    $p: TypeTag[]
+): any {
+  return aptos_framework_util_from_bytes(bytes, $c, $p);
+}
+
+export function aptos_std_aptos_hash_keccak256(
+    bytes: U8[],
+    $c: AptosDataCache
+): U8[] {
+  throw new Error("Not implemented");
+}
+
 export function aptos_std_aptos_hash_sip_hash(
   bytes: U8[],
   $c: AptosDataCache
