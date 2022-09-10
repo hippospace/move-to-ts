@@ -3,7 +3,8 @@
   "version": "0.2.27",
   "license": "MIT",
   "scripts": {
-    "build": "rm -rf dist && rollup -c",
+    "build": "rm -rf dist && tsc -p tsconfig.js.json",
+    "build-rollup": "rm -rf dist && rollup -c",
     "build-test": "rm -rf tests && rollup -c rollup.config.test.js",
     "test": "yarn build-test && node tests/test.cjs test && node tests/test.mjs test",
     "test-cjs": "yarn build-rollup-test && node tests/test.cjs test",
@@ -13,7 +14,7 @@
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.js"
     }
   },
   "main": "dist/index.cjs",
