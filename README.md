@@ -38,7 +38,7 @@ attributes that will guide the transpiler to generate specific TypeScript utilit
 
 - `#[cmd]`: automatically generate command-line tool for invoking `public entry` functions
 - `#[method]`: allows you to call methods written in Move from TypeScript frontend
-- `#[query]`: allows you to perform arbitrary computation onchain using Move code, and return 
+- `#[query]`: allows you to perform arbitrary computation onchain using Move code, and return
 the result of the computation to your TypeScript frontend, without going through consensus.
 
 ## `#[cmd]`
@@ -78,7 +78,7 @@ Commands:
 
 ## `#[method]`
 
-The `method` attribute allows you to attach speicfic Move functions to specified Move resource types, and use them from
+The `method` attribute allows you to attach specific Move functions to specified Move resource types, and use them from
 TypeScript as ordinary class methods.
 
 Example in Move (taken from Econia):
@@ -94,7 +94,7 @@ Example in Move (taken from Econia):
         ...
     }
 
-    
+
     /// Calculate expected result of swap against an `OrderBook`.
     fun simulate_swap_sdk<B, Q, E>(
         order_book_ref_mut: &mut OrderBook<B, Q, E>,
@@ -155,7 +155,7 @@ Example in Move:
             move_from<PoolList>(signer::address_of(user));
         };
         // we use move_to to mark the value which should be returned
-        // in the future, you will also be able to place the query attribute directly on 
+        // in the future, you will also be able to place the query attribute directly on
         // compute_pool_list
         move_to<PoolList>(user, compute_pool_list())
     }
@@ -186,10 +186,10 @@ USAGE:
 
 OPTIONS:
     -a, --asynchronous
-            
+
 
     -c, --gen-cli
-            
+
 
     -h, --help
             Print help information
@@ -207,7 +207,7 @@ OPTIONS:
             generate #[test] functions [default: ]
 
     -u, --gen-ui
-            
+
 
     -V, --version
             Print version information
@@ -232,10 +232,10 @@ Automatically translate Move code to TypeScript. So that:
 - swap frontends and arb bots can generate quotes using exactly the same pricing logic as its Move contract
 - liquidation bots can evaluate whether an account is open for liquidation using exactly the same logic as contract
 
-Above are two very specific use cases. In a more abstract sense, `move-to-ts` wants to increase the portability of 
+Above are two very specific use cases. In a more abstract sense, `move-to-ts` wants to increase the portability of
 Move code and increase the productivity of Move developers.
 
-A side benefit of having an emulator, of course, is that we can also debug Move code in a JS environment (since we 
+A side benefit of having an emulator, of course, is that we can also debug Move code in a JS environment (since we
 are currently missing a native Move debugger). I personally find it easier to debug Move units tests after they are
 translated to TypeScript because I get to see the stack locations by default.
 
@@ -248,7 +248,7 @@ Turn this into a development framework similar to Truffle/Anchor, and provide di
 - [x] automated TypeScript SDK generation
 - [ ] automated bot script generation
 - [-] automated experimental UI generation
-  
+
 
 # Experimental objectives:
 
