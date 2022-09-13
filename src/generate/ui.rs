@@ -1,5 +1,5 @@
 use crate::ast_to_ts::is_type_signer;
-use crate::gen_cli::{format_qualified_payload_fname_and_import, stype_to_ts_parser};
+use crate::cli::{format_qualified_payload_fname_and_import, stype_to_ts_parser};
 use crate::shared::*;
 use crate::tsgen_writer::TsgenWriter;
 use itertools::Itertools;
@@ -107,7 +107,7 @@ pub fn write_command(cmd: &CmdParams, w: &mut TsgenWriter) -> TermResult {
     }
     w.decrease_indent();
     w.writeln("],");
-    w.writeln("type: \"cmd\",");
+    w.writeln("types: \"cmd\",");
 
     let type_param_names = cmd
         .func
@@ -252,14 +252,14 @@ interface ICommand {
   name: string;
   typeArgs: string[];
   args: IArg[];
-  type: "cmd";
+  types: "cmd";
   invoker: Function;
 }
 
 interface IShow {
   module: string;
   name: string;
-  type: "show",
+  types: "show",
 }
 
 interface IModule {
@@ -279,12 +279,12 @@ interface IContent {
 }
 
 function isShow(v: any) {
-  return v.type === 'show';
+  return v.types === 'show';
 }
 
 /*
 function isCommand(v: any) {
-  return v.type === 'command';
+  return v.types === 'command';
 }
 */
 

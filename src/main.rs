@@ -1,16 +1,16 @@
-mod ast_exp;
-mod ast_tests;
-pub mod ast_to_ts;
-pub mod gen_cli;
-pub mod gen_ui;
 mod shared;
 pub mod tsgen_writer;
 pub mod utils;
+mod ast_ts_printer;
+mod generate;
+mod types;
+mod err;
+mod utils;
 
-use crate::gen_cli::generate_cli;
+use crate::cli::generate_cli;
 use crate::gen_ui::{gen_public_html, generate_ui};
 use crate::shared::{format_address, format_address_hex, is_same_package};
-use crate::utils::{generate_index, generate_topmost_index};
+use crate::utils::{generate_topmost_index};
 use clap::Parser;
 use move_command_line_common::address::NumericalAddress;
 use move_command_line_common::parser::NumberFormat;

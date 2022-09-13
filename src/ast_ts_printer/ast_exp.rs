@@ -158,7 +158,7 @@ impl AstTsPrinter for ModuleCall {
         // every function signature will start with:
         // export function X($c: AptosDataCache, $p: TypeTag[], ...)
         let func_name = format_qualified_name(module, name, c);
-        // AptosFramework::TypeInfo::type_of requires us to always send in the type parameters as
+        // AptosFramework::TypeInfo::type_of requires us to always send in the types parameters as
         // arguments as they are not always inferrable from regular parameters
         let tparams_ = format_type_args_at_instantiation(type_arguments, c)?;
         if arguments.ty.value == Type_::Unit {
@@ -264,16 +264,16 @@ pub fn base_type_to_tstype(base_ty: &BaseType, c: &mut Context) -> TermResult {
     match &base_ty.value {
         BaseType_::Param(tp) => {
             if c.current_function_signature.is_none() {
-                // inside struct decl, where type params are translated to "any"
+                // inside struct decl, where types params are translated to "any"
                 return Ok("any".to_string());
             }
             // when TParam is used within a Type_, it is always used for instantiating a
-            // concrete type or at a call site. So just use the hard-coded type-param: tparams_
+            // concrete types or at a call site. So just use the hard-coded types-param: tparams_
             if let Some(idx) = c.get_tparam_index(tp) {
                 Ok(format!("$p[{}]", idx))
             } else {
-                unreachable!("Non-existent type parameter");
-                //derr!((self.loc, "Non-existent type parameter"))
+                unreachable!("Non-existent types parameter");
+                //derr!((self.loc, "Non-existent types parameter"))
             }
         }
         BaseType_::Apply(_abilities_opt, m, ss) => {
@@ -289,12 +289,12 @@ pub fn base_type_to_tstype(base_ty: &BaseType, c: &mut Context) -> TermResult {
                     }
                 }
                 TypeName_::ModuleType(mi, s) => {
-                    // in TS, do not include type args
+                    // in TS, do not include types args
                     Ok(format_qualified_name(mi, s, c))
                 }
             }
         }
-        _ => derr!((base_ty.loc, "Unresolved type")),
+        _ => derr!((base_ty.loc, "Unresolved types")),
     }
 }
 
@@ -359,7 +359,7 @@ impl AstTsPrinter for BuiltinTypeName {
             BuiltinTypeName_::U128 => Ok("U128".to_string()),
             BuiltinTypeName_::Signer => Ok("HexString".to_string()),
             BuiltinTypeName_::Vector => {
-                panic!("Should be handled elsewhere as here we do not have type param info");
+                panic!("Should be handled elsewhere as here we do not have types param info");
             }
         }
     }
@@ -440,7 +440,7 @@ impl AstTsPrinter for TParam {
     /*
     TParam is used in
     - StructTypeParameter
-    - concrete type instantiation (Call, ApplySingle)
+    - concrete types instantiation (Call, ApplySingle)
      */
     const CTOR_NAME: &'static str = "TParam";
     fn term(&self, _c: &mut Context) -> TermResult {
@@ -463,7 +463,7 @@ impl AstTsPrinter for Vec<TParam> {
 impl AstTsPrinter for BinOp {
     const CTOR_NAME: &'static str = "BinOp";
     // most of the binary ops can be directly used in TypeScript. Arithmetic & bitwise ones,
-    // however, require type-checked handling from runtime
+    // however, require types-checked handling from runtime
     fn term(&self, _c: &mut Context) -> TermResult {
         Ok(format!("{}", self))
     }
@@ -494,7 +494,7 @@ pub fn dynamic_binop_name(op: BinOp_) -> &'static str {
 }
 
 pub fn handle_binop_for_base_type(
-    ty: &BaseType, // usually type of lhs, but also inner type of Ref
+    ty: &BaseType, // usually types of lhs, but also inner types of Ref
     binop: &BinOp,
     lhs: &Exp,
     rhs: &Exp,
@@ -636,15 +636,15 @@ pub fn handle_binop_for_base_type(
 }
 
 pub fn handle_binop_for_type(
-    ty: &Type, // usually type of lhs, but also inner type of Ref
+    ty: &Type, // usually types of lhs, but also inner types of Ref
     binop: &BinOp,
     lhs: &Exp,
     rhs: &Exp,
     c: &mut Context,
 ) -> TermResult {
     match &ty.value {
-        Type_::Unit => derr!((ty.loc, "Unit type has no supported binop")),
-        Type_::Multiple(_) => derr!((ty.loc, "Tuple type has no supported binop")),
+        Type_::Unit => derr!((ty.loc, "Unit types has no supported binop")),
+        Type_::Multiple(_) => derr!((ty.loc, "Tuple types has no supported binop")),
         Type_::Single(single_ty) => match &single_ty.value {
             SingleType_::Ref(_, ty) => match &binop.value {
                 BinOp_::Eq | BinOp_::Neq => handle_binop_for_base_type(ty, binop, lhs, rhs, c),
@@ -688,7 +688,7 @@ impl AstTsPrinter for Value {
         use Value_ as V;
         match &self.value {
             V::Address(addr) => ts_format_numerical_address(addr),
-            // FIXME bigInt needs type cast when assigned to U8/64/128?
+            // FIXME bigInt needs types cast when assigned to U8/64/128?
             V::U8(u) => Ok(format!("u8(\"{}\")", u)),
             V::U64(u) => Ok(format!("u64(\"{}\")", u)),
             V::U128(u) => Ok(format!("u128(\"{}\")", u)),
@@ -712,7 +712,7 @@ impl AstTsPrinter for move_compiler::expansion::ast::Value {
         use move_compiler::expansion::ast::Value_ as V;
         match &self.value {
             V::Address(addr) => ts_format_address_as_literal(addr, self.loc),
-            // FIXME bigInt needs type cast when assigned to U8/64/128?
+            // FIXME bigInt needs types cast when assigned to U8/64/128?
             V::InferredNum(u) => Ok(format!("bigInt(\"{}\")", u)),
             V::U8(u) => Ok(format!("u8(\"{}\")", u)),
             V::U64(u) => Ok(format!("u64(\"{}\")", u)),

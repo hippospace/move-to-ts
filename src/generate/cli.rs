@@ -32,7 +32,7 @@ pub fn check_allowed_structs_for_entry_function(
     } else {
         derr!((
             loc,
-            "This struct type cannot be used at entry function invocation"
+            "This struct types cannot be used at entry function invocation"
         ))
     }
 }
@@ -54,7 +54,7 @@ pub fn vector_type_ts_parser(name: &String, element_type: &BaseType) -> TermResu
                 BuiltinTypeName_::U8 => Ok(format!("strToU8({})", name)),
                 _ => derr!((
                     element_type.loc,
-                    "byte-strings is the only vector type supported at entry function invocation"
+                    "byte-strings is the only vector types supported at entry function invocation"
                 )),
             },
         },
@@ -492,7 +492,7 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
     }
     for method in ctx.printer_methods.iter() {
         let (mi, sname, sdef, fname, fsig) = method;
-        // if sdef is a resource type, generate printer for it
+        // if sdef is a resource types, generate printer for it
         if sdef.abilities.has_ability_(Ability_::Key) {
             let printer_res = generate_printer(mi, sname, sdef, fname, fsig);
             if let Ok((printer_body, package_name)) = printer_res {

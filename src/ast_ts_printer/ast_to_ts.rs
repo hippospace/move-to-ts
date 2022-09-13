@@ -530,7 +530,7 @@ pub fn handle_struct_show_iter_table_directive(
                 if table_targs.len() != 2 {
                     return derr!((
                         field_decl_name.0.loc,
-                        "IterableTable should have 2 type arguments "
+                        "IterableTable should have 2 types arguments "
                     ));
                 }
                 let key_ts_type = base_type_to_tstype(&table_targs[0], c)?;
@@ -582,22 +582,22 @@ pub fn validate_method(
         )
     ));
     let sig = &f.signature;
-    // check it has the same type parameters as sdef
+    // check it has the same types parameters as sdef
     if sig.type_parameters.len() != sdef.type_parameters.len() {
         return derr!((
             name.loc,
             format!(
-                "This function should have the same type parameters as {}",
+                "This function should have the same types parameters as {}",
                 sname
             )
         ));
     }
     for (idx, tparam) in sig.type_parameters.iter().enumerate() {
         if sdef.type_parameters[idx].param.user_specified_name != tparam.user_specified_name {
-            return derr!((tparam.user_specified_name.loc, "Mismatched type parameters"));
+            return derr!((tparam.user_specified_name.loc, "Mismatched types parameters"));
         }
     }
-    // check it has at least one parameter of sdef's type
+    // check it has at least one parameter of sdef's types
     if sig.parameters.is_empty() {
         return err;
     }
@@ -609,18 +609,18 @@ pub fn validate_method(
         match &typename.value {
             TypeName_::ModuleType(mi, sname2) => {
                 if is_same_module(&c.current_module.unwrap(), mi) && *sname == *sname2 {
-                    // check type params are in the right order
+                    // check types params are in the right order
                     for (idx, tparam) in targs.iter().enumerate() {
                         match &tparam.value {
                             BaseType_::Param(tp) => {
                                 if sdef.type_parameters[idx].param.user_specified_name
                                     != tp.user_specified_name
                                 {
-                                    return derr!((tparam.loc, "Mismatched type parameters"));
+                                    return derr!((tparam.loc, "Mismatched types parameters"));
                                 }
                             }
                             _ => {
-                                return derr!((tparam.loc, "Mismatched type parameters"));
+                                return derr!((tparam.loc, "Mismatched types parameters"));
                             }
                         }
                     }
@@ -744,18 +744,18 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
             w.writeln("__app: $.AppType | null = null;");
             w.writeln(format!("static structName: string = {};", quote(&name.term(c)?)));
 
-            // 0. type parameters
+            // 0. types parameters
             // 1. static field decl
             // 2. actual field decl
             // 3. ctor
             // 4. static parser
             // 5. resource loader
             // 6. makeTag / getTag
-            // 7. additional util funcs
+            // 7. additional utils funcs
             // 8. attribute-directives
             // 9. loadFullState
 
-            // 0: type parameters
+            // 0: types parameters
             w.write("static typeParameters: TypeParamDeclType[] = [");
             w.indent(2, |w| {
                 w.list(&sdef.type_parameters, ",", |w, struct_tparam| {
@@ -852,7 +852,7 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                         w.writeln("}");
                     }
 
-                    // 7. additional util funcs
+                    // 7. additional utils funcs
                     handle_special_structs(name, fields, w, c)?;
 
                     // 8. attribute directives
@@ -1025,7 +1025,7 @@ pub fn write_query_function(
         has_tags = true;
     }
 
-    let move_to_err = derr!((return_type.loc, "Expect move_to to contain a struct type"));
+    let move_to_err = derr!((return_type.loc, "Expect move_to to contain a struct types"));
     let output_struct_name = match &return_type.value {
         BaseType_::Apply(_, tn, _) => match &tn.value {
             TypeName_::ModuleType(_, name) => name.to_string(),
@@ -1330,7 +1330,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 w.writeln(format!("  \"{}\",", mident.value.module));
                 // funcName
                 w.writeln(format!("  \"{}\",", name));
-                // type arguments
+                // types arguments
                 w.writeln("  typeParamStrings,");
                 // arguments
                 if params_no_signers.is_empty() {
@@ -1422,7 +1422,7 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
                 } else {
                     derr!((
                         ty.loc,
-                        "This vector type is not supported as parameter of a script function"
+                        "This vector types is not supported as parameter of a script function"
                     ))
                 }
             }
@@ -1430,7 +1430,7 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
     } else {
         let err = derr!((
             ty.loc,
-            "This type is not supported as parameter of script function"
+            "This types is not supported as parameter of script function"
         ));
         match &ty.value {
             SingleType_::Base(base) => match &base.value {
@@ -1466,7 +1466,7 @@ pub fn get_ts_handler_for_vector_in_vector(inner_ty: &BaseType) -> TermResult {
             }
         }
     } else {
-        derr!((inner_ty.loc, "Unsupported vector-in-vector type"))
+        derr!((inner_ty.loc, "Unsupported vector-in-vector types"))
     }
 }
 

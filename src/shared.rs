@@ -18,38 +18,7 @@ use std::fmt;
 use std::path::PathBuf;
 use std::rc::Rc;
 
-#[derive(Copy, Clone)]
-pub struct NotTranslatable {}
 
-impl DiagnosticCode for NotTranslatable {
-    const CATEGORY: Category = Category::TypeSafety;
-    fn severity(self) -> Severity {
-        Severity::BlockingError
-    }
-
-    fn code_and_message(self) -> (u8, &'static str) {
-        (1, "Not Translatable")
-    }
-}
-
-macro_rules! derr {
-    ($primary: expr $(,)?) => {{
-        Err(Diagnostic::new(
-            NotTranslatable{},
-            $primary,
-            std::iter::empty::<(Loc, String)>(),
-            std::iter::empty::<String>(),
-        ))
-    }};
-    ($primary: expr, $($secondary: expr),+ $(,)?) => {{
-        Err(Diagnostic::new(
-            NotTranslatable{},
-            $primary,
-            vec![$($secondary, )*],
-            std::iter::empty::<String>(),
-        ))
-    }};
-}
 
 #[derive(Parser, Clone)]
 #[clap(author, version, about)]
@@ -277,22 +246,7 @@ impl Context {
     }
 }
 
-pub trait AstTsPrinter {
-    const CTOR_NAME: &'static str;
 
-    fn term(&self, _c: &mut Context) -> TermResult {
-        panic!("term() not implemented for {}", Self::CTOR_NAME);
-    }
-
-    fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
-        w.write(self.term(c)?);
-
-        Ok(())
-    }
-}
-
-pub type TermResult = Result<String, Diagnostic>;
-pub type WriteResult = Result<(), Diagnostic>;
 
 pub fn quote(quoted: &impl fmt::Display) -> String {
     format!("\"{}\"", quoted)
@@ -531,9 +485,9 @@ pub fn base_type_to_typetag(base_ty: &BaseType, c: &mut Context) -> TermResult {
 
 pub fn type_to_typetag(ty: &Type, c: &mut Context) -> TermResult {
     match &ty.value {
-        Type_::Unit => derr!((ty.loc, "Cannot construct Unit type")),
+        Type_::Unit => derr!((ty.loc, "Cannot construct Unit types")),
         Type_::Single(single_ty) => match &single_ty.value {
-            SingleType_::Ref(_, _) => derr!((ty.loc, "Cannot construct typetag for Ref type")),
+            SingleType_::Ref(_, _) => derr!((ty.loc, "Cannot construct typetag for Ref types")),
             SingleType_::Base(base_ty) => base_type_to_typetag(base_ty, c),
         },
         Type_::Multiple(_) => derr!((ty.loc, "Cannot construct typeTag for tuples")),
