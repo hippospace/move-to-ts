@@ -49,7 +49,7 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
         "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
         "import {AtomicTypeTag, StructTag, TypeTag, VectorTag, SimpleStructTag} from \"@manahippo/move-to-ts\";"
             .to_string(),
-        "import {HexString, AptosClient, AptosAccount} from \"aptos\";".to_string(),
+        "import {HexString, AptosClient, AptosAccount, TxnBuilderTypes, Types} from \"aptos\";".to_string(),
     ];
     for package_name in c.package_imports.iter() {
         lines.push(format!(
@@ -275,7 +275,8 @@ pub fn write_app(
         } else {
             ", "
         };
-        w.writeln(") {");
+        w.writeln("): TxnBuilderTypes.TransactionPayloadEntryFunction");
+        w.writeln("      | Types.TransactionPayload_EntryFunctionPayload {");
         w.writeln(format!(
             "  return buildPayload_{}({}{}{}{}isJSON);",
             fname, args, separator, tags, possibly_comma,
@@ -1304,7 +1305,8 @@ impl AstTsPrinter for (FunctionName, &Function) {
             }
             w.writeln("  isJSON = false,");
             // marks returnType or void
-            w.write(") ");
+            w.writeln("): TxnBuilderTypes.TransactionPayloadEntryFunction");
+            w.write("   | Types.TransactionPayload_EntryFunctionPayload ");
             // body:
             let params_no_signers = func
                 .signature
