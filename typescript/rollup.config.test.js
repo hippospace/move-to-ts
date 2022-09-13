@@ -6,7 +6,7 @@ var rollup_config = [
     input: 'src/tests/index.ts',
     output: [
       {
-        file: "./tests/test.cjs",
+        file: "./tests/test.js",
         format: 'cjs',
         sourcemap: true
       },
