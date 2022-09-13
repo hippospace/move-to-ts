@@ -78,7 +78,7 @@ Commands:
 
 ## `#[method]`
 
-The `method` attribute allows you to attach speicfic Move functions to specified Move resource types, and use them from
+The `method` attribute allows you to attach specific Move functions to specified Move resource types, and use them from
 TypeScript as ordinary class methods.
 
 Example in Move (taken from Econia):
