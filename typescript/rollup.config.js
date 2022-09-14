@@ -16,6 +16,7 @@ var rollup_config = [
         sourcemap: true
       }
     ],
+    external:["aptos","json-stable-stringify","big-integer","sha.js","sha3","elliptic"],
     plugins: [typescript()]
   }
 
