@@ -44,9 +44,7 @@
     "big-integer": "^1.6.51",
     "elliptic": "^6.5.4",
     "json-stable-stringify": "^1.0.1",
-    "path": "^0.12.7",
     "sha.js": "^2.4.11",
-    "sha3": "^2.1.4",
-    "tslib": "^2.4.0"
+    "sha3": "^2.1.4"
   }
 }
