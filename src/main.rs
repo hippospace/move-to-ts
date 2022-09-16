@@ -6,6 +6,7 @@ mod generate;
 mod types;
 mod err;
 mod utils;
+mod context;
 
 use crate::cli::generate_cli;
 use crate::gen_ui::{gen_public_html, generate_ui};
