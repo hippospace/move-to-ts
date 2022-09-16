@@ -520,6 +520,17 @@ export function aptos_framework_code_request_publish(
   throw new Error("Not Implemented");
 }
 
+export function aptos_framework_code_request_publish_with_allowed_deps(
+    owner: HexString,
+    expected_modules: ActualStringClass[],
+    allowed_deps: any[],
+    bundle: U8[][],
+    policy: U8,
+    $c: AptosDataCache,
+){
+  throw new Error("Not Implemented");
+}
+
 function u8ArrayToKeyString(u8array: U8[]): string {
   return u8array.map((u) => u.value.toJSNumber().toString(16)).join();
 }
