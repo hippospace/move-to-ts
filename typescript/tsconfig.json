@@ -7,7 +7,6 @@
     "rootDir": "./src",
 
     "esModuleInterop": true,
-    "composite": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
