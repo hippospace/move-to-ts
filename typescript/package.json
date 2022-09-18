@@ -1,9 +1,10 @@
 {
   "name": "@manahippo/move-to-ts",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "MIT",
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "build": "rm -rf dist && rollup -c",
+    "build-tsc": "rm -rf dist && tsc -p tsconfig.json",
     "build-rollup": "rm -rf dist && rollup -c",
     "build-test": "rm -rf tests && rollup -c rollup.config.test.js",
     "test-cjs": "node tests/test.js test",
