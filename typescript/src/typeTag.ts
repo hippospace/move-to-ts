@@ -118,7 +118,7 @@ export function parseQualifiedStructTag(
   const hexAddress = new HexString(address);
   const [module, withoutModule] = splitByDoubleColon(withoutAddress);
   // structName<...>
-  if (withoutModule.match(/^[a-zA-Z_]+</)) {
+  if (withoutModule.match(/^[a-zA-Z_][a-zA-Z_0-9]*</)) {
     const leftBracketIdx = withoutModule.indexOf("<");
     const structName = withoutModule.substr(0, leftBracketIdx);
     const afterLeftBracket = withoutModule.substr(leftBracketIdx + 1);

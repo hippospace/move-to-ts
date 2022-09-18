@@ -72,4 +72,7 @@ export function test() {
     "0x1::M::S<0x1::M::s, u8, 0x2::MM::TT, 0x2::MM::TT<u8,address,0x2::M::T>, address, vector<0x1::M::S<u8>>>",
     false
   );
+  genericTest(
+    "0xfff29aab::sss::lV3<0xfff2775c19aab::coins::CoinA, 0xfff2775c19aab::coins::CoinB>"
+  );
 }
