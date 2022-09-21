@@ -1,4 +1,3 @@
-use crate::tsgen_writer::TsgenWriter;
 use clap::Parser;
 use itertools::Itertools;
 use move_compiler::{
@@ -17,13 +16,14 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::path::PathBuf;
 use std::rc::Rc;
-use crate::{format_address, is_same_package};
 use crate::types::{CmdParams, MoveToTsOptions, TermResult};
-use crate::utils::utils::{capitalize, rename};
+use crate::utils::utils;
+use crate::utils::utils::{capitalize, format_address, format_address_hex, is_same_package, quote, rename};
 
 
 pub struct Context {
     pub program: Rc<Program>,
+    pub build_root_path: PathBuf,
     pub current_module: Option<ModuleIdent>,
     pub current_function_signature: Option<FunctionSignature>,
     // modules imported from same package
@@ -59,9 +59,10 @@ pub struct Context {
     pub all_shows_iter_tables: Vec<(ModuleIdent, StructName, StructDefinition, Name)>,
 }
 impl Context {
-    pub fn new(config: &MoveToTsOptions, program: Rc<Program>) -> Self {
+    pub fn new(config: &MoveToTsOptions, program: Rc<Program>, build_root_path: PathBuf) -> Self {
         Self {
             program,
+            build_root_path,
             current_module: None,
             current_function_signature: None,
             same_package_imports: BTreeSet::new(),
@@ -200,6 +201,7 @@ impl Context {
     ) -> TermResult {
         self.comma_term_opt(items, f, true)
     }
+
     pub fn format_qualified_name(
         &mut self,
         mident: &ModuleIdent,
@@ -227,74 +229,11 @@ impl Context {
         }
     }
 
-    pub fn base_type_to_typetag_builder_inner(
-        base_ty: &BaseType,
-        tparams: &Vec<StructTypeParameter>,
-        c: &mut Context,
-        use_simple_struct_tag: bool,
-    ) -> TermResult {
-        match &base_ty.value {
-            BaseType_::Param(tp) => {
-                let idx = tparams
-                    .iter()
-                    .find_position(|tp2| tp2.param.user_specified_name == tp.user_specified_name)
-                    .unwrap()
-                    .0;
-                Ok(format!("new $.TypeParamIdx({})", idx))
-            }
-            BaseType_::Apply(_, typename, ss) => match &typename.value {
-                TypeName_::Builtin(builtin) => match &builtin.value {
-                    BuiltinTypeName_::Vector => {
-                        assert!(ss.len() == 1);
-                        let inner_builder = base_type_to_typetag_builder_inner(
-                            &ss[0],
-                            tparams,
-                            c,
-                            use_simple_struct_tag,
-                        )?;
-                        Ok(format!("new VectorTag({})", inner_builder))
-                    }
-                    BuiltinTypeName_::Bool => Ok("AtomicTypeTag.Bool".to_string()),
-                    BuiltinTypeName_::U8 => Ok("AtomicTypeTag.U8".to_string()),
-                    BuiltinTypeName_::U64 => Ok("AtomicTypeTag.U64".to_string()),
-                    BuiltinTypeName_::U128 => Ok("AtomicTypeTag.U128".to_string()),
-                    BuiltinTypeName_::Address => Ok("AtomicTypeTag.Address".to_string()),
-                    BuiltinTypeName_::Signer => Ok("AtomicTypeTag.Signer".to_string()),
-                },
-                TypeName_::ModuleType(mident, sname) => {
-                    let address = format_address_hex(mident.value.address);
-                    let modname = mident.value.module;
-                    let tparams = format!(
-                        "[{}]",
-                        comma_term(ss, c, |t, c| base_type_to_typetag_builder_inner(
-                            t,
-                            tparams,
-                            c,
-                            use_simple_struct_tag
-                        ))?
-                    );
-                    if use_simple_struct_tag && c.is_current_module(mident) {
-                        Ok(format!(
-                            "new SimpleStructTag({}{})",
-                            sname,
-                            if tparams.len() == 2 {
-                                "".to_string()
-                            } else {
-                                format!(", {}", tparams)
-                            }
-                        ))
-                    } else {
-                        Ok(format!(
-                            "new StructTag(new HexString({}), {}, {}, {})",
-                            quote(&address),
-                            quote(&modname),
-                            quote(&sname),
-                            tparams
-                        ))
-                    }
-                }
-            },
-            _ => derr!((base_ty.loc, "Received Unresolved Type")),
+    pub fn write_file(&self, path:&str, pair: (String, String)){
+        if path.is_empty() {
+            utils::write_file(&self.build_root_path, pair)
+        } else {
+            utils::write_file(&self.build_root_path.join(path), pair)
         }
     }
 }

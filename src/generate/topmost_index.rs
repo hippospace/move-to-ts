@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-pub fn generate_topmost_index(packages: &[&String]) -> (String, String) {
+pub fn generate(packages: &[&String]) -> (String, String) {
     let filename = "index.ts".to_string();
     let exports = packages
         .iter()

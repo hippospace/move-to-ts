@@ -1,7 +1,9 @@
 use crate::Context;
+use crate::types::{TermResult, WriteResult};
+use crate::utils::tsgen_writer::TsgenWriter;
 
-mod ast_exp;
-mod ast_to_ts;
+pub mod ast_exp;
+pub mod ast_to_ts;
 
 pub trait AstTsPrinter {
     const CTOR_NAME: &'static str;

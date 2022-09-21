@@ -5,7 +5,7 @@ use move_compiler::{
     hlir::ast::*,
 };
 use std::path::PathBuf;
-
+use clap::Parser;
 
 pub type TermResult = Result<String, Diagnostic>;
 pub type WriteResult = Result<(), Diagnostic>;

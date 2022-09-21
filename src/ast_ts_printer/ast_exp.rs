@@ -1,5 +1,5 @@
 use crate::shared::*;
-use crate::utils::rename;
+use crate::derr;
 use move_compiler::{
     diagnostics::Diagnostic,
     expansion::ast::ModuleAccess,
@@ -8,6 +8,10 @@ use move_compiler::{
     parser::ast::{BinOp, BinOp_, UnaryOp},
 };
 use move_ir_types::location::Loc;
+use crate::ast_ts_printer::AstTsPrinter;
+use crate::context::Context;
+use crate::types::TermResult;
+use crate::utils::utils::{base_type_to_typetag, format_function_name, quote, rename, ts_format_address_as_literal, ts_format_numerical_address, type_to_typetag};
 
 impl AstTsPrinter for Exp {
     const CTOR_NAME: &'static str = "Exp";

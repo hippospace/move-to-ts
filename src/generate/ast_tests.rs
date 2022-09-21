@@ -1,5 +1,4 @@
 use crate::shared::*;
-use crate::tsgen_writer::TsgenWriter;
 use itertools::Itertools;
 use move_compiler::{
     diagnostics::{Diagnostic, Diagnostics},
@@ -8,64 +7,14 @@ use move_compiler::{
     parser::ast::FunctionName,
 };
 use move_ir_types::location::Loc;
+use crate::ast_ts_printer::AstTsPrinter;
+use crate::context::Context;
+use crate::types::{TermResult, WriteResult};
+use crate::utils::tsgen_writer::TsgenWriter;
+use crate::utils::utils::{format_address, format_function_name, quote};
+use crate::derr;
 
-pub fn check_test(
-    name: &FunctionName,
-    func: &Function,
-    c: &mut Context,
-) -> Result<bool, Diagnostic> {
-    let test_attr = func
-        .attributes
-        .key_cloned_iter()
-        .filter(|(k, _)| {
-            let string_name = k.to_string();
-            string_name == "test"
-        })
-        .collect::<Vec<_>>();
-
-    let expect_failure_attr = func
-        .attributes
-        .key_cloned_iter()
-        .find(|(k, _)| {
-            let string_name = k.to_string();
-            string_name == "expected_failure"
-        })
-        .map(|(_k, v)| v.clone());
-
-    if !test_attr.is_empty() {
-        if test_attr.len() != 1 {
-            return derr!((
-                test_attr[1].1.loc,
-                "This unit test has more than one #test attribute"
-            ));
-        }
-
-        c.tests.push((
-            *name,
-            func.signature.clone(),
-            test_attr[0].1.clone(),
-            expect_failure_attr,
-        ));
-
-        return Ok(true);
-    }
-
-    let test_only = func.attributes.key_cloned_iter().any(|(k, _)| {
-        let string_name = k.to_string();
-        string_name == "test_only"
-    });
-
-    Ok(!test_attr.is_empty() || test_only)
-}
-
-pub fn format_attribute_value(val: &AttributeValue, c: &mut Context) -> TermResult {
-    match &val.value {
-        AttributeValue_::Value(val) => val.term(c),
-        AttributeValue_::ModuleAccess(ma) => ma.term(c),
-    }
-}
-
-pub fn generate_tests(c: &mut Context) -> Result<(String, String), Diagnostics> {
+pub fn generate(c: &mut Context) -> Result<(String, String), Diagnostics> {
     let mut w = TsgenWriter::new();
     let output = write_tests(&mut w, c);
     match output {
@@ -87,7 +36,16 @@ pub fn generate_tests(c: &mut Context) -> Result<(String, String), Diagnostics> 
     }
 }
 
-pub fn get_abort_code_from_expected_failure(expected_failure: &Attribute) -> String {
+fn format_attribute_value(val: &AttributeValue, c: &mut Context) -> TermResult {
+    match &val.value {
+        AttributeValue_::Value(val) => val.term(c),
+        AttributeValue_::ModuleAccess(ma) => ma.term(c),
+    }
+}
+
+
+
+fn get_abort_code_from_expected_failure(expected_failure: &Attribute) -> String {
     if let Attribute_::Parameterized(_, attrs_inner) = &expected_failure.value {
         for (name, attr) in attrs_inner.key_cloned_iter() {
             if name.to_string() == "abort_code" {
@@ -109,7 +67,7 @@ pub fn get_abort_code_from_expected_failure(expected_failure: &Attribute) -> Str
     "".to_string()
 }
 
-pub fn write_tests(w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
+ fn write_tests(w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
     let mident = c.current_module.unwrap();
 
     w.writeln(format!(

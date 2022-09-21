@@ -1,6 +1,4 @@
-use crate::ast_to_ts::is_type_signer;
-use crate::shared::*;
-use crate::utils::{capitalize, rename};
+
 use itertools::Itertools;
 use move_compiler::diagnostics::{Diagnostic, Diagnostics};
 use move_compiler::expansion::ast::ModuleIdent;
@@ -13,468 +11,12 @@ use move_compiler::shared::Name;
 use move_ir_types::location::Loc;
 use std::collections::BTreeSet;
 use std::fmt;
+use crate::context::Context;
+use crate::types::{CmdParams, TermResult};
+use crate::utils::utils::{capitalize, format_address, format_address_hex, rename, stype_to_ts_parser};
+use crate::derr;
 
-pub fn check_allowed_structs_for_entry_function(
-    name: &String,
-    mi: &ModuleIdent,
-    sname: &StructName,
-    loc: Loc,
-) -> TermResult {
-    let address = format_address_hex(mi.value.address);
-
-    let short_name = format!("{}::{}::{}", address, mi.value.module, sname);
-
-    if short_name == "0x1::string::String" {
-        Ok(format!(
-            "new ActualStringClass({{bytes: strToU8({})}}, parseTypeTagOrThrow('0x1::string::String'))",
-            name
-        ))
-    } else {
-        derr!((
-            loc,
-            "This struct types cannot be used at entry function invocation"
-        ))
-    }
-}
-
-pub fn vector_type_ts_parser(name: &String, element_type: &BaseType) -> TermResult {
-    match &element_type.value {
-        BaseType_::Param(_tparam) => {
-            // FIXME
-            derr!((
-                element_type.loc,
-                "Generic-typed arguments not supported at entry function invocation (yet)"
-            ))
-        }
-        BaseType_::Apply(_, typename, _) => match &typename.value {
-            TypeName_::ModuleType(mi, sname) => {
-                check_allowed_structs_for_entry_function(name, mi, sname, element_type.loc)
-            }
-            TypeName_::Builtin(builtin) => match &builtin.value {
-                BuiltinTypeName_::U8 => Ok(format!("strToU8({})", name)),
-                _ => derr!((
-                    element_type.loc,
-                    "byte-strings is the only vector types supported at entry function invocation"
-                )),
-            },
-        },
-        _ => unreachable!(),
-    }
-}
-
-pub fn stype_to_ts_parser(name: &String, loc: Loc, stype: &SingleType) -> TermResult {
-    let base = match &stype.value {
-        SingleType_::Base(b) => b,
-        SingleType_::Ref(_, b) => b,
-    };
-    match &base.value {
-        BaseType_::Param(_tparam) => {
-            // FIXME
-            derr!((
-                loc,
-                "Generic-typed arguments not supported at entry function invocation (yet)"
-            ))
-        }
-        BaseType_::Apply(_, typename, targs) => match &typename.value {
-            TypeName_::ModuleType(mi, sname) => {
-                check_allowed_structs_for_entry_function(name, mi, sname, stype.loc)
-            }
-            TypeName_::Builtin(builtin) => match &builtin.value {
-                BuiltinTypeName_::U8 => Ok(format!("u8({})", name)),
-                BuiltinTypeName_::U64 => Ok(format!("u64({})", name)),
-                BuiltinTypeName_::U128 => Ok(format!("u128({})", name)),
-                BuiltinTypeName_::Bool => Ok(format!("{}=='true'", name)),
-                BuiltinTypeName_::Address => Ok(format!("new HexString({})", name)),
-                BuiltinTypeName_::Signer => unreachable!(),
-                BuiltinTypeName_::Vector => {
-                    assert!(targs.len() == 1);
-                    vector_type_ts_parser(name, &targs[0])
-                }
-            },
-        },
-        _ => unreachable!(),
-    }
-}
-
-pub fn format_qualified_payload_fname_and_import(
-    mident: &ModuleIdent,
-    name: &impl fmt::Display,
-) -> (String, String) {
-    // name exists in a different package, use fully qualified name
-    let package_name = format_address(mident.value.address);
-    (
-        format!(
-            "{}.{}.buildPayload_{}",
-            capitalize(&package_name),
-            capitalize(&mident.value.module),
-            name
-        ),
-        package_name,
-    )
-}
-
-pub fn format_qualified_fname_and_import(
-    mident: &ModuleIdent,
-    name: &impl fmt::Display,
-) -> (String, String) {
-    // name exists in a different package, use fully qualified name
-    let package_name = format_address(mident.value.address);
-    (
-        format!(
-            "{}.{}.query_{}",
-            capitalize(&package_name),
-            capitalize(&mident.value.module),
-            name
-        ),
-        package_name,
-    )
-}
-
-/// Generates module_name:func-name command for entry functions marked with #[cmd]
-pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic> {
-    let type_param_names = cmd
-        .func
-        .signature
-        .type_parameters
-        .iter()
-        .map(|tparam| tparam.user_specified_name.to_string())
-        .collect::<Vec<_>>();
-    let param_no_signers = cmd
-        .func
-        .signature
-        .parameters
-        .iter()
-        .filter(|(_, stype)| !is_type_signer(stype));
-    let param_names_no_signer = param_no_signers
-        .clone()
-        .map(|(name, _)| name.to_string())
-        .collect::<Vec<_>>();
-    let mut all_params = vec![];
-    all_params.extend(type_param_names.clone());
-    all_params.extend(param_names_no_signer.clone());
-    let param_decl = all_params
-        .iter()
-        .map(|pname| format!("{}: string", pname))
-        .join(", ");
-    let mut param_parsers = vec![];
-    let mut arguments = vec![];
-    for tparam in cmd.func.signature.type_parameters.iter() {
-        let tname = tparam.user_specified_name;
-        param_parsers.push(format!(
-            "  const {}_ = parseTypeTagOrThrow({});",
-            tname, tname
-        ));
-        arguments.push(format!("  .argument('<TYPE_{}>')", tname));
-    }
-    for (pname, ptype) in param_no_signers {
-        param_parsers.push(format!(
-            "  const {}_ = {};",
-            pname,
-            stype_to_ts_parser(&pname.to_string(), pname.0.loc, ptype)?
-        ));
-        arguments.push(format!("  .argument('<{}>')", pname));
-    }
-    let (payload_builder, package_name) =
-        format_qualified_payload_fname_and_import(&cmd.mi, &cmd.fname);
-    let payload = format!(
-        "{}({}{})",
-        payload_builder,
-        param_names_no_signer
-            .iter()
-            .map(|pname| format!("{}_", pname))
-            .join(", "),
-        if cmd.func.signature.type_parameters.is_empty() {
-            "".to_string()
-        } else {
-            format!(
-                "{}[{}]",
-                if !param_names_no_signer.is_empty() {
-                    ", "
-                } else {
-                    ""
-                },
-                type_param_names
-                    .iter()
-                    .map(|name| format!("{}_", name))
-                    .join(", ")
-            )
-        }
-    );
-    let miname = cmd.mi.value.module;
-    let func_name = format!("{}_{}", miname, cmd.fname);
-    let command_name = format!(
-        "{}:{}",
-        miname.to_string().replace('_', "-"),
-        cmd.fname.to_string().replace('_', "-")
-    );
-    let description = cmd.desc.clone().unwrap_or_default();
-    let action_body = format!(
-        r###"
-const {} = async ({}) => {{
-  const {{client, account}} = readConfig(program);
-{}
-  const payload = {};
-  await sendPayloadTx(client, account, payload);
-}}
-
-program
-  .command("{}")
-  .description("{}")
-{}
-  .action({});
-"###,
-        func_name,
-        param_decl,
-        param_parsers.join("\n"),
-        payload,
-        command_name,
-        description,
-        arguments.join("\n"),
-        func_name,
-    );
-
-    Ok((action_body, package_name))
-}
-
-pub fn format_qualified_sname_and_import(
-    mident: &ModuleIdent,
-    name: &StructName,
-) -> (String, String) {
-    // name exists in a different package, use fully qualified name
-    let package_name = format_address(mident.value.address);
-    (
-        format!(
-            "{}.{}.{}",
-            capitalize(&package_name),
-            capitalize(&mident.value.module),
-            rename(name)
-        ),
-        package_name,
-    )
-}
-
-/// Generate printer commands for functions included by #[method(...)]
-pub fn generate_printer(
-    mi: &ModuleIdent,
-    sname: &StructName,
-    sdef: &StructDefinition,
-    fname: &Name,
-    fsig: &FunctionSignature,
-) -> Result<(String, String), Diagnostic> {
-    let mut arg_decls = vec![];
-    for tp in sdef.type_parameters.iter() {
-        arg_decls.push(format!("{}: string", tp.param.user_specified_name));
-    }
-    for (name, _) in fsig.parameters[1..].iter() {
-        arg_decls.push(format!("{}: string", name));
-    }
-
-    let (struct_qualified_name, package_name) = format_qualified_sname_and_import(mi, sname);
-
-    let type_tags_inner = sdef
-        .type_parameters
-        .iter()
-        .map(|tp| format!("parseTypeTagOrThrow({})", tp.param.user_specified_name))
-        .join(", ");
-
-    let mut arguments = vec![];
-
-    for tp in sdef.type_parameters.iter() {
-        arguments.push(format!(
-            "  .argument('<TYPE_{}>')",
-            tp.param.user_specified_name
-        ));
-    }
-    for (name, _) in fsig.parameters[1..].iter() {
-        arguments.push(format!("  .argument('<{}>')", name));
-    }
-
-    let mut param_handlers = vec![];
-    for (name, ty) in fsig.parameters[1..].iter() {
-        param_handlers.push(stype_to_ts_parser(&name.to_string(), name.0.loc, ty)?);
-    }
-
-    let cmd_func_name = format!("{}_{}", sname, fname);
-    let command_name = format!("{}:{}", sname, fname.to_string().replace('_', "-"));
-
-    let body = format!(
-        r###"
-const {} = async (owner: string, {}) => {{
-  const {{client}} = readConfig(program);
-  const repo = getProjectRepo();
-  const owner_ = new HexString(owner);
-  const value = await {}.load(repo, client, owner_, [{}])
-  print(value.{}({}));
-}}
-
-program
-  .command("{}")
-  .argument("<ADDRESS:owner>")
-{}
-  .action({})
-"###,
-        cmd_func_name,
-        arg_decls.join(", "),
-        struct_qualified_name,
-        type_tags_inner,
-        fname,
-        param_handlers.join(", "),
-        command_name,
-        arguments.join("\n"),
-        cmd_func_name,
-    );
-
-    Ok((body, package_name))
-}
-
-/// Generate query commands for functions marked with #[query]
-pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Diagnostic> {
-    let mut arg_decls = vec![];
-    for tp in query.func.signature.type_parameters.iter() {
-        arg_decls.push(format!("{}: string", tp.user_specified_name));
-    }
-    let params_no_signer = query
-        .func
-        .signature
-        .parameters
-        .iter()
-        .filter(|(_, t)| !is_type_signer(t));
-    for (name, _) in params_no_signer.clone() {
-        arg_decls.push(format!("{}: string", name));
-    }
-
-    let (query_func_name, package_name) =
-        format_qualified_fname_and_import(&query.mi, &query.fname);
-
-    let type_tags_inner = query
-        .func
-        .signature
-        .type_parameters
-        .iter()
-        .map(|tp| format!("parseTypeTagOrThrow({})", tp.user_specified_name))
-        .join(", ");
-
-    let mut arguments = vec![];
-
-    for tp in query.func.signature.type_parameters.iter() {
-        arguments.push(format!("  .argument('<TYPE_{}>')", tp.user_specified_name));
-    }
-    for (name, _) in params_no_signer.clone() {
-        arguments.push(format!("  .argument('<{}>')", name));
-    }
-
-    let mut param_handlers = vec![];
-    for (name, ty) in params_no_signer {
-        param_handlers.push(stype_to_ts_parser(&name.to_string(), name.0.loc, ty)?);
-    }
-
-    let cmd_func_name = format!("{}_{}", query.mi.value.module, query.fname);
-    let command_name = format!(
-        "{}:query-{}",
-        query.mi.value.module.to_string().replace('_', "-"),
-        query.fname.to_string().replace('_', "-")
-    );
-
-    let body = format!(
-        r###"
-const {} = async ({}) => {{
-  const {{client, account}} = readConfig(program);
-  const repo = getProjectRepo();
-  const value = await {}(client, getSimulationKeys(account), repo, {}{}[{}])
-  print(value);
-}}
-
-program
-  .command("{}")
-{}
-  .action({})
-"###,
-        cmd_func_name,
-        arg_decls.join(", "),
-        query_func_name,
-        param_handlers.join(", "),
-        if param_handlers.is_empty() { "" } else { ", " },
-        type_tags_inner,
-        command_name,
-        arguments.join("\n"),
-        cmd_func_name,
-    );
-
-    Ok((body, package_name))
-}
-
-pub fn generate_iter_table_printer(
-    mi: &ModuleIdent,
-    sname: &StructName,
-    sdef: &StructDefinition,
-    field_name: &Name,
-) -> (String, String) {
-    let action_name = format!("show_entries_{}_{}", sname, field_name);
-
-    let type_param_decls = sdef
-        .type_parameters
-        .iter()
-        .map(|tparam| format!("{}: string", tparam.param.user_specified_name))
-        .join(", ");
-
-    let (struct_qualified_name, package_name) = format_qualified_sname_and_import(mi, sname);
-
-    let type_tags_inner = sdef
-        .type_parameters
-        .iter()
-        .map(|tp| format!("parseTypeTagOrThrow({})", tp.param.user_specified_name))
-        .join(", ");
-
-    let arguments = sdef
-        .type_parameters
-        .iter()
-        .map(|tp| (format!("  .argument('<TYPE_{}>')", tp.param.user_specified_name)))
-        .join("\n");
-
-    let command_name = action_name.replace('_', "-");
-
-    let body = format!(
-        r###"
-const {} = async (owner: string{}) => {{
-  const {{client}} = readConfig(program);
-  const repo = getProjectRepo();
-  const owner_ = new HexString(owner);
-  const value = await {}.load(repo, client, owner_, [{}])
-  const entries = await value.getIterTableEntries_{}(client, repo);
-  for (const entry of entries) {{
-    console.log();
-    console.log(`Entry:`);
-    print(entry[0]);
-    print(entry[1]);
-  }}
-}}
-
-program
-  .command("{}")
-  .argument("<ADDRESS:owner>"){}
-  .action({})
-"###,
-        action_name,
-        if !type_param_decls.is_empty() {
-            format!(", {}", type_param_decls)
-        } else {
-            "".to_string()
-        },
-        struct_qualified_name,
-        type_tags_inner,
-        field_name,
-        command_name,
-        if !arguments.is_empty() {
-            format!("\n{}", arguments)
-        } else {
-            "".to_ascii_lowercase()
-        },
-        action_name,
-    );
-    (body, package_name)
-}
-
-pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
+pub fn generate(ctx: &Context) -> Result<(String, String), Diagnostics> {
     let mut commands = vec![];
     let mut printers = vec![];
     let mut imported_packages = BTreeSet::new();
@@ -585,3 +127,413 @@ program.parse();
     );
     Ok((filename, content))
 }
+
+fn check_allowed_structs_for_entry_function(
+    name: &String,
+    mi: &ModuleIdent,
+    sname: &StructName,
+    loc: Loc,
+) -> TermResult {
+    let address = format_address_hex(mi.value.address);
+
+    let short_name = format!("{}::{}::{}", address, mi.value.module, sname);
+
+    if short_name == "0x1::string::String" {
+        Ok(format!(
+            "new ActualStringClass({{bytes: strToU8({})}}, parseTypeTagOrThrow('0x1::string::String'))",
+            name
+        ))
+    } else {
+        derr!((
+            loc,
+            "This struct types cannot be used at entry function invocation"
+        ))
+    }
+}
+
+fn vector_type_ts_parser(name: &String, element_type: &BaseType) -> TermResult {
+    match &element_type.value {
+        BaseType_::Param(_tparam) => {
+            // FIXME
+            derr!((
+                element_type.loc,
+                "Generic-typed arguments not supported at entry function invocation (yet)"
+            ))
+        }
+        BaseType_::Apply(_, typename, _) => match &typename.value {
+            TypeName_::ModuleType(mi, sname) => {
+                check_allowed_structs_for_entry_function(name, mi, sname, element_type.loc)
+            }
+            TypeName_::Builtin(builtin) => match &builtin.value {
+                BuiltinTypeName_::U8 => Ok(format!("strToU8({})", name)),
+                _ => derr!((
+                    element_type.loc,
+                    "byte-strings is the only vector types supported at entry function invocation"
+                )),
+            },
+        },
+        _ => unreachable!(),
+    }
+}
+
+fn format_qualified_fname_and_import(
+    mident: &ModuleIdent,
+    name: &impl fmt::Display,
+) -> (String, String) {
+    // name exists in a different package, use fully qualified name
+    let package_name = format_address(mident.value.address);
+    (
+        format!(
+            "{}.{}.query_{}",
+            capitalize(&package_name),
+            capitalize(&mident.value.module),
+            name
+        ),
+        package_name,
+    )
+}
+
+/// Generates module_name:func-name command for entry functions marked with #[cmd]
+fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic> {
+    let type_param_names = cmd
+        .func
+        .signature
+        .type_parameters
+        .iter()
+        .map(|tparam| tparam.user_specified_name.to_string())
+        .collect::<Vec<_>>();
+    let param_no_signers = cmd
+        .func
+        .signature
+        .parameters
+        .iter()
+        .filter(|(_, stype)| !is_type_signer(stype));
+    let param_names_no_signer = param_no_signers
+        .clone()
+        .map(|(name, _)| name.to_string())
+        .collect::<Vec<_>>();
+    let mut all_params = vec![];
+    all_params.extend(type_param_names.clone());
+    all_params.extend(param_names_no_signer.clone());
+    let param_decl = all_params
+        .iter()
+        .map(|pname| format!("{}: string", pname))
+        .join(", ");
+    let mut param_parsers = vec![];
+    let mut arguments = vec![];
+    for tparam in cmd.func.signature.type_parameters.iter() {
+        let tname = tparam.user_specified_name;
+        param_parsers.push(format!(
+            "  const {}_ = parseTypeTagOrThrow({});",
+            tname, tname
+        ));
+        arguments.push(format!("  .argument('<TYPE_{}>')", tname));
+    }
+    for (pname, ptype) in param_no_signers {
+        param_parsers.push(format!(
+            "  const {}_ = {};",
+            pname,
+            stype_to_ts_parser(&pname.to_string(), pname.0.loc, ptype)?
+        ));
+        arguments.push(format!("  .argument('<{}>')", pname));
+    }
+    let (payload_builder, package_name) =
+        format_qualified_payload_fname_and_import(&cmd.mi, &cmd.fname);
+    let payload = format!(
+        "{}({}{})",
+        payload_builder,
+        param_names_no_signer
+            .iter()
+            .map(|pname| format!("{}_", pname))
+            .join(", "),
+        if cmd.func.signature.type_parameters.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "{}[{}]",
+                if !param_names_no_signer.is_empty() {
+                    ", "
+                } else {
+                    ""
+                },
+                type_param_names
+                    .iter()
+                    .map(|name| format!("{}_", name))
+                    .join(", ")
+            )
+        }
+    );
+    let miname = cmd.mi.value.module;
+    let func_name = format!("{}_{}", miname, cmd.fname);
+    let command_name = format!(
+        "{}:{}",
+        miname.to_string().replace('_', "-"),
+        cmd.fname.to_string().replace('_', "-")
+    );
+    let description = cmd.desc.clone().unwrap_or_default();
+    let action_body = format!(
+        r###"
+const {} = async ({}) => {{
+  const {{client, account}} = readConfig(program);
+{}
+  const payload = {};
+  await sendPayloadTx(client, account, payload);
+}}
+
+program
+  .command("{}")
+  .description("{}")
+{}
+  .action({});
+"###,
+        func_name,
+        param_decl,
+        param_parsers.join("\n"),
+        payload,
+        command_name,
+        description,
+        arguments.join("\n"),
+        func_name,
+    );
+
+    Ok((action_body, package_name))
+}
+
+fn format_qualified_sname_and_import(
+    mident: &ModuleIdent,
+    name: &StructName,
+) -> (String, String) {
+    // name exists in a different package, use fully qualified name
+    let package_name = format_address(mident.value.address);
+    (
+        format!(
+            "{}.{}.{}",
+            capitalize(&package_name),
+            capitalize(&mident.value.module),
+            rename(name)
+        ),
+        package_name,
+    )
+}
+
+/// Generate printer commands for functions included by #[method(...)]
+fn generate_printer(
+    mi: &ModuleIdent,
+    sname: &StructName,
+    sdef: &StructDefinition,
+    fname: &Name,
+    fsig: &FunctionSignature,
+) -> Result<(String, String), Diagnostic> {
+    let mut arg_decls = vec![];
+    for tp in sdef.type_parameters.iter() {
+        arg_decls.push(format!("{}: string", tp.param.user_specified_name));
+    }
+    for (name, _) in fsig.parameters[1..].iter() {
+        arg_decls.push(format!("{}: string", name));
+    }
+
+    let (struct_qualified_name, package_name) = format_qualified_sname_and_import(mi, sname);
+
+    let type_tags_inner = sdef
+        .type_parameters
+        .iter()
+        .map(|tp| format!("parseTypeTagOrThrow({})", tp.param.user_specified_name))
+        .join(", ");
+
+    let mut arguments = vec![];
+
+    for tp in sdef.type_parameters.iter() {
+        arguments.push(format!(
+            "  .argument('<TYPE_{}>')",
+            tp.param.user_specified_name
+        ));
+    }
+    for (name, _) in fsig.parameters[1..].iter() {
+        arguments.push(format!("  .argument('<{}>')", name));
+    }
+
+    let mut param_handlers = vec![];
+    for (name, ty) in fsig.parameters[1..].iter() {
+        param_handlers.push(stype_to_ts_parser(&name.to_string(), name.0.loc, ty)?);
+    }
+
+    let cmd_func_name = format!("{}_{}", sname, fname);
+    let command_name = format!("{}:{}", sname, fname.to_string().replace('_', "-"));
+
+    let body = format!(
+        r###"
+const {} = async (owner: string, {}) => {{
+  const {{client}} = readConfig(program);
+  const repo = getProjectRepo();
+  const owner_ = new HexString(owner);
+  const value = await {}.load(repo, client, owner_, [{}])
+  print(value.{}({}));
+}}
+
+program
+  .command("{}")
+  .argument("<ADDRESS:owner>")
+{}
+  .action({})
+"###,
+        cmd_func_name,
+        arg_decls.join(", "),
+        struct_qualified_name,
+        type_tags_inner,
+        fname,
+        param_handlers.join(", "),
+        command_name,
+        arguments.join("\n"),
+        cmd_func_name,
+    );
+
+    Ok((body, package_name))
+}
+
+/// Generate query commands for functions marked with #[query]
+fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Diagnostic> {
+    let mut arg_decls = vec![];
+    for tp in query.func.signature.type_parameters.iter() {
+        arg_decls.push(format!("{}: string", tp.user_specified_name));
+    }
+    let params_no_signer = query
+        .func
+        .signature
+        .parameters
+        .iter()
+        .filter(|(_, t)| !is_type_signer(t));
+    for (name, _) in params_no_signer.clone() {
+        arg_decls.push(format!("{}: string", name));
+    }
+
+    let (query_func_name, package_name) =
+        format_qualified_fname_and_import(&query.mi, &query.fname);
+
+    let type_tags_inner = query
+        .func
+        .signature
+        .type_parameters
+        .iter()
+        .map(|tp| format!("parseTypeTagOrThrow({})", tp.user_specified_name))
+        .join(", ");
+
+    let mut arguments = vec![];
+
+    for tp in query.func.signature.type_parameters.iter() {
+        arguments.push(format!("  .argument('<TYPE_{}>')", tp.user_specified_name));
+    }
+    for (name, _) in params_no_signer.clone() {
+        arguments.push(format!("  .argument('<{}>')", name));
+    }
+
+    let mut param_handlers = vec![];
+    for (name, ty) in params_no_signer {
+        param_handlers.push(stype_to_ts_parser(&name.to_string(), name.0.loc, ty)?);
+    }
+
+    let cmd_func_name = format!("{}_{}", query.mi.value.module, query.fname);
+    let command_name = format!(
+        "{}:query-{}",
+        query.mi.value.module.to_string().replace('_', "-"),
+        query.fname.to_string().replace('_', "-")
+    );
+
+    let body = format!(
+        r###"
+const {} = async ({}) => {{
+  const {{client, account}} = readConfig(program);
+  const repo = getProjectRepo();
+  const value = await {}(client, getSimulationKeys(account), repo, {}{}[{}])
+  print(value);
+}}
+
+program
+  .command("{}")
+{}
+  .action({})
+"###,
+        cmd_func_name,
+        arg_decls.join(", "),
+        query_func_name,
+        param_handlers.join(", "),
+        if param_handlers.is_empty() { "" } else { ", " },
+        type_tags_inner,
+        command_name,
+        arguments.join("\n"),
+        cmd_func_name,
+    );
+
+    Ok((body, package_name))
+}
+
+fn generate_iter_table_printer(
+    mi: &ModuleIdent,
+    sname: &StructName,
+    sdef: &StructDefinition,
+    field_name: &Name,
+) -> (String, String) {
+    let action_name = format!("show_entries_{}_{}", sname, field_name);
+
+    let type_param_decls = sdef
+        .type_parameters
+        .iter()
+        .map(|tparam| format!("{}: string", tparam.param.user_specified_name))
+        .join(", ");
+
+    let (struct_qualified_name, package_name) = format_qualified_sname_and_import(mi, sname);
+
+    let type_tags_inner = sdef
+        .type_parameters
+        .iter()
+        .map(|tp| format!("parseTypeTagOrThrow({})", tp.param.user_specified_name))
+        .join(", ");
+
+    let arguments = sdef
+        .type_parameters
+        .iter()
+        .map(|tp| (format!("  .argument('<TYPE_{}>')", tp.param.user_specified_name)))
+        .join("\n");
+
+    let command_name = action_name.replace('_', "-");
+
+    let body = format!(
+        r###"
+const {} = async (owner: string{}) => {{
+  const {{client}} = readConfig(program);
+  const repo = getProjectRepo();
+  const owner_ = new HexString(owner);
+  const value = await {}.load(repo, client, owner_, [{}])
+  const entries = await value.getIterTableEntries_{}(client, repo);
+  for (const entry of entries) {{
+    console.log();
+    console.log(`Entry:`);
+    print(entry[0]);
+    print(entry[1]);
+  }}
+}}
+
+program
+  .command("{}")
+  .argument("<ADDRESS:owner>"){}
+  .action({})
+"###,
+        action_name,
+        if !type_param_decls.is_empty() {
+            format!(", {}", type_param_decls)
+        } else {
+            "".to_string()
+        },
+        struct_qualified_name,
+        type_tags_inner,
+        field_name,
+        command_name,
+        if !arguments.is_empty() {
+            format!("\n{}", arguments)
+        } else {
+            "".to_ascii_lowercase()
+        },
+        action_name,
+    );
+    (body, package_name)
+}
+

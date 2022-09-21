@@ -1,4 +1,4 @@
-pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (String, String) {
+pub fn generate(package_name: String, cli: bool, ui: bool) -> (String, String) {
     let ui_dependencies = r###"
     "react": "^18.1.0",
     "react-dom": "^18.2.0",

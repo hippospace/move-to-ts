@@ -1,17 +1,11 @@
-mod shared;
-pub mod tsgen_writer;
 pub mod utils;
 mod ast_ts_printer;
 mod generate;
 mod types;
-mod err;
-mod utils;
+pub mod err;
 mod context;
 
-use crate::cli::generate_cli;
-use crate::gen_ui::{gen_public_html, generate_ui};
-use crate::shared::{format_address, format_address_hex, is_same_package};
-use crate::utils::{generate_topmost_index};
+use crate::cli::generate;
 use clap::Parser;
 use move_command_line_common::address::NumericalAddress;
 use move_command_line_common::parser::NumberFormat;
@@ -20,21 +14,19 @@ use move_compiler::shared::PackagePaths;
 use move_compiler::*;
 use move_package::compilation::package_layout::CompiledPackageLayout;
 use move_package::source_package::layout::SourcePackageLayout;
-use shared::{Context, MoveToTsOptions};
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::process;
 use std::rc::Rc;
+use move_compiler::hlir::ast::Program;
+use crate::context::Context;
+use crate::generate::{ast_tests, cli, html, index, jest_config, module, package, topmost_index, ts_config, ui};
 
-fn write_file(root_path: &Path, pair: (String, String)) {
-    let (filename, content) = pair;
-    let path_to_save = root_path.join(filename);
-    let parent = path_to_save.parent().unwrap();
-    std::fs::create_dir_all(&parent).expect("Failed to create directory");
-    std::fs::write(path_to_save, content).expect("Failed to write file to output");
-}
+use crate::types::MoveToTsOptions;
+use crate::utils::utils::{format_address, format_address_hex, is_same_package, write_file};
 
-fn build(path: &Path, config: &MoveToTsOptions) {
+
+fn get_context(path: &Path,config: &MoveToTsOptions)-> Context{
     let build_config = move_package::BuildConfig::default();
     let resolution_graph = build_config
         .resolution_graph_for_package(path)
@@ -121,20 +113,6 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     let (_, hlir_program) = hlir_compiler.into_ast();
     let hlir_program = Rc::new(hlir_program);
 
-    // run the full pipeline to check errors/warnings
-    // move package doesn't provide a way to save intermediate program ast, so rerunning the
-    // entire pipeline to check all errors. We need to make a PR upstream to avoid doing repeat
-    // work here.
-
-    // commented out for faster testing >.<
-    /*
-    let compiler = Compiler::from_package_paths(source_package_paths, vec![]);
-    let (_, full_res) = compiler
-        .run::<{ move_compiler::PASS_COMPILATION }>()
-        .expect("Compilation failed");
-    unwrap_or_report_diagnostics(&files, full_res);
-     */
-
     // 2 & 3
     let build_root_path = if config.output_path.clone().into_os_string().is_empty() {
         project_root
@@ -143,8 +121,15 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     } else {
         config.output_path.clone()
     };
-    let mut ctx = Context::new(config, hlir_program.clone());
-    for (mident, mdef) in hlir_program.modules.key_cloned_iter() {
+
+    Context::new(config, hlir_program.clone(), build_root_path)
+}
+
+fn build(path: &Path, config: &MoveToTsOptions) {
+
+    let mut ctx = get_context(path, config);
+
+    for (mident, mdef) in ctx.program.modules.key_cloned_iter() {
         // skip problematic modules under aptos_framework::aggregator*
         let mod_name = mident.value.module.to_string();
         if format_address_hex(mident.value.address) == "0x1" && mod_name.contains("secp256k1") {
@@ -152,60 +137,56 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         }
 
         // 2
-        let result = ast_to_ts::translate_module(mident, mdef, &mut ctx);
+        let result = module::generate(mident, mdef, &mut ctx);
 
         let (filename, content) = unwrap_or_report_diagnostics(&files, result);
 
         // 3
-        write_file(&build_root_path.join("src"), (filename, content));
+        ctx.write_file("src", (filename, content));
 
         // 4 tests
         let test_matches = config.test_address == "all"
             || format_address(mident.value.address) == config.test_address;
         if test_matches && !ctx.tests.is_empty() {
-            let test_res = ast_tests::generate_tests(&mut ctx);
+            let test_res = ast_tests::generate(&mut ctx);
             let (filename, content) = unwrap_or_report_diagnostics(&files, test_res);
-            write_file(&build_root_path.join("src/tests"), (filename, content));
+            ctx.write_file("src/tests", (filename, content));
         }
     }
 
     // 5
     if config.cli {
-        let (filename, content) = unwrap_or_report_diagnostics(&files, generate_cli(&ctx));
-        write_file(&build_root_path.join("src"), (filename, content));
+        let (filename, content) = unwrap_or_report_diagnostics(&files, cli::generate(&ctx));
+        ctx.write_file("src", (filename, content));
     }
 
     if config.ui {
-        let files = unwrap_or_report_diagnostics(&files, generate_ui(&mut ctx));
+        let files = unwrap_or_report_diagnostics(&files, ui::generate(&mut ctx));
         for (filename, content) in files.iter() {
-            write_file(
-                &build_root_path.join("src"),
-                (filename.clone(), content.clone()),
-            );
+            ctx.write_file("src", (filename.clone(), content.clone()));
         }
 
-        let (filename, content) = gen_public_html();
-        write_file(&build_root_path.join("public"), (filename, content));
+        let (filename, content) = html::gen_public_html();
+        ctx.write_file("public", (filename, content));
     }
 
     // 6
     if !config.package_json_name.is_empty() {
         // package.json
         let (filename, content) =
-            utils::generate_package_json(config.package_json_name.clone(), config.cli, config.ui);
-        write_file(&build_root_path, (filename, content));
+            package::generate(config.package_json_name.clone(), config.cli, config.ui);
+        ctx.write_file("", (filename, content));
 
         // tsconfig.json
-        let (filename, content) = utils::generate_ts_config();
-        write_file(&build_root_path, (filename, content));
+        let (filename, content) = ts_config::generate();
+        ctx.write_file("", (filename, content));
 
         // jest.config.js
         if !config.test_address.is_empty() {
-            let (filename, content) = utils::generate_jest_config();
-            write_file(&build_root_path, (filename, content));
+            let (filename, content) = jest_config::generate();
+            ctx.write_file("", (filename, content));
         }
     }
-
     // 7
     for (package_name, address) in ctx.visited_packages.iter() {
         let modules = ctx
@@ -214,19 +195,18 @@ fn build(path: &Path, config: &MoveToTsOptions) {
             .filter(|mi| is_same_package(mi.value.address, *address))
             .collect::<Vec<_>>();
 
-        let (filename, content) = generate_index(package_name, &modules);
-        write_file(&build_root_path.join("src"), (filename, content));
+        let (filename, content) = index::generate_index(package_name, &modules);
+        ctx.write_file("src", (filename, content));
     }
-
     // cannot generat topmost index.ts when generating a React playground
     if !config.ui {
         let package_names = ctx.visited_packages.keys().collect::<Vec<_>>();
-        write_file(
-            &build_root_path.join("src"),
-            generate_topmost_index(&package_names),
-        )
+        context.write_file("src", topmost_index::generate(&package_names))
     }
+
 }
+
+
 
 fn main() {
     let args = MoveToTsOptions::parse();

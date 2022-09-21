@@ -1,8 +1,5 @@
-use crate::ast_exp::*;
-use crate::ast_tests::check_test;
+use crate::ast_ts_printer::ast_exp::*;
 use crate::shared::*;
-use crate::tsgen_writer::TsgenWriter;
-use crate::utils::{capitalize, get_iterable_table_helper_decl, get_table_helper_decl, rename};
 use itertools::Itertools;
 use move_compiler::parser::ast::Field;
 use move_compiler::shared::Name;
@@ -15,75 +12,13 @@ use move_compiler::{
 };
 use move_ir_types::location::Loc;
 use std::collections::BTreeSet;
-
-pub fn translate_module(
-    mident: ModuleIdent,
-    mdef: &ModuleDefinition,
-    c: &mut Context,
-) -> Result<(String, String), Diagnostics> {
-    let filename = format!(
-        "{}/{}.ts",
-        format_address(mident.value.address),
-        mident.value.module
-    );
-    c.reset_for_module(mident);
-    let content = to_ts_string(&(mident, mdef), c);
-    match content {
-        Err(diag) => {
-            let mut diags = Diagnostics::new();
-            diags.add(diag);
-            Err(diags)
-        }
-        Ok(res) => Ok((filename, res)),
-    }
-}
-
-pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Diagnostic> {
-    let mut writer = TsgenWriter::new();
-    v.write_ts(&mut writer, c)?;
-    let mut lines = vec![
-        "import * as $ from \"@manahippo/move-to-ts\";".to_string(),
-        "import {AptosDataCache, AptosParserRepo, DummyCache, AptosLocalCache} from \"@manahippo/move-to-ts\";".to_string(),
-        "import {U8, U64, U128} from \"@manahippo/move-to-ts\";".to_string(),
-        "import {u8, u64, u128} from \"@manahippo/move-to-ts\";".to_string(),
-        "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
-        "import {AtomicTypeTag, StructTag, TypeTag, VectorTag, SimpleStructTag} from \"@manahippo/move-to-ts\";"
-            .to_string(),
-        "import {HexString, AptosClient, AptosAccount, TxnBuilderTypes, Types} from \"aptos\";".to_string(),
-    ];
-    for package_name in c.package_imports.iter() {
-        lines.push(format!(
-            "import * as {} from \"../{}\";",
-            capitalize(package_name),
-            package_name
-        ));
-    }
-    for module_name in c.same_package_imports.iter() {
-        lines.push(format!(
-            "import * as {} from \"./{}\";",
-            capitalize(module_name),
-            module_name
-        ));
-    }
-    lines.push(format!("{}", writer));
-    Ok(lines.join("\n"))
-}
-
-pub fn handle_special_module(
-    mi: &ModuleIdent,
-    _module: &ModuleDefinition,
-    w: &mut TsgenWriter,
-    _c: &mut Context,
-) -> WriteResult {
-    if format_address_hex(mi.value.address) == "0x1" {
-        if mi.value.module.to_string() == "table" {
-            w.writeln(get_table_helper_decl());
-        } else if mi.value.module.to_string() == "iterable_table" {
-            w.writeln(get_iterable_table_helper_decl());
-        }
-    }
-    Ok(())
-}
+use crate::ast_ts_printer::ast_exp::{base_type_to_tstype, is_empty_lvalue_list, single_type_to_tstype, type_to_tstype};
+use crate::ast_ts_printer::AstTsPrinter;
+use crate::context::Context;
+use crate::types::{TermResult, WriteResult};
+use crate::utils::tsgen_writer::TsgenWriter;
+use crate::utils::utils::{base_type_to_typetag, base_type_to_typetag_builder, extract_attribute_value_string, format_address_, format_address_hex, format_function_name, get_iterable_table_helper_decl, get_table_helper_decl, is_same_module, is_typename_string, quote, rename};
+use crate::derr;
 
 impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
     const CTOR_NAME: &'static str = "ModuleDefinition";
@@ -150,7 +85,21 @@ impl AstTsPrinter for (ModuleIdent, &ModuleDefinition) {
         Ok(())
     }
 }
-
+pub fn handle_special_module(
+    mi: &ModuleIdent,
+    _module: &ModuleDefinition,
+    w: &mut TsgenWriter,
+    _c: &mut Context,
+) -> WriteResult {
+    if format_address_hex(mi.value.address) == "0x1" {
+        if mi.value.module.to_string() == "table" {
+            w.writeln(get_table_helper_decl());
+        } else if mi.value.module.to_string() == "iterable_table" {
+            w.writeln(get_iterable_table_helper_decl());
+        }
+    }
+    Ok(())
+}
 pub fn write_load_parsers(
     mident: &ModuleIdent,
     module: &ModuleDefinition,
@@ -1187,6 +1136,54 @@ pub fn handle_function_directives(
     Ok(())
 }
 
+pub fn check_test(
+    name: &FunctionName,
+    func: &Function,
+    c: &mut Context,
+) -> Result<bool, Diagnostic> {
+    let test_attr = func
+        .attributes
+        .key_cloned_iter()
+        .filter(|(k, _)| {
+            let string_name = k.to_string();
+            string_name == "test"
+        })
+        .collect::<Vec<_>>();
+
+    let expect_failure_attr = func
+        .attributes
+        .key_cloned_iter()
+        .find(|(k, _)| {
+            let string_name = k.to_string();
+            string_name == "expected_failure"
+        })
+        .map(|(_k, v)| v.clone());
+
+    if !test_attr.is_empty() {
+        if test_attr.len() != 1 {
+            return derr!((
+                test_attr[1].1.loc,
+                "This unit test has more than one #test attribute"
+            ));
+        }
+
+        c.tests.push((
+            *name,
+            func.signature.clone(),
+            test_attr[0].1.clone(),
+            expect_failure_attr,
+        ));
+
+        return Ok(true);
+    }
+
+    let test_only = func.attributes.key_cloned_iter().any(|(k, _)| {
+        let string_name = k.to_string();
+        string_name == "test_only"
+    });
+
+    Ok(!test_attr.is_empty() || test_only)
+}
 impl AstTsPrinter for (FunctionName, &Function) {
     const CTOR_NAME: &'static str = "FunctionDef";
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {

@@ -13,7 +13,7 @@ impl DiagnosticCode for NotTranslatable {
         (1, "Not Translatable")
     }
 }
-
+#[macro_export]
 macro_rules! derr {
     ($primary: expr $(,)?) => {{
         Err(Diagnostic::new(

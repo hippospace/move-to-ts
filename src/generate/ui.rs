@@ -1,7 +1,4 @@
-use crate::ast_to_ts::is_type_signer;
-use crate::cli::{format_qualified_payload_fname_and_import, stype_to_ts_parser};
 use crate::shared::*;
-use crate::tsgen_writer::TsgenWriter;
 use itertools::Itertools;
 use move_compiler::diagnostics::{Diagnostic, Diagnostics};
 use move_compiler::hlir::ast::{BaseType, BaseType_, SingleType, SingleType_, TypeName_};
@@ -9,229 +6,13 @@ use move_compiler::naming::ast::{BuiltinTypeName_, TParam};
 use move_compiler::parser::ast::Var;
 use move_ir_types::location::Loc;
 use std::collections::{BTreeMap, BTreeSet};
+use crate::context::Context;
+use crate::types::{CmdParams, TermResult, WriteResult};
+use crate::utils::tsgen_writer::TsgenWriter;
+use crate::utils::utils::{format_address, format_address_hex, format_qualified_payload_fname_and_import, quote, stype_to_ts_parser};
+use crate::derr;
 
-pub fn base_type_to_typetag_builder(base_ty: &BaseType, tparams: &Vec<TParam>) -> TermResult {
-    match &base_ty.value {
-        BaseType_::Param(tp) => {
-            let idx = tparams
-                .iter()
-                .find_position(|tp2| tp2.user_specified_name == tp.user_specified_name)
-                .unwrap()
-                .0;
-            Ok(format!("new TypeParamIdx({})", idx))
-        }
-        BaseType_::Apply(_, typename, ss) => match &typename.value {
-            TypeName_::Builtin(builtin) => match &builtin.value {
-                BuiltinTypeName_::Vector => {
-                    assert!(ss.len() == 1);
-                    let inner_builder = base_type_to_typetag_builder(&ss[0], tparams)?;
-                    Ok(format!("new VectorTag({})", inner_builder))
-                }
-                BuiltinTypeName_::Bool => Ok("AtomicTypeTag.Bool".to_string()),
-                BuiltinTypeName_::U8 => Ok("AtomicTypeTag.U8".to_string()),
-                BuiltinTypeName_::U64 => Ok("AtomicTypeTag.U64".to_string()),
-                BuiltinTypeName_::U128 => Ok("AtomicTypeTag.U128".to_string()),
-                BuiltinTypeName_::Address => Ok("AtomicTypeTag.Address".to_string()),
-                BuiltinTypeName_::Signer => Ok("AtomicTypeTag.Signer".to_string()),
-            },
-            TypeName_::ModuleType(mident, sname) => {
-                let address = format_address_hex(mident.value.address);
-                let modname = mident.value.module;
-                let mut tparam_parts = vec![];
-                for base in ss.iter() {
-                    tparam_parts.push(base_type_to_typetag_builder(base, tparams)?);
-                }
-                let tparams = format!("[{}]", tparam_parts.join(", "));
-                Ok(format!(
-                    "new StructTag(new HexString({}), {}, {}, {})",
-                    quote(&address),
-                    quote(&modname),
-                    quote(&sname),
-                    tparams
-                ))
-            }
-        },
-        _ => derr!((base_ty.loc, "Received Unresolved Type")),
-    }
-}
-
-pub fn write_cmd_arg(
-    var: &Var,
-    stype: &SingleType,
-    tparams: &Vec<TParam>,
-    w: &mut TsgenWriter,
-) -> WriteResult {
-    w.writeln("{");
-    w.increase_indent();
-
-    let type_tag_builder = match &stype.value {
-        SingleType_::Ref(_, _) => unreachable!(),
-        SingleType_::Base(base) => base_type_to_typetag_builder(base, tparams)?,
-    };
-    w.writeln(format!("name: {},", quote(var)));
-    w.writeln(format!("typeTag: {},", type_tag_builder));
-
-    w.decrease_indent();
-    w.writeln("},");
-
-    Ok(())
-}
-
-pub fn write_command(cmd: &CmdParams, w: &mut TsgenWriter) -> TermResult {
-    w.writeln("{");
-    w.increase_indent();
-
-    w.writeln(format!("module: {},", quote(&cmd.mi.value.module)));
-    w.writeln(format!("name: {},", quote(&cmd.fname)));
-    w.writeln(format!(
-        "typeArgs: [{}],",
-        cmd.func
-            .signature
-            .type_parameters
-            .iter()
-            .map(|tp| quote(&tp.user_specified_name.to_string()))
-            .join(", ")
-    ));
-    w.writeln("args: [");
-    w.increase_indent();
-
-    let param_no_signers = cmd
-        .func
-        .signature
-        .parameters
-        .iter()
-        .filter(|(_n, ty)| !is_type_signer(ty))
-        .collect::<Vec<_>>();
-    for (var, stype) in param_no_signers.iter() {
-        write_cmd_arg(var, stype, &cmd.func.signature.type_parameters, w)?;
-    }
-    w.decrease_indent();
-    w.writeln("],");
-    w.writeln("types: \"cmd\",");
-
-    let type_param_names = cmd
-        .func
-        .signature
-        .type_parameters
-        .iter()
-        .map(|tparam| tparam.user_specified_name.to_string())
-        .collect::<Vec<_>>();
-    let param_names_no_signer = param_no_signers
-        .iter()
-        .map(|(name, _)| name.to_string())
-        .collect::<Vec<_>>();
-    let mut all_params = vec![];
-    all_params.extend(type_param_names.clone());
-    all_params.extend(param_names_no_signer.clone());
-    let param_decl = all_params
-        .iter()
-        .map(|pname| format!("{}_: string", pname))
-        .join(", ");
-    w.writeln(format!(
-        "invoker: async (client: AptosClient, account: AptosAccount, {}) => {{",
-        param_decl
-    ));
-    w.increase_indent();
-    for tparam in cmd.func.signature.type_parameters.iter() {
-        let tname = tparam.user_specified_name;
-        w.writeln(format!(
-            "const {} = parseTypeTagOrThrow({}_);",
-            tname, tname
-        ));
-    }
-    for (pname, ptype) in param_no_signers {
-        w.writeln(format!(
-            "const {} = {};",
-            pname,
-            stype_to_ts_parser(&format!("{}_", pname), pname.0.loc, ptype)?
-        ));
-    }
-    let (payload_builder, package_name) =
-        format_qualified_payload_fname_and_import(&cmd.mi, &cmd.fname);
-    w.writeln(format!(
-        "const payload = {}({}{});",
-        payload_builder,
-        param_names_no_signer.join(", "),
-        if cmd.func.signature.type_parameters.is_empty() {
-            "".to_string()
-        } else {
-            format!(
-                "{}[{}]",
-                if !param_names_no_signer.is_empty() {
-                    ", "
-                } else {
-                    ""
-                },
-                type_param_names.join(", ")
-            )
-        }
-    ));
-    w.writeln("await sendPayloadTx(client, account, payload);");
-
-    w.decrease_indent();
-    w.writeln("}");
-
-    w.decrease_indent();
-    w.writeln("},");
-
-    Ok(package_name)
-}
-
-pub fn write_module(
-    package_name: &String,
-    module_name: &String,
-    cmds: &[&CmdParams],
-    all_imported_packages: &mut BTreeSet<String>,
-    w: &mut TsgenWriter,
-) -> WriteResult {
-    w.writeln("{");
-    w.increase_indent();
-    w.writeln(format!("name: {},", quote(module_name)));
-    w.writeln(format!("package: {},", quote(package_name)));
-
-    w.writeln("commands: [");
-    w.increase_indent();
-
-    for cmd in cmds.iter() {
-        all_imported_packages.insert(write_command(cmd, w)?);
-    }
-
-    w.decrease_indent();
-    w.writeln("],");
-
-    w.decrease_indent();
-    w.writeln("},");
-
-    Ok(())
-}
-
-pub fn write_package(
-    name: &String,
-    module_cmds: &[(&String, &Vec<&CmdParams>)],
-    all_imported_packages: &mut BTreeSet<String>,
-    w: &mut TsgenWriter,
-) -> WriteResult {
-    w.writeln("{");
-    w.increase_indent();
-    w.writeln(format!("name: {},", quote(name)));
-
-    w.writeln("modules: [");
-    w.increase_indent();
-    for (module, cmds) in module_cmds.iter() {
-        write_module(name, module, cmds, all_imported_packages, w)?;
-    }
-    w.decrease_indent();
-    w.writeln("],");
-
-    w.writeln("shows: [");
-    w.writeln("],");
-    w.decrease_indent();
-    w.writeln("},");
-
-    Ok(())
-}
-
-pub fn generate_ui(ctx: &mut Context) -> Result<Vec<(String, String)>, Diagnostics> {
+pub fn generate(ctx: &mut Context) -> Result<Vec<(String, String)>, Diagnostics> {
     let index_tsx_1 = r###"
 import React, { useState } from 'react';
 import { Input } from 'semantic-ui-react';
@@ -553,21 +334,224 @@ code {
     ])
 }
 
-pub fn gen_public_html() -> (String, String) {
-    let index_html = r###"
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <title>Move-to-ts Playground</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-  </body>
-</html>
-"###;
-    ("index.html".to_string(), index_html.to_string())
+fn base_type_to_typetag_builder(base_ty: &BaseType, tparams: &Vec<TParam>) -> TermResult {
+    match &base_ty.value {
+        BaseType_::Param(tp) => {
+            let idx = tparams
+                .iter()
+                .find_position(|tp2| tp2.user_specified_name == tp.user_specified_name)
+                .unwrap()
+                .0;
+            Ok(format!("new TypeParamIdx({})", idx))
+        }
+        BaseType_::Apply(_, typename, ss) => match &typename.value {
+            TypeName_::Builtin(builtin) => match &builtin.value {
+                BuiltinTypeName_::Vector => {
+                    assert!(ss.len() == 1);
+                    let inner_builder = base_type_to_typetag_builder(&ss[0], tparams)?;
+                    Ok(format!("new VectorTag({})", inner_builder))
+                }
+                BuiltinTypeName_::Bool => Ok("AtomicTypeTag.Bool".to_string()),
+                BuiltinTypeName_::U8 => Ok("AtomicTypeTag.U8".to_string()),
+                BuiltinTypeName_::U64 => Ok("AtomicTypeTag.U64".to_string()),
+                BuiltinTypeName_::U128 => Ok("AtomicTypeTag.U128".to_string()),
+                BuiltinTypeName_::Address => Ok("AtomicTypeTag.Address".to_string()),
+                BuiltinTypeName_::Signer => Ok("AtomicTypeTag.Signer".to_string()),
+            },
+            TypeName_::ModuleType(mident, sname) => {
+                let address = format_address_hex(mident.value.address);
+                let modname = mident.value.module;
+                let mut tparam_parts = vec![];
+                for base in ss.iter() {
+                    tparam_parts.push(base_type_to_typetag_builder(base, tparams)?);
+                }
+                let tparams = format!("[{}]", tparam_parts.join(", "));
+                Ok(format!(
+                    "new StructTag(new HexString({}), {}, {}, {})",
+                    quote(&address),
+                    quote(&modname),
+                    quote(&sname),
+                    tparams
+                ))
+            }
+        },
+        _ => derr!((base_ty.loc, "Received Unresolved Type")),
+    }
 }
+
+fn write_cmd_arg(
+    var: &Var,
+    stype: &SingleType,
+    tparams: &Vec<TParam>,
+    w: &mut TsgenWriter,
+) -> WriteResult {
+    w.writeln("{");
+    w.increase_indent();
+
+    let type_tag_builder = match &stype.value {
+        SingleType_::Ref(_, _) => unreachable!(),
+        SingleType_::Base(base) => base_type_to_typetag_builder(base, tparams)?,
+    };
+    w.writeln(format!("name: {},", quote(var)));
+    w.writeln(format!("typeTag: {},", type_tag_builder));
+
+    w.decrease_indent();
+    w.writeln("},");
+
+    Ok(())
+}
+
+fn write_command(cmd: &CmdParams, w: &mut TsgenWriter) -> TermResult {
+    w.writeln("{");
+    w.increase_indent();
+
+    w.writeln(format!("module: {},", quote(&cmd.mi.value.module)));
+    w.writeln(format!("name: {},", quote(&cmd.fname)));
+    w.writeln(format!(
+        "typeArgs: [{}],",
+        cmd.func
+            .signature
+            .type_parameters
+            .iter()
+            .map(|tp| quote(&tp.user_specified_name.to_string()))
+            .join(", ")
+    ));
+    w.writeln("args: [");
+    w.increase_indent();
+
+    let param_no_signers = cmd
+        .func
+        .signature
+        .parameters
+        .iter()
+        .filter(|(_n, ty)| !is_type_signer(ty))
+        .collect::<Vec<_>>();
+    for (var, stype) in param_no_signers.iter() {
+        write_cmd_arg(var, stype, &cmd.func.signature.type_parameters, w)?;
+    }
+    w.decrease_indent();
+    w.writeln("],");
+    w.writeln("types: \"cmd\",");
+
+    let type_param_names = cmd
+        .func
+        .signature
+        .type_parameters
+        .iter()
+        .map(|tparam| tparam.user_specified_name.to_string())
+        .collect::<Vec<_>>();
+    let param_names_no_signer = param_no_signers
+        .iter()
+        .map(|(name, _)| name.to_string())
+        .collect::<Vec<_>>();
+    let mut all_params = vec![];
+    all_params.extend(type_param_names.clone());
+    all_params.extend(param_names_no_signer.clone());
+    let param_decl = all_params
+        .iter()
+        .map(|pname| format!("{}_: string", pname))
+        .join(", ");
+    w.writeln(format!(
+        "invoker: async (client: AptosClient, account: AptosAccount, {}) => {{",
+        param_decl
+    ));
+    w.increase_indent();
+    for tparam in cmd.func.signature.type_parameters.iter() {
+        let tname = tparam.user_specified_name;
+        w.writeln(format!(
+            "const {} = parseTypeTagOrThrow({}_);",
+            tname, tname
+        ));
+    }
+    for (pname, ptype) in param_no_signers {
+        w.writeln(format!(
+            "const {} = {};",
+            pname,
+            stype_to_ts_parser(&format!("{}_", pname), pname.0.loc, ptype)?
+        ));
+    }
+    let (payload_builder, package_name) =
+        format_qualified_payload_fname_and_import(&cmd.mi, &cmd.fname);
+    w.writeln(format!(
+        "const payload = {}({}{});",
+        payload_builder,
+        param_names_no_signer.join(", "),
+        if cmd.func.signature.type_parameters.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "{}[{}]",
+                if !param_names_no_signer.is_empty() {
+                    ", "
+                } else {
+                    ""
+                },
+                type_param_names.join(", ")
+            )
+        }
+    ));
+    w.writeln("await sendPayloadTx(client, account, payload);");
+
+    w.decrease_indent();
+    w.writeln("}");
+
+    w.decrease_indent();
+    w.writeln("},");
+
+    Ok(package_name)
+}
+
+fn write_module(
+    package_name: &String,
+    module_name: &String,
+    cmds: &[&CmdParams],
+    all_imported_packages: &mut BTreeSet<String>,
+    w: &mut TsgenWriter,
+) -> WriteResult {
+    w.writeln("{");
+    w.increase_indent();
+    w.writeln(format!("name: {},", quote(module_name)));
+    w.writeln(format!("package: {},", quote(package_name)));
+
+    w.writeln("commands: [");
+    w.increase_indent();
+
+    for cmd in cmds.iter() {
+        all_imported_packages.insert(write_command(cmd, w)?);
+    }
+
+    w.decrease_indent();
+    w.writeln("],");
+
+    w.decrease_indent();
+    w.writeln("},");
+
+    Ok(())
+}
+
+fn write_package(
+    name: &String,
+    module_cmds: &[(&String, &Vec<&CmdParams>)],
+    all_imported_packages: &mut BTreeSet<String>,
+    w: &mut TsgenWriter,
+) -> WriteResult {
+    w.writeln("{");
+    w.increase_indent();
+    w.writeln(format!("name: {},", quote(name)));
+
+    w.writeln("modules: [");
+    w.increase_indent();
+    for (module, cmds) in module_cmds.iter() {
+        write_module(name, module, cmds, all_imported_packages, w)?;
+    }
+    w.decrease_indent();
+    w.writeln("],");
+
+    w.writeln("shows: [");
+    w.writeln("],");
+    w.decrease_indent();
+    w.writeln("},");
+
+    Ok(())
+}
+

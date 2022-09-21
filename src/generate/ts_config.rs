@@ -1,4 +1,4 @@
-pub fn generate_ts_config() -> (String, String) {
+pub fn generate() -> (String, String) {
     let content = r###"
 {
   "compilerOptions": {

@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use move_compiler::expansion::ast::ModuleIdent;
-use crate::utils::capitalize;
+use crate::utils::utils::capitalize;
 
 pub fn generate_index(package_name: &String, modules: &[&ModuleIdent]) -> (String, String) {
     let filename = format!("{}/index.ts", package_name);

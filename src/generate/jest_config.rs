@@ -1,4 +1,4 @@
-pub fn generate_jest_config() -> (String, String) {
+pub fn generate() -> (String, String) {
     let content = r###"
 module.exports = {
   preset: "ts-jest",
