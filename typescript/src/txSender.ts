@@ -73,7 +73,7 @@ export async function sendPayloadTx(
   payload:
     | TxnBuilderTypes.TransactionPayload
     | Types.TransactionPayload_EntryFunctionPayload,
-  max_gas = 1000
+  max_gas = 1000000
 ) {
   // send BCS transaction
   if (payload instanceof TxnBuilderTypes.TransactionPayloadEntryFunction) {
@@ -82,7 +82,7 @@ export async function sendPayloadTx(
     const rawTxn = await client.generateRawTransaction(
       account.address(),
       payload,
-      { maxGasAmount: BigInt(max_gas) }
+      { maxGasAmount: BigInt(max_gas)}
     );
     // Signed BCS representation
     const bcsTxn = AptosClient.generateBCSTransaction(account, rawTxn);

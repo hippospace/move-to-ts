@@ -375,6 +375,13 @@ export function aptos_framework_account_create_address(
   return HexString.fromUint8Array(bytesArray);
 }
 
+export function aptos_framework_genesis_create_signer(
+    addr: HexString,
+    $c: AptosDataCache
+): HexString {
+  return aptos_framework_account_create_signer(addr, $c)
+}
+
 export function aptos_framework_account_create_signer(
   addr: HexString,
   $c: AptosDataCache
