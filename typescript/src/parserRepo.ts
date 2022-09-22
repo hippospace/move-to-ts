@@ -330,7 +330,7 @@ export class AptosParserRepo {
     address: HexString,
     containerTypeTag: TypeTag,
     field: string,
-    query?: { start?: BigInt; limit?: number }
+    query?: { start?: bigint|number; limit?: number }
   ) {
     if (!(containerTypeTag instanceof StructTag)) {
       throw new Error(
