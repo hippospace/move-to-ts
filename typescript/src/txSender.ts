@@ -73,7 +73,7 @@ export async function sendPayloadTx(
   payload:
     | TxnBuilderTypes.TransactionPayload
     | Types.TransactionPayload_EntryFunctionPayload,
-  max_gas = 100000
+  max_gas = 1000
 ) {
   // send BCS transaction
   if (payload instanceof TxnBuilderTypes.TransactionPayloadEntryFunction) {
@@ -139,7 +139,7 @@ export async function simulatePayloadTx(
   payload:
     | TxnBuilderTypes.TransactionPayload
     | Types.TransactionPayload_EntryFunctionPayload,
-  max_gas = 100000
+  max_gas = 1000
 ) {
   if (payload instanceof TxnBuilderTypes.TransactionPayload) {
     const rawTxn = await client.generateRawTransaction(keys.address, payload, {
