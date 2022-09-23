@@ -77,7 +77,6 @@ export async function sendPayloadTx(
 ) {
   // send BCS transaction
   if (payload instanceof TxnBuilderTypes.TransactionPayloadEntryFunction) {
-    console.log("Building tx...");
     // RawTransaction
     const rawTxn = await client.generateRawTransaction(
       account.address(),
@@ -86,37 +85,27 @@ export async function sendPayloadTx(
     );
     // Signed BCS representation
     const bcsTxn = AptosClient.generateBCSTransaction(account, rawTxn);
-    console.log("Submitting...");
     const txnResult = await client.submitSignedBCSTransaction(bcsTxn);
-    console.log("Submitted");
     await client.waitForTransaction(txnResult.hash);
-    console.log("Confirmed");
     const txDetails = (await client.getTransactionByHash(
       txnResult.hash
     )) as Types.UserTransaction;
-    console.log(txDetails);
     return txDetails;
   }
   // send JSON transaction
   else {
-    console.log("Building tx...");
     const pld = payload as Types.TransactionPayload_EntryFunctionPayload;
     // RawTransaction
     const txn = await client.generateTransaction(account.address(), pld, {
       max_gas_amount: max_gas.toString(),
     });
     // Signed json representation
-    console.log("Signing tx...");
     const signedTxn = await client.signTransaction(account, txn);
-    console.log("Submitting...");
     const txnResult = await client.submitTransaction(signedTxn);
-    console.log("Submitted");
     await client.waitForTransaction(txnResult.hash);
-    console.log("Confirmed");
     const txDetails = (await client.getTransactionByHash(
       txnResult.hash
     )) as Types.UserTransaction;
-    console.log(txDetails);
     return txDetails;
   }
 }
