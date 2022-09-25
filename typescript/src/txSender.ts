@@ -73,7 +73,8 @@ export async function sendPayloadTx(
   payload:
     | TxnBuilderTypes.TransactionPayload
     | Types.TransactionPayload_EntryFunctionPayload,
-  max_gas = 1000
+  max_gas = 1000,
+  log = false,
 ) {
   // send BCS transaction
   if (payload instanceof TxnBuilderTypes.TransactionPayloadEntryFunction) {
@@ -90,6 +91,9 @@ export async function sendPayloadTx(
     const txDetails = (await client.getTransactionByHash(
       txnResult.hash
     )) as Types.UserTransaction;
+    if (log) {
+      console.log(txDetails);
+    }
     return txDetails;
   }
   // send JSON transaction
@@ -106,6 +110,9 @@ export async function sendPayloadTx(
     const txDetails = (await client.getTransactionByHash(
       txnResult.hash
     )) as Types.UserTransaction;
+    if (log) {
+      console.log(txDetails);
+    }
     return txDetails;
   }
 }

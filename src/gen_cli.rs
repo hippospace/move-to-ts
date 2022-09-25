@@ -214,7 +214,7 @@ const {} = async ({}) => {{
   const {{client, account}} = readConfig(program);
 {}
   const payload = {};
-  await sendPayloadTx(client, account, payload);
+  await sendPayloadTx(client, account, payload, 10000, true);
 }}
 
 program

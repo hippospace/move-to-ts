@@ -89,6 +89,7 @@ pub struct MoveToTsOptions {
 use crate::utils::{capitalize, rename};
 pub(crate) use derr;
 use move_command_line_common::address::NumericalAddress;
+use move_compiler::expansion::ast::Attributes;
 
 pub struct CmdParams {
     pub mi: ModuleIdent,
@@ -567,4 +568,13 @@ pub fn is_typename_string(typename: &TypeName) -> bool {
         }
         _ => false,
     }
+}
+
+pub fn has_attribute(attributes: &Attributes, attr_name: &str) -> bool  {
+    for (name, _) in attributes.key_cloned_iter() {
+        if name.to_string().as_str() == attr_name {
+            return true;
+        }
+    }
+    false
 }

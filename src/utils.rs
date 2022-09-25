@@ -67,7 +67,7 @@ pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (Stri
   "dependencies": {{
     "aptos": "1.3.14",
     "big-integer": "^1.6.51",{}
-    "@manahippo/move-to-ts": "^0.3.4"
+    "@manahippo/move-to-ts": "^0.3.6"
   }}
 }}
 "###,
@@ -201,7 +201,7 @@ pub fn generate_index(package_name: &String, modules: &[&ModuleIdent]) -> (Strin
     let content = format!(
         r###"
 import {{ AptosClient }} from "aptos";
-import {{ AptosParserRepo, AptosLocalCache }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, AptosLocalCache, AptosSyncedCache }} from "@manahippo/move-to-ts";
 {}
 {}
 
@@ -239,7 +239,7 @@ export class App {{
     (filename, content)
 }
 
-pub fn generate_topmost_index(packages: &[&String]) -> (String, String) {
+pub fn generate_topmost_index(packages: &[&String], is_async: bool) -> (String, String) {
     let filename = "index.ts".to_string();
     let exports = packages
         .iter()
@@ -276,7 +276,7 @@ pub fn generate_topmost_index(packages: &[&String]) -> (String, String) {
     let content = format!(
         r###"
 import {{ AptosClient }} from "aptos";
-import {{ AptosParserRepo, AptosLocalCache }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, AptosLocalCache, AptosSyncedCache }} from "@manahippo/move-to-ts";
 {}
 {}
 
@@ -295,12 +295,18 @@ export class App {{
     public client: AptosClient,
   ) {{
     this.parserRepo = getProjectRepo();
-    this.cache = new AptosLocalCache();
+    this.cache = new {}({});
 {}
   }}
 }}
 "###,
-        imports, exports, loads, app_fields, app_field_inits
+        imports,
+        exports,
+        loads,
+        app_fields,
+        if is_async {"AptosSyncedCache"} else {"AptosLocalCache"},
+        if is_async {"this.parserRepo, client"} else {""},
+        app_field_inits
     );
 
     (filename, content)

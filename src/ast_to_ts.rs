@@ -215,6 +215,7 @@ pub fn write_app(
             w.writeln(format!("  $p: TypeTag[], /* <{}> */", tpnames));
         }
         w.writeln("  loadFull=true,");
+        w.writeln("  fillCache=true,");
         let tags = if sdef.type_parameters.is_empty() {
             "[] as TypeTag[]"
         } else {
@@ -227,6 +228,10 @@ pub fn write_app(
         ));
         w.writeln("  if (loadFull) {");
         w.writeln("    await val.loadFullState(this);");
+        w.writeln("  }");
+
+        w.writeln("  if (fillCache) {");
+        w.writeln("    this.cache.move_to(val.typeTag, owner, val);");
         w.writeln("  }");
 
         w.writeln("  return val;");
@@ -307,6 +312,47 @@ pub fn write_app(
                 fname, fname
             ));
         }
+    }
+
+    // functions marked with 'app'
+    for (fname, func) in module.functions.key_cloned_iter() {
+        if !has_attribute(&func.attributes, "app") {
+            continue;
+        }
+
+        w.writeln(format!("app_{}(", fname));
+        w.increase_indent();
+        // params
+        write_parameters(&func.signature, w, c, true, false)?;
+
+        let has_tags = !func.signature.type_parameters.is_empty();
+        if has_tags {
+            w.writeln("$p: TypeTag[],");
+        }
+
+        w.decrease_indent();
+        w.writeln(") {");
+
+        let param_list = func
+            .signature
+            .parameters
+            .iter()
+            .filter(|(_, t)| !is_type_signer(t))
+            .map(|(v, _)| v.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        w.increase_indent();
+
+        if has_tags {
+            w.writeln(format!("return {}_({}, this.cache, $p);",fname, param_list));
+        }
+        else {
+            w.writeln(format!("return {}_({}, this.cache);",fname, param_list));
+        }
+
+        w.decrease_indent();
+        w.writeln("}");
     }
 
     w.decrease_indent();
@@ -1139,6 +1185,27 @@ pub fn handle_function_query_directive(
     }
 }
 
+
+pub fn handle_function_app_directive(
+    fname: &FunctionName,
+    f: &Function,
+    _w: &mut TsgenWriter,
+    _c: &mut Context,
+) -> WriteResult {
+    match &f.body.value {
+        FunctionBody_::Native => {
+            derr!((
+                fname.0.loc,
+                "the query attribute can only be used on user-defined entry functions"
+            ))
+        }
+        FunctionBody_::Defined { locals: _, body: _ } => {
+            // no-op
+            Ok(())
+        }
+    }
+}
+
 pub fn handle_function_directives(
     fname: &FunctionName,
     f: &Function,
@@ -1172,6 +1239,13 @@ pub fn handle_function_directives(
                 Attribute_::Name(_) => {
                     w.new_line();
                     handle_function_query_directive(fname, f, w, c)?;
+                }
+                _ => return derr!((attr.loc, "the 'query' attribute has no parameters")),
+            },
+            "app" => match &attr.value {
+                Attribute_::Name(_) => {
+                    w.new_line();
+                    handle_function_app_directive(fname, f, w, c)?;
                 }
                 _ => return derr!((attr.loc, "the 'query' attribute has no parameters")),
             },

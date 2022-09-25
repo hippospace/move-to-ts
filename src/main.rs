@@ -222,7 +222,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
         let package_names = ctx.visited_packages.keys().collect::<Vec<_>>();
         write_file(
             &build_root_path.join("src"),
-            generate_topmost_index(&package_names),
+            generate_topmost_index(&package_names, config.asynchronous),
         )
     }
 }
