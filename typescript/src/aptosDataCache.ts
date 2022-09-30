@@ -162,14 +162,11 @@ class AccountCache {
       );
     }
   }
-  set(tag: TypeTag, resource: any) {
+  set(tag: TypeTag, resource: any, overwrite?: bool) {
     const fullname = getTypeTagFullname(tag);
-    if (this.has(tag)) {
-      throw new Error(
-        `Account ${this.address.hex()} already has resource: ${fullname}`
-      );
+    if (this.has(tag) && overwrite) {
+      this.resources.set(fullname, resource);
     }
-    this.resources.set(fullname, resource);
   }
   move_from(tag: TypeTag): any {
     const fullname = getTypeTagFullname(tag);
