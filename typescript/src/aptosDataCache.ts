@@ -26,6 +26,8 @@ export interface IBox {
 export interface AptosDataCache {
   exists(tag: TypeTag, address: HexString): boolean;
   move_to(tag: TypeTag, address: HexString, resource: any): void;
+  // set is similar to move_to, except it doesn't check if resource already exists and just forces overwrite
+  set(tag: TypeTag, address: HexString, resource: any): void;
   move_from<T>(tag: TypeTag, address: HexString): T;
   borrow_global<T>(tag: TypeTag, address: HexString): T;
   borrow_global_mut<T>(tag: TypeTag, address: HexString): T;
@@ -57,6 +59,9 @@ export class DummyCache implements AptosDataCache {
   }
   move_to(_tag: TypeTag, _address: HexString, _resource: any): void {
     throw new Error("DummyCache does not support 'move_to'");
+  }
+  set(_tag: TypeTag, _address: HexString, _resource: any): void {
+    throw new Error("DummyCache does not support 'set'");
   }
   move_from<T>(_tag: TypeTag, _address: HexString): T {
     throw new Error("DummyCache does not support 'move_from'");
@@ -162,9 +167,9 @@ class AccountCache {
       );
     }
   }
-  set(tag: TypeTag, resource: any) {
+  set(tag: TypeTag, resource: any, overwrite = false) {
     const fullname = getTypeTagFullname(tag);
-    if (this.has(tag)) {
+    if (this.has(tag) && !overwrite) {
       throw new Error(
         `Account ${this.address.hex()} already has resource: ${fullname}`
       );
@@ -204,13 +209,16 @@ export class AptosLocalCache implements AptosDataCache {
     }
     return account.has(tag);
   }
-  move_to(tag: TypeTag, address: HexString, resource: any): void {
+  move_to(tag: TypeTag, address: HexString, resource: any, overwrite = false): void {
     let account = this.accounts.get(address.hex());
     if (!account) {
       account = new AccountCache(address);
       this.accounts.set(address.hex(), account);
     }
-    account.set(tag, resource);
+    account.set(tag, resource, overwrite);
+  }
+  set(tag: TypeTag, address: HexString, resource: any): void {
+    this.move_to(tag, address, resource, true);
   }
   move_from<T>(tag: TypeTag, address: HexString): T {
     let account = this.accounts.get(address.hex());
@@ -246,7 +254,7 @@ export class AptosLocalCache implements AptosDataCache {
     _address: HexString,
     _resource: any
   ): Promise<void> {
-    return this.move_to(_tag, _address, _resource);
+    return this.move_to(_tag, _address, _resource, true);
   }
   async move_from_async<T>(_tag: TypeTag, _address: HexString): Promise<T> {
     return this.move_from(_tag, _address);

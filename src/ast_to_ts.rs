@@ -231,7 +231,7 @@ pub fn write_app(
         w.writeln("  }");
 
         w.writeln("  if (fillCache) {");
-        w.writeln("    this.cache.move_to(val.typeTag, owner, val);");
+        w.writeln("    this.cache.set(val.typeTag, owner, val);");
         w.writeln("  }");
 
         w.writeln("  return val;");
