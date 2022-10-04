@@ -276,9 +276,10 @@ pub fn generate_topmost_index(packages: &[&String], is_async: bool) -> (String, 
     let content = format!(
         r###"
 import {{ AptosClient }} from "aptos";
-import {{ AptosParserRepo, AptosLocalCache, AptosSyncedCache }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, AptosLocalCache, AptosSyncedCache, u8, u64, u128 }} from "@manahippo/move-to-ts";
 {}
 {}
+export {{ u8, u64, u128 }};
 
 export function getProjectRepo(): AptosParserRepo {{
   const repo = new AptosParserRepo();
