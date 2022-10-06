@@ -1110,9 +1110,9 @@ pub fn write_query_function(
     w.writeln("function maker(");
     w.increase_indent();
 
-    w.writeln("fetcher: $.SimulationKeys,");
     write_parameters(&f.signature, w, c, true, false)?;
     w.writeln("$p: TypeTag[],");
+    w.writeln("fetcher: $.SimulationKeys = $.SIM_KEYS,");
 
     w.decrease_indent();
     w.writeln(") {");
