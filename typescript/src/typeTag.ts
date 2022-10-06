@@ -13,7 +13,7 @@ export enum AtomicTypeTag {
 }
 
 export function isAtomicTypeTag(val: any): val is AtomicTypeTag {
-  return (typeof val === 'string' && val in AtomicTypeTag);
+  return (typeof val === 'string' && Object.values(AtomicTypeTag).includes(val as AtomicTypeTag));
 }
 
 export class StructTag {
