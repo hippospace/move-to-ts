@@ -12,13 +12,21 @@ export enum AtomicTypeTag {
   Signer = "signer", // only needed for script function interface
 }
 
+export function isAtomicTypeTag(val: any): val is AtomicTypeTag {
+  return (typeof val === 'string' && val in AtomicTypeTag);
+}
+
 export class StructTag {
+  readonly kind = 'StructTag';
   constructor(
     public address: HexString,
     public module: string,
     public name: string,
     public typeParams: TypeTag[]
   ) {}
+  static isInstance(val: any): val is StructTag {
+    return val.kind && val.kind === 'StructTag';
+  }
   getFullname(): string {
     const typeParamString = getTypeParamsString(this.typeParams);
     return `${this.address.hex()}::${this.module}::${
@@ -55,41 +63,53 @@ export class SimpleStructTag extends StructTag {
 }
 
 export class VectorTag {
+  readonly kind = 'VectorTag';
   constructor(public elementType: TypeTag) {}
+  static isInstance(val: any): val is VectorTag {
+    return val.kind && val.kind === 'VectorTag';
+  }
 }
 
 export class TypeParamIdx {
+  readonly kind = "TypeParamIdx";
   constructor(public index: number) {}
+  static isInstance(val: any): val is TypeParamIdx {
+    return val.kind && val.kind === 'TypeParamIdx';
+  }
 }
 
 export type TypeTag = AtomicTypeTag | VectorTag | StructTag | TypeParamIdx;
 
 export function getTypeTagFullname(typeTag: TypeTag): string {
-  if (typeTag instanceof VectorTag) {
+  if (VectorTag.isInstance(typeTag)) {
     const vecTag = typeTag as VectorTag;
     return `vector<${getTypeTagFullname(vecTag.elementType)}>`;
-  } else if (typeTag instanceof StructTag) {
+  } else if (StructTag.isInstance(typeTag)) {
     const structTag = typeTag as StructTag;
     return structTag.getFullname();
-  } else if (typeTag instanceof TypeParamIdx) {
+  } else if (TypeParamIdx.isInstance(typeTag)) {
     return `$tv${typeTag.index}`;
-  } else {
-    const atomicTag = typeTag as AtomicTypeTag;
-    return atomicTag;
+  } else if (isAtomicTypeTag(typeTag)) {
+    return typeTag as AtomicTypeTag;
+  }
+  else {
+    throw new Error(`Unrecognized type: ${typeTag}`);
   }
 }
 
 export function getTypeTagParamlessName(typeTag: TypeTag): string {
-  if (typeTag instanceof VectorTag) {
+  if (VectorTag.isInstance(typeTag)) {
     return `vector`;
-  } else if (typeTag instanceof StructTag) {
+  } else if (StructTag.isInstance(typeTag)) {
     const structTag = typeTag as StructTag;
     return structTag.getParamlessName();
-  } else if (typeTag instanceof TypeParamIdx) {
+  } else if (TypeParamIdx.isInstance(typeTag)) {
     return `$tv${typeTag.index}`;
-  } else {
-    const atomicTag = typeTag as AtomicTypeTag;
-    return atomicTag;
+  } else if (isAtomicTypeTag(typeTag)) {
+    return typeTag as AtomicTypeTag;
+  }
+  else {
+    throw new Error(`Unrecognized type: ${typeTag}`);
   }
 }
 
@@ -254,7 +274,7 @@ export function parseTypeTagOrThrow(name: string): TypeTag {
 
 export function parseMoveStructTag(moveTag: Types.MoveStructTag): StructTag {
   const result = parseTypeTagOrThrow(moveTag);
-  if (!(result instanceof StructTag)) {
+  if (!(StructTag.isInstance(result))) {
     throw new Error(`Expected a StructTag but instead received: ${moveTag}`);
   }
   return result as StructTag;
@@ -275,7 +295,7 @@ export function substituteTypeParams(
   toSubstitute: TypeTag,
   typeParams: TypeTag[]
 ): TypeTag {
-  if (toSubstitute instanceof StructTag) {
+  if (StructTag.isInstance(toSubstitute)) {
     let params = toSubstitute.typeParams.map((p) =>
       substituteTypeParams(p, typeParams)
     );
@@ -285,13 +305,13 @@ export function substituteTypeParams(
       toSubstitute.name,
       params
     );
-  } else if (toSubstitute instanceof VectorTag) {
+  } else if (VectorTag.isInstance(toSubstitute)) {
     const innerSubbed = substituteTypeParams(
       toSubstitute.elementType,
       typeParams
     );
     return new VectorTag(innerSubbed);
-  } else if (toSubstitute instanceof TypeParamIdx) {
+  } else if (TypeParamIdx.isInstance(toSubstitute)) {
     let subbed = typeParams[toSubstitute.index];
     if (!subbed) {
       throw new Error(
@@ -308,9 +328,9 @@ export function substituteTypeParams(
 }
 
 export function isTypeTagConcrete(tag: TypeTag): boolean {
-  if (tag instanceof TypeParamIdx) {
+  if (TypeParamIdx.isInstance(tag)) {
     return false;
-  } else if (tag instanceof StructTag) {
+  } else if (StructTag.isInstance(tag)) {
     // if all the parameters are filled with concret types instead of TypeParamIdx
     for (const tv of tag.typeParams) {
       if (!isTypeTagConcrete(tv)) {
@@ -318,7 +338,7 @@ export function isTypeTagConcrete(tag: TypeTag): boolean {
       }
     }
     return true;
-  } else if (tag instanceof VectorTag) {
+  } else if (VectorTag.isInstance(tag)) {
     return isTypeTagConcrete(tag.elementType);
   } else {
     // AtomicTypeTag
