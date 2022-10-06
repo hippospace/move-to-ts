@@ -123,8 +123,8 @@ export type SimulationKeys = {
 };
 
 export const SIM_KEYS: SimulationKeys = {
-  pubkey: new HexString('0x0000000000000000000000000000000000000000000000000000000000000001'),
-  address: new HexString('0x0000000000000000000000000000000000000000000000000000000000000001'),
+  pubkey: new HexString('0xf9edd14bcf93b878ee1b97e68f336b96122665af351318a52ae20c7fbf89f8f2'),
+  address: new HexString('0xf70ac33c984f8b7bead655ad239d246f1c0e3ca55fe0b8bfc119aa529c4630e8'),
 }
 
 export function getSimulationKeys(account: AptosAccount): SimulationKeys {
