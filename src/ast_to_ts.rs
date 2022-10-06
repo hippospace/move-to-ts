@@ -342,13 +342,15 @@ pub fn write_app(
             .collect::<Vec<_>>()
             .join(", ");
 
+        let opt_comma = if param_list.is_empty() {""} else {","};
+
         w.increase_indent();
 
         if has_tags {
-            w.writeln(format!("return {}_({}, this.cache, $p);",fname, param_list));
+            w.writeln(format!("return {}_({}{} this.cache, $p);",fname, param_list, opt_comma));
         }
         else {
-            w.writeln(format!("return {}_({}, this.cache);",fname, param_list));
+            w.writeln(format!("return {}_({}{} this.cache);",fname, param_list, opt_comma));
         }
 
         w.decrease_indent();
