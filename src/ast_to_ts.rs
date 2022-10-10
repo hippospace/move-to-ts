@@ -308,9 +308,10 @@ pub fn write_app(
         // query sender
         if c.has_query(mident, &fname) {
             w.writeln(format!(
-                "async query_{}(client: AptosClient, fetcher: $.SimulationKeys, repo: AptosParserRepo,",
+                "async query_{}(",
                 fname
             ));
+            w.writeln("  fetcher: $.SimulationKeys, ");
             write_parameters(&func.signature, w, c, true, false)?;
             w.writeln("  $p: TypeTag[],");
             w.writeln("  _maxGas = 1000,");
