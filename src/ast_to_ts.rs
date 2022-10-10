@@ -308,9 +308,20 @@ pub fn write_app(
         // query sender
         if c.has_query(mident, &fname) {
             w.writeln(format!(
-                "get query_{}() {{ return make_query_{}(this); }}",
-                fname, fname
+                "async query_{}(client: AptosClient, fetcher: $.SimulationKeys, repo: AptosParserRepo,",
+                fname
             ));
+            write_parameters(&func.signature, w, c, true, false)?;
+            w.writeln("  $p: TypeTag[],");
+            w.writeln("  _maxGas = 1000,");
+            w.writeln("  _isJSON = false,");
+            w.writeln(") {");
+            w.writeln(format!("return query_{}(this.client, fetcher, this.repo, {}{}$p, _maxGas, _isJSON);",fname,args,if args.is_empty() {
+                ""
+            } else {
+                ","
+            }));
+            w.writeln("}");
         }
     }
 
@@ -1054,7 +1065,8 @@ pub fn write_query_function(
     w.writeln("repo: AptosParserRepo,");
     write_parameters(&f.signature, w, c, true, false)?;
     w.writeln("$p: TypeTag[],");
-
+    w.writeln("_maxGas = 1000,");
+    w.writeln("_isJSON = false,");
     w.decrease_indent();
     w.writeln(") {");
 
@@ -1090,13 +1102,16 @@ pub fn write_query_function(
 
     // body
     w.writeln(format!(
-        "const payload = buildPayload_{}({});",
+        "const payload = buildPayload_{}({}{});",
         fname,
-        param_list.join(", ")
+        param_list.join(", "),
+        if param_list.is_empty() {"_isJSON"} else {
+            ", _isJSON"
+        }
     ));
     let output_tag = base_type_to_typetag(return_type, c)?;
     w.writeln(format!("const outputTypeTag = {};", output_tag));
-    w.writeln("const output = await $.simulatePayloadTx(client, fetcher, payload);");
+    w.writeln("const output = await $.simulatePayloadTx(client, fetcher, payload, _maxGas);");
     w.writeln(format!(
         "return $.takeSimulationValue<{}>(output, outputTypeTag, repo)",
         output_struct_name
@@ -1105,35 +1120,7 @@ pub fn write_query_function(
     w.decrease_indent();
     w.writeln("}");
 
-    // write query function for App interface
-    w.writeln(format!("function make_{}(app: App) {{", query_fname));
-    w.increase_indent();
 
-    w.writeln("function maker(");
-    w.increase_indent();
-
-    write_parameters(&f.signature, w, c, true, false)?;
-    w.writeln("$p: TypeTag[],");
-    w.writeln("fetcher: $.SimulationKeys = $.SIM_KEYS,");
-
-    w.decrease_indent();
-    w.writeln(") {");
-
-    if !has_tags {
-        param_list.push("$p".to_string());
-    }
-    w.writeln(format!(
-        "  return {}(app.client, fetcher, app.repo, {})",
-        query_fname,
-        param_list.join(", ")
-    ));
-
-    w.writeln("}");
-
-    w.writeln("return maker;");
-
-    w.decrease_indent();
-    w.writeln("}");
     Ok(())
 }
 

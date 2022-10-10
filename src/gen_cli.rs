@@ -152,10 +152,13 @@ pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic>
     let mut all_params = vec![];
     all_params.extend(type_param_names.clone());
     all_params.extend(param_names_no_signer.clone());
-    let param_decl = all_params
-        .iter()
-        .map(|pname| format!("{}: string", pname))
-        .join(", ");
+
+    let mut arg_decls = vec![];
+    for pname in all_params.iter() {
+        arg_decls.push(format!("{}: string", pname));
+    }
+    arg_decls.push(format!("{}","max_gas: string"));
+
     let mut param_parsers = vec![];
     let mut arguments = vec![];
     for tparam in cmd.func.signature.type_parameters.iter() {
@@ -174,6 +177,8 @@ pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic>
         ));
         arguments.push(format!("  .argument('<{}>')", pname));
     }
+    arguments.push(format!("  .argument('[max_gas]', '', '10000')"));
+    param_parsers.push(format!("  const max_gas_ = parseInt(max_gas);"));
     let (payload_builder, package_name) =
         format_qualified_payload_fname_and_import(&cmd.mi, &cmd.fname);
     let payload = format!(
@@ -214,7 +219,7 @@ const {} = async ({}) => {{
   const {{client, account}} = readConfig(program);
 {}
   const payload = {};
-  await sendPayloadTx(client, account, payload, 10000, true);
+  await sendPayloadTx(client, account, payload, max_gas_, true);
 }}
 
 program
@@ -224,7 +229,7 @@ program
   .action({});
 "###,
         func_name,
-        param_decl,
+        arg_decls.join(","),
         param_parsers.join("\n"),
         payload,
         command_name,
@@ -333,6 +338,7 @@ pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Dia
     for tp in query.func.signature.type_parameters.iter() {
         arg_decls.push(format!("{}: string", tp.user_specified_name));
     }
+
     let params_no_signer = query
         .func
         .signature
@@ -342,6 +348,7 @@ pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Dia
     for (name, _) in params_no_signer.clone() {
         arg_decls.push(format!("{}: string", name));
     }
+    arg_decls.push(format!("{}", "max_gas: string"));
 
     let (query_func_name, package_name) =
         format_qualified_fname_and_import(&query.mi, &query.fname);
@@ -362,6 +369,7 @@ pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Dia
     for (name, _) in params_no_signer.clone() {
         arguments.push(format!("  .argument('<{}>')", name));
     }
+    arguments.push(format!("  .argument('[max_gas]', '', '10000')"));
 
     let mut param_handlers = vec![];
     for (name, ty) in params_no_signer {
@@ -380,7 +388,7 @@ pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Dia
 const {} = async ({}) => {{
   const {{client, account}} = readConfig(program);
   const repo = getProjectRepo();
-  const value = await {}(client, getSimulationKeys(account), repo, {}{}[{}])
+  const value = await {}(client, getSimulationKeys(account), repo, {}{}[{}], parseInt(max_gas))
   print(value);
 }}
 
@@ -430,7 +438,6 @@ pub fn generate_iter_table_printer(
         .iter()
         .map(|tp| (format!("  .argument('<TYPE_{}>')", tp.param.user_specified_name)))
         .join("\n");
-
     let command_name = action_name.replace('_', "-");
 
     let body = format!(
