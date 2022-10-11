@@ -146,6 +146,15 @@ export function aptos_std_aptos_hash_sip_hash(
   throw new Error("Not implemented");
 }
 
+export function aptos_std_secp256k1_ecdsa_recover_internal(
+  message: U8[],
+  recovery_id: U8,
+  signature: U8[],
+  $c: AptosDataCache
+): U64 {
+  throw new Error("Not implemented");
+}
+
 export function std_hash_sha2_256(data: U8[], $c: AptosDataCache): U8[] {
   const dataBuffer = Buffer.from(data.map((u) => u.value.toJSNumber()));
   const outputBuffer = new sha.sha256().update(dataBuffer).digest();
