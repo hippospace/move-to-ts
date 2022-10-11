@@ -122,6 +122,7 @@ module.exports = {
 pub fn rename(name: &impl fmt::Display) -> String {
     let name_str = format!("{}", name);
     match name_str.as_str() {
+        "in" => "in__".to_string(),
         "new" => "new__".to_string(),
         "default" => "default__".to_string(),
         "for" => "for__".to_string(),
