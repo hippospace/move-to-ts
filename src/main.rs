@@ -144,11 +144,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     };
     let mut ctx = Context::new(config, hlir_program.clone());
     for (mident, mdef) in hlir_program.modules.key_cloned_iter() {
-        // skip problematic modules under aptos_framework::aggregator*
         let mod_name = mident.value.module.to_string();
-        if format_address_hex(mident.value.address) == "0x1" && mod_name.contains("secp256k1") {
-            continue;
-        }
 
         // 2
         let result = ast_to_ts::translate_module(mident, mdef, &mut ctx);
