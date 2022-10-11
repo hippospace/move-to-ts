@@ -301,10 +301,10 @@ pub fn write_app(
 
         w.writeln(") {");
         w.writeln(format!(
-            "  const payload = buildPayload_{}({}{}{}{}_isJSON);",
+            "  const payload__ = buildPayload_{}({}{}{}{}_isJSON);",
             fname, args, separator, tags, possibly_comma
         ));
-        w.writeln("  return $.sendPayloadTx(this.client, _account, payload, option);");
+        w.writeln("  return $.sendPayloadTx(this.client, _account, payload__, option);");
         w.writeln("}");
 
         // query sender
@@ -1105,7 +1105,7 @@ pub fn write_query_function(
 
     // body
     w.writeln(format!(
-        "const payload = buildPayload_{}({}{});",
+        "const payload__ = buildPayload_{}({}{});",
         fname,
         param_list.join(", "),
         if param_list.is_empty() {"_isJSON"} else {
@@ -1114,7 +1114,7 @@ pub fn write_query_function(
     ));
     let output_tag = base_type_to_typetag(return_type, c)?;
     w.writeln(format!("const outputTypeTag = {};", output_tag));
-    w.writeln("const output = await $.simulatePayloadTx(client, fetcher, payload, option);");
+    w.writeln("const output = await $.simulatePayloadTx(client, fetcher, payload__, option);");
     w.writeln(format!(
         "return $.takeSimulationValue<{}>(output, outputTypeTag, repo)",
         output_struct_name
