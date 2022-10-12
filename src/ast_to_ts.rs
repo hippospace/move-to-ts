@@ -49,6 +49,7 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
         "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
         "import {AtomicTypeTag, StructTag, TypeTag, VectorTag, SimpleStructTag} from \"@manahippo/move-to-ts\";"
             .to_string(),
+        "import {OptionTransaction} from \"@manahippo/move-to-ts\";".to_string(),
         "import {HexString, AptosClient, AptosAccount, TxnBuilderTypes, Types} from \"aptos\";".to_string(),
     ];
     for package_name in c.package_imports.iter() {
@@ -295,14 +296,15 @@ pub fn write_app(
         if !func.signature.type_parameters.is_empty() {
             w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
         }
-        w.writeln("  _maxGas = 1000,");
-        w.writeln("  _isJSON = false,");
+        w.writeln("  option?: OptionTransaction,");
+        w.writeln("  _isJSON = false");
+
         w.writeln(") {");
         w.writeln(format!(
             "  const payload = buildPayload_{}({}{}{}{}_isJSON);",
             fname, args, separator, tags, possibly_comma
         ));
-        w.writeln("  return $.sendPayloadTx(this.client, _account, payload, _maxGas);");
+        w.writeln("  return $.sendPayloadTx(this.client, _account, payload, option);");
         w.writeln("}");
 
         // query sender
@@ -314,10 +316,10 @@ pub fn write_app(
             w.writeln("  fetcher: $.SimulationKeys, ");
             write_parameters(&func.signature, w, c, true, false)?;
             w.writeln("  $p: TypeTag[],");
-            w.writeln("  _maxGas = 1000,");
+            w.writeln("  option?: OptionTransaction,");
             w.writeln("  _isJSON = false,");
             w.writeln(") {");
-            w.writeln(format!("return query_{}(this.client, fetcher, this.repo, {}{}$p, _maxGas, _isJSON);",fname,args,if args.is_empty() {
+            w.writeln(format!("return query_{}(this.client, fetcher, this.repo, {}{}$p, option);",fname,args,if args.is_empty() {
                 ""
             } else {
                 ","
@@ -1066,8 +1068,8 @@ pub fn write_query_function(
     w.writeln("repo: AptosParserRepo,");
     write_parameters(&f.signature, w, c, true, false)?;
     w.writeln("$p: TypeTag[],");
-    w.writeln("_maxGas = 1000,");
-    w.writeln("_isJSON = false,");
+    w.writeln("option?: OptionTransaction,");
+    w.writeln("_isJSON = false");
     w.decrease_indent();
     w.writeln(") {");
 
@@ -1112,7 +1114,7 @@ pub fn write_query_function(
     ));
     let output_tag = base_type_to_typetag(return_type, c)?;
     w.writeln(format!("const outputTypeTag = {};", output_tag));
-    w.writeln("const output = await $.simulatePayloadTx(client, fetcher, payload, _maxGas);");
+    w.writeln("const output = await $.simulatePayloadTx(client, fetcher, payload, option);");
     w.writeln(format!(
         "return $.takeSimulationValue<{}>(output, outputTypeTag, repo)",
         output_struct_name

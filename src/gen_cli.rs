@@ -219,7 +219,7 @@ const {} = async ({}) => {{
   const {{client, account}} = readConfig(program);
 {}
   const payload = {};
-  await sendPayloadTx(client, account, payload, max_gas_, true);
+  await sendPayloadTxAndLog(client, account, payload,{{maxGasAmount: max_gas_}});
 }}
 
 program
@@ -388,7 +388,7 @@ pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Dia
 const {} = async ({}) => {{
   const {{client, account}} = readConfig(program);
   const repo = getProjectRepo();
-  const value = await {}(client, getSimulationKeys(account), repo, {}{}[{}], parseInt(max_gas))
+  const value = await {}(client, getSimulationKeys(account), repo, {}{}[{}], {{maxGasAmount: parseInt(max_gas)}})
   print(value);
 }}
 
@@ -538,7 +538,7 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
     let filename = "cli.ts".to_string();
     let content = format!(
         r###"
-import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, print, strToU8, u8str, DummyCache, ActualStringClass, sendPayloadTx, getSimulationKeys }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, print, strToU8, u8str, DummyCache, ActualStringClass, sendPayloadTx, sendPayloadTxAndLog, getSimulationKeys }} from "@manahippo/move-to-ts";
 import {{ AptosAccount, AptosClient, HexString, Types }} from "aptos";
 import {{ Command }} from "commander";
 import {{ getProjectRepo }} from "./";

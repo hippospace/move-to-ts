@@ -471,7 +471,7 @@ export async function sendPayloadTx(
   const signedTxn = await client.signTransaction(account, txnRequest);
   const txnResult = await client.submitTransaction(signedTxn);
   await client.waitForTransaction(txnResult.hash);
-  const txDetails = (await client.getTransaction(txnResult.hash)) as Types.UserTransaction;
+  const txDetails = (await client.getTransactionByHash(txnResult.hash)) as Types.UserTransaction;
   console.log(txDetails);
 }
 

@@ -5,7 +5,7 @@ import {
   TxnBuilderTypes,
   HexString,
   BCS,
-  TransactionBuilderEd25519,
+  TransactionBuilderEd25519, OptionalTransactionArgs,
 } from "aptos";
 import { TypeTagParser } from "./builder_utils";
 
@@ -18,7 +18,6 @@ import {payloadArg} from "./builtinFuncs";
 import {ActualStringClass} from "./nativeFuncs";
 import {serializeMoveValueWithoutTag} from "./bcs";
 
-
 type AcceptedScriptFuncArgType =
   | any[]
   | U8
@@ -27,6 +26,13 @@ type AcceptedScriptFuncArgType =
   | HexString
   | boolean
   | ActualStringClass;
+
+export type OptionTransaction = {
+  maxGasAmount?: number;
+  gasUnitPrice?: number;
+  // in s
+  expireTimestamp?: number;
+}
 
 export function buildPayload(
   moduleAddress: HexString,
@@ -67,22 +73,66 @@ export function buildPayload(
   }
 }
 
+function toOptionalTransactionArgs(option?: OptionTransaction){
+  if (option){
+    const extraArgs = {} as OptionalTransactionArgs
+    if (option.maxGasAmount){
+      extraArgs.maxGasAmount = BigInt(option.maxGasAmount);
+    }
+    if (option.gasUnitPrice) {
+      extraArgs.gasUnitPrice = BigInt(option.gasUnitPrice);
+    }
+    if (option.expireTimestamp) {
+      extraArgs.expireTimestamp = BigInt(option.expireTimestamp);
+    }
+    return extraArgs
+  }
+}
+function toSubmitTransactionRequest(option?: OptionTransaction){
+  if (option){
+    const options = {} as Types.SubmitTransactionRequest
+    if (option.maxGasAmount){
+      options.max_gas_amount = option.maxGasAmount.toString()
+    }
+
+    if (option.gasUnitPrice){
+      options.gas_unit_price = option.gasUnitPrice.toString()
+    }
+    if (option.expireTimestamp){
+      options.expiration_timestamp_secs = option.expireTimestamp.toString()
+    }
+    return options
+  }
+}
+
 export async function sendPayloadTx(
+    client: AptosClient,
+    account: AptosAccount,
+    payload:
+        | TxnBuilderTypes.TransactionPayload
+        | Types.TransactionPayload_EntryFunctionPayload,
+    option?: OptionTransaction
+) {
+  return await sendPayloadTxAndLog(client, account, payload, option, false)
+}
+
+export async function sendPayloadTxAndLog(
   client: AptosClient,
   account: AptosAccount,
   payload:
     | TxnBuilderTypes.TransactionPayload
     | Types.TransactionPayload_EntryFunctionPayload,
-  max_gas = 1000,
-  log = false,
+  option?: OptionTransaction,
+  log = true,
 ) {
   // send BCS transaction
   if (payload instanceof TxnBuilderTypes.TransactionPayloadEntryFunction) {
     // RawTransaction
+
     const rawTxn = await client.generateRawTransaction(
       account.address(),
       payload,
-      { maxGasAmount: BigInt(max_gas),gasUnitPrice: BigInt(1000)}
+      toOptionalTransactionArgs(option)
     );
     // Signed BCS representation
     const bcsTxn = AptosClient.generateBCSTransaction(account, rawTxn);
@@ -100,10 +150,8 @@ export async function sendPayloadTx(
   else {
     const pld = payload as Types.TransactionPayload_EntryFunctionPayload;
     // RawTransaction
-    const txn = await client.generateTransaction(account.address(), pld, {
-      max_gas_amount: max_gas.toString(),
-      gas_unit_price: '1000'
-    });
+
+    const txn = await client.generateTransaction(account.address(), pld, toSubmitTransactionRequest(option));
     // Signed json representation
     const signedTxn = await client.signTransaction(account, txn);
     const txnResult = await client.submitTransaction(signedTxn);
@@ -136,27 +184,36 @@ export function getSimulationKeys(account: AptosAccount): SimulationKeys {
 }
 
 export async function simulatePayloadTx(
+    client: AptosClient,
+    keys: SimulationKeys,
+    payload:
+        | TxnBuilderTypes.TransactionPayload
+        | Types.TransactionPayload_EntryFunctionPayload,
+    option?: OptionTransaction
+){
+  return simulatePayloadTxAndLog(client, keys, payload, option, false);
+}
+
+export async function simulatePayloadTxAndLog(
   client: AptosClient,
   keys: SimulationKeys,
   payload:
     | TxnBuilderTypes.TransactionPayload
     | Types.TransactionPayload_EntryFunctionPayload,
-  max_gas = 1000
+  option?: OptionTransaction,
+  log = true
 ) {
   if (payload instanceof TxnBuilderTypes.TransactionPayload) {
-    const rawTxn = await client.generateRawTransaction(keys.address, payload, {
-      maxGasAmount: BigInt(max_gas),
-      gasUnitPrice: BigInt(1000)
-    });
+    const rawTxn = await client.generateRawTransaction(keys.address, payload, toOptionalTransactionArgs(option));
     const bcsTxn = generateBCSSimulation(keys.pubkey, rawTxn);
     const outputs = await client.submitBCSSimulation(bcsTxn);
+    if (log){
+      console.log(outputs[0])
+    }
     return outputs[0];
   } else {
     const pld = payload as Types.TransactionPayload_EntryFunctionPayload;
-    const txn = await client.generateTransaction(keys.address, pld, {
-      max_gas_amount: max_gas.toString(),
-      gas_unit_price: '1000'
-    });
+    const txn = await client.generateTransaction(keys.address, pld, toSubmitTransactionRequest(option));
     const transactionSignature: Types.TransactionSignature = {
       type: "ed25519_signature",
       public_key: keys.pubkey.hex(),
@@ -176,6 +233,9 @@ export async function simulatePayloadTx(
     const outputs = await client.client.transactions.simulateTransaction(
       request
     );
+    if (log){
+      console.log(outputs[0])
+    }
     return outputs[0];
   }
 }
