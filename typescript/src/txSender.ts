@@ -82,7 +82,7 @@ export async function sendPayloadTx(
     const rawTxn = await client.generateRawTransaction(
       account.address(),
       payload,
-      { maxGasAmount: BigInt(max_gas)}
+      { maxGasAmount: BigInt(max_gas),gasUnitPrice: BigInt(1000)}
     );
     // Signed BCS representation
     const bcsTxn = AptosClient.generateBCSTransaction(account, rawTxn);
@@ -102,6 +102,7 @@ export async function sendPayloadTx(
     // RawTransaction
     const txn = await client.generateTransaction(account.address(), pld, {
       max_gas_amount: max_gas.toString(),
+      gas_unit_price: '1000'
     });
     // Signed json representation
     const signedTxn = await client.signTransaction(account, txn);
@@ -145,6 +146,7 @@ export async function simulatePayloadTx(
   if (payload instanceof TxnBuilderTypes.TransactionPayload) {
     const rawTxn = await client.generateRawTransaction(keys.address, payload, {
       maxGasAmount: BigInt(max_gas),
+      gasUnitPrice: BigInt(1000)
     });
     const bcsTxn = generateBCSSimulation(keys.pubkey, rawTxn);
     const outputs = await client.submitBCSSimulation(bcsTxn);
@@ -153,6 +155,7 @@ export async function simulatePayloadTx(
     const pld = payload as Types.TransactionPayload_EntryFunctionPayload;
     const txn = await client.generateTransaction(keys.address, pld, {
       max_gas_amount: max_gas.toString(),
+      gas_unit_price: '1000'
     });
     const transactionSignature: Types.TransactionSignature = {
       type: "ed25519_signature",
