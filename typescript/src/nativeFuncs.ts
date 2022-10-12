@@ -86,6 +86,17 @@ export function aptos_std_debug_print_stack_trace($c: AptosDataCache) {
   // NOP
 }
 
+export function aptos_framework_event_write_to_event_store(
+  guid: U8[],
+  count: U64,
+  msg: any,
+  $c: AptosDataCache,
+  _tags: TypeTag[]
+) {
+  // FIXME: should probably allow some callback/prints??
+  // NOP
+}
+
 export function aptos_std_event_write_to_event_store(
   guid: U8[],
   count: U64,
