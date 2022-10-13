@@ -148,7 +148,7 @@ export function copy<T>(val: T): T {
   }
 }
 
-function printerReplacer(key: string, val: any) {
+export function printerReplacer(key: string, val: any) {
   if (key === "typeTag" || key === "__app") {
     return undefined;
   }
