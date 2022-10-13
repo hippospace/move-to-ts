@@ -313,11 +313,11 @@ pub fn write_app(
                 "async query_{}(",
                 fname
             ));
-            w.writeln("  fetcher: $.SimulationKeys, ");
             write_parameters(&func.signature, w, c, true, false)?;
             w.writeln("  $p: TypeTag[],");
             w.writeln("  option?: OptionTransaction,");
             w.writeln("  _isJSON = false,");
+            w.writeln("  fetcher: $.SimulationKeys = $.SIM_KEYS,");
             w.writeln(") {");
             w.writeln(format!("return query_{}(this.client, fetcher, this.repo, {}{}$p, option);",fname,args,if args.is_empty() {
                 ""
