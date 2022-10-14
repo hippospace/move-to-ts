@@ -151,7 +151,7 @@ export function aptos_std_secp256k1_ecdsa_recover_internal(
   recovery_id: U8,
   signature: U8[],
   $c: AptosDataCache
-): U64 {
+): [U8[], boolean] {
   throw new Error("Not implemented");
 }
 
