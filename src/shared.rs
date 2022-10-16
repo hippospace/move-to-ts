@@ -12,11 +12,13 @@ use move_compiler::{
     parser::ast::{FunctionName, StructName},
     shared::Name,
 };
+use move_core_types::account_address::AccountAddress;
 use move_ir_types::location::Loc;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::path::PathBuf;
 use std::rc::Rc;
+use std::str::FromStr;
 
 #[derive(Copy, Clone)]
 pub struct NotTranslatable {}
@@ -84,6 +86,11 @@ pub struct MoveToTsOptions {
     /// generate package.json
     #[clap(long = "package-json-name", short = 'n', default_value = "")]
     pub package_json_name: String,
+    /// Named addresses for the move binary
+    ///
+    /// Example: alice=0x1234,bob=0x5678
+    #[clap(long, parse(try_from_str = parse_named_addresses), default_value = "")]
+    pub named_addresses: BTreeMap<String, AccountAddress>,
 }
 
 use crate::utils::{capitalize, rename};
@@ -577,4 +584,30 @@ pub fn has_attribute(attributes: &Attributes, attr_name: &str) -> bool  {
         }
     }
     false
+}
+
+/// Parses an inline map of values
+///
+/// Example: Name=Value,Name2=Value
+pub fn parse_named_addresses<K: FromStr + Ord, V: FromStr>(str: &str) -> Result<BTreeMap<K, V>, std::fmt::Error>
+where
+    K::Err: 'static + std::error::Error + Send + Sync,
+    V::Err: 'static + std::error::Error + Send + Sync,
+{
+    let mut map = BTreeMap::new();
+
+    // Split pairs by commas
+    for pair in str.split(',') {
+        let split = pair.split('=').collect::<Vec<&str>>();
+        if split.len() == 2 {
+            let first = split[0].trim();
+            let second = split[1].trim();
+
+            // At this point, we just give error messages appropriate to parsing
+            let key: K = K::from_str(first).unwrap();
+            let value: V = V::from_str(second).unwrap();
+            map.insert(key, value);
+        }
+    }
+    Ok(map)
 }
