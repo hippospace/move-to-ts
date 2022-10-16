@@ -34,7 +34,9 @@ fn write_file(root_path: &Path, pair: (String, String)) {
 }
 
 fn build(path: &Path, config: &MoveToTsOptions) {
-    let build_config = move_package::BuildConfig::default();
+    let mut build_config = move_package::BuildConfig::default();
+    build_config.additional_named_addresses = config.named_addresses.clone();
+    // build_config.additional_named_addresses =
     let resolution_graph = build_config
         .resolution_graph_for_package(path)
         .expect("Failed to build resolution graph for package");
