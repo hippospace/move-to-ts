@@ -27,6 +27,8 @@ export class UnsignedInt<T extends IntInterface<T>> {
   }
 
   checkBounds() {}
+  min() { return bigInt(); }
+  max() { return bigInt(); }
   make(value: bigInt.BigInteger) {
     return new UnsignedInt<T>(value);
   }
@@ -80,8 +82,7 @@ export class UnsignedInt<T extends IntInterface<T>> {
     return other.make(this.value.mod(other.value));
   }
   shl(other: UnsignedInt<any>): UnsignedInt<T> {
-    // FIXME: need to match this with move's implementation
-    return this.make(this.value.shiftLeft(other.value));
+    return this.make(this.value.shiftLeft(other.value).and(this.max()));
   }
   shr(other: UnsignedInt<any>): UnsignedInt<T> {
     // FIXME: need to match this with move's implementation
@@ -120,6 +121,9 @@ export class U8 extends UnsignedInt<U8> {
       throw new Error(`Value out of bounds for U8: ${this.value}`);
     }
   }
+
+  min() { return U8.MIN; }
+  max() { return U8.MAX; }
 }
 
 export class U64 extends UnsignedInt<U64> {
@@ -135,6 +139,9 @@ export class U64 extends UnsignedInt<U64> {
       throw new Error(`Value out of bounds for U64: ${this.value}`);
     }
   }
+
+  min() { return U64.MIN; }
+  max() { return U64.MAX; }
 }
 
 export class U128 extends UnsignedInt<U128> {
@@ -150,4 +157,7 @@ export class U128 extends UnsignedInt<U128> {
       throw new Error(`Value out of bounds for U128: ${this.value}`);
     }
   }
+
+  min() { return U128.MIN; }
+  max() { return U128.MAX; }
 }
