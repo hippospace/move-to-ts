@@ -29,13 +29,13 @@ export class StructTag {
   }
   getFullname(): string {
     const typeParamString = getTypeParamsString(this.typeParams);
-    return `${this.address.hex()}::${this.module}::${
+    return `${this.address.toShortString()}::${this.module}::${
       this.name
     }${typeParamString}`;
   }
 
   getParamlessName(): string {
-    return `${this.address.hex()}::${this.module}::${this.name}`;
+    return `${this.address.toShortString()}::${this.module}::${this.name}`;
   }
 
   getAptosMoveTypeTag(): Types.MoveStructTag {
