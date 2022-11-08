@@ -144,7 +144,7 @@ class AccountCache {
     const resource = this.resources.get(fullname);
     if (!resource) {
       throw new Error(
-        `Account ${this.address.hex()} does not have resource: ${fullname}`
+        `Account ${this.address.toShortString()} does not have resource: ${fullname}`
       );
     }
     return resource;
@@ -161,7 +161,7 @@ class AccountCache {
       return repo.parse(resource.data, tag);
     } catch (e) {
       throw new Error(
-        `Account ${this.address.hex()} does not have resource ${getTypeTagFullname(
+        `Account ${this.address.toShortString()} does not have resource ${getTypeTagFullname(
           tag
         )}`
       );
@@ -171,7 +171,7 @@ class AccountCache {
     const fullname = getTypeTagFullname(tag);
     if (this.has(tag) && !overwrite) {
       throw new Error(
-        `Account ${this.address.hex()} already has resource: ${fullname}`
+        `Account ${this.address.toShortString()} already has resource: ${fullname}`
       );
     }
     this.resources.set(fullname, resource);
@@ -181,7 +181,7 @@ class AccountCache {
     const resource = this.resources.get(fullname);
     if (!resource) {
       throw new Error(
-        `Account ${this.address.hex()} does not have resource: ${fullname}`
+        `Account ${this.address.toShortString()} does not have resource: ${fullname}`
       );
     }
     this.resources.delete(fullname);
@@ -192,7 +192,7 @@ class AccountCache {
 // caches all data locally and never attempts to retrieve anything from chain
 // only suited for running tests
 export class AptosLocalCache implements AptosDataCache {
-  // maps account address (HexString.hex()) to AccountCache
+  // maps account address (HexString.toShortString()) to AccountCache
   public accounts: Map<string, AccountCache>;
   public tables: Map<string, Map<string, IBox>>;
   nextTableHandle: number;
@@ -203,17 +203,17 @@ export class AptosLocalCache implements AptosDataCache {
   }
   // synchronous builtins
   exists(tag: TypeTag, address: HexString): boolean {
-    const account = this.accounts.get(address.hex());
+    const account = this.accounts.get(address.toShortString());
     if (!account) {
       return false;
     }
     return account.has(tag);
   }
   move_to(tag: TypeTag, address: HexString, resource: any, overwrite = false): void {
-    let account = this.accounts.get(address.hex());
+    let account = this.accounts.get(address.toShortString());
     if (!account) {
       account = new AccountCache(address);
-      this.accounts.set(address.hex(), account);
+      this.accounts.set(address.toShortString(), account);
     }
     account.set(tag, resource, overwrite);
   }
@@ -221,23 +221,23 @@ export class AptosLocalCache implements AptosDataCache {
     this.move_to(tag, address, resource, true);
   }
   move_from<T>(tag: TypeTag, address: HexString): T {
-    let account = this.accounts.get(address.hex());
+    let account = this.accounts.get(address.toShortString());
     if (!account) {
       throw new Error(
         `Resource ${getTypeTagFullname(
           tag
-        )} does not exist for ${address.hex()}`
+        )} does not exist for ${address.toShortString()}`
       );
     }
     return account.move_from(tag);
   }
   borrow_global<T>(tag: TypeTag, address: HexString): T {
-    let account = this.accounts.get(address.hex());
+    let account = this.accounts.get(address.toShortString());
     if (!account) {
       throw new Error(
         `Resource ${getTypeTagFullname(
           tag
-        )} does not exist for ${address.hex()}`
+        )} does not exist for ${address.toShortString()}`
       );
     }
     return account.get(tag) as unknown as T;
@@ -275,7 +275,7 @@ export class AptosLocalCache implements AptosDataCache {
       return table;
     } else {
       const newTable: Map<string, any> = new Map();
-      this.tables.set(handle.toString(), newTable);
+      this.tables.set(handle.toShortString(), newTable);
       return newTable;
     }
   }
@@ -284,7 +284,7 @@ export class AptosLocalCache implements AptosDataCache {
     const handleStr = `${handleIdx.toString(16)}`;
     const handle = new HexString(handleStr);
     const table: Map<string, IBox> = new Map();
-    this.tables.set(handle.toString(), table);
+    this.tables.set(handle.toShortString(), table);
     return handle;
   }
 
@@ -338,10 +338,10 @@ export class AptosSyncedCache extends AptosLocalCache {
   }
   // asynchronous builtins
   async exists_async(tag: TypeTag, address: HexString): Promise<boolean> {
-    let account = this.accounts.get(address.hex());
+    let account = this.accounts.get(address.toShortString());
     if (!account) {
       account = new AccountCache(address);
-      this.accounts.set(address.hex(), account);
+      this.accounts.set(address.toShortString(), account);
     }
     return account.has_async(tag, this.repo, this.client);
   }
@@ -356,10 +356,10 @@ export class AptosSyncedCache extends AptosLocalCache {
     throw new Error("move_from not supported by AptosSyncedCache");
   }
   async borrow_global_async<T>(tag: TypeTag, address: HexString): Promise<T> {
-    let account = this.accounts.get(address.hex());
+    let account = this.accounts.get(address.toShortString());
     if (!account) {
       account = new AccountCache(address);
-      this.accounts.set(address.hex(), account);
+      this.accounts.set(address.toShortString(), account);
     }
     return (await account.get_async(
       tag,
@@ -567,7 +567,7 @@ export class AptosResourceCache {
   Computes ResourceKey from owner address and resource TypeTag
   */
   getResourceKey(ownerAddress: HexString, typeTag: TypeTag) {
-    return `${ownerAddress.hex()}/${getTypeTagFullname(typeTag)}`;
+    return `${ownerAddress.toShortString()}/${getTypeTagFullname(typeTag)}`;
   }
 }
 

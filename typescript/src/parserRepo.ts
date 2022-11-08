@@ -46,7 +46,7 @@ export function parseStructProto(
       `${struct.structName} expects a StructTag as typeTag but received: ${typeTag}`
     );
   }
-  if (typeTag.address.hex() !== struct.moduleAddress.hex()) {
+  if (typeTag.address.toShortString() !== struct.moduleAddress.toShortString()) {
     throw new Error(
       `${struct.structName} expects a moduleAddress of ${struct.moduleAddress} but received: ${typeTag.address}.`
     );
