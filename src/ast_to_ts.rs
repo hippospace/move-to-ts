@@ -309,21 +309,19 @@ pub fn write_app(
 
         // query sender
         if c.has_query(mident, &fname) {
-            w.writeln(format!(
-                "async query_{}(",
-                fname
-            ));
+            w.writeln(format!("async query_{}(", fname));
             write_parameters(&func.signature, w, c, true, false)?;
             w.writeln("  $p: TypeTag[],");
             w.writeln("  option?: OptionTransaction,");
             w.writeln("  _isJSON = false,");
             w.writeln("  fetcher: $.SimulationKeys = $.SIM_KEYS,");
             w.writeln(") {");
-            w.writeln(format!("return query_{}(this.client, fetcher, this.repo, {}{}$p, option);",fname,args,if args.is_empty() {
-                ""
-            } else {
-                ","
-            }));
+            w.writeln(format!(
+                "return query_{}(this.client, fetcher, this.repo, {}{}$p, option);",
+                fname,
+                args,
+                if args.is_empty() { "" } else { "," }
+            ));
             w.writeln("}");
         }
     }
@@ -356,15 +354,20 @@ pub fn write_app(
             .collect::<Vec<_>>()
             .join(", ");
 
-        let opt_comma = if param_list.is_empty() {""} else {","};
+        let opt_comma = if param_list.is_empty() { "" } else { "," };
 
         w.increase_indent();
 
         if has_tags {
-            w.writeln(format!("return {}_({}{} this.cache, $p);",fname, param_list, opt_comma));
-        }
-        else {
-            w.writeln(format!("return {}_({}{} this.cache);",fname, param_list, opt_comma));
+            w.writeln(format!(
+                "return {}_({}{} this.cache, $p);",
+                fname, param_list, opt_comma
+            ));
+        } else {
+            w.writeln(format!(
+                "return {}_({}{} this.cache);",
+                fname, param_list, opt_comma
+            ));
         }
 
         w.decrease_indent();
@@ -1108,7 +1111,9 @@ pub fn write_query_function(
         "const payload__ = buildPayload_{}({}{});",
         fname,
         param_list.join(", "),
-        if param_list.is_empty() {"_isJSON"} else {
+        if param_list.is_empty() {
+            "_isJSON"
+        } else {
             ", _isJSON"
         }
     ));
@@ -1122,7 +1127,6 @@ pub fn write_query_function(
 
     w.decrease_indent();
     w.writeln("}");
-
 
     Ok(())
 }
@@ -1176,7 +1180,6 @@ pub fn handle_function_query_directive(
         }
     }
 }
-
 
 pub fn handle_function_app_directive(
     fname: &FunctionName,

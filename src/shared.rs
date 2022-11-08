@@ -577,7 +577,7 @@ pub fn is_typename_string(typename: &TypeName) -> bool {
     }
 }
 
-pub fn has_attribute(attributes: &Attributes, attr_name: &str) -> bool  {
+pub fn has_attribute(attributes: &Attributes, attr_name: &str) -> bool {
     for (name, _) in attributes.key_cloned_iter() {
         if name.to_string().as_str() == attr_name {
             return true;
@@ -589,7 +589,9 @@ pub fn has_attribute(attributes: &Attributes, attr_name: &str) -> bool  {
 /// Parses an inline map of values
 ///
 /// Example: Name=Value,Name2=Value
-pub fn parse_named_addresses<K: FromStr + Ord, V: FromStr>(str: &str) -> Result<BTreeMap<K, V>, std::fmt::Error>
+pub fn parse_named_addresses<K: FromStr + Ord, V: FromStr>(
+    str: &str,
+) -> Result<BTreeMap<K, V>, std::fmt::Error>
 where
     K::Err: 'static + std::error::Error + Send + Sync,
     V::Err: 'static + std::error::Error + Send + Sync,

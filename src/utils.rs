@@ -306,8 +306,16 @@ export class App {{
         exports,
         loads,
         app_fields,
-        if is_async {"AptosSyncedCache"} else {"AptosLocalCache"},
-        if is_async {"this.parserRepo, client"} else {""},
+        if is_async {
+            "AptosSyncedCache"
+        } else {
+            "AptosLocalCache"
+        },
+        if is_async {
+            "this.parserRepo, client"
+        } else {
+            ""
+        },
         app_field_inits
     );
 

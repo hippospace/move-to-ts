@@ -157,7 +157,7 @@ pub fn generate_command(cmd: &CmdParams) -> Result<(String, String), Diagnostic>
     for pname in all_params.iter() {
         arg_decls.push(format!("{}: string", pname));
     }
-    arg_decls.push(format!("{}","max_gas: string"));
+    arg_decls.push(format!("{}", "max_gas: string"));
 
     let mut param_parsers = vec![];
     let mut arguments = vec![];
