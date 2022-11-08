@@ -27,16 +27,29 @@ export class StructTag {
   static isInstance(val: any): val is StructTag {
     return val.kind && val.kind === 'StructTag';
   }
+
   getFullname(): string {
     const typeParamString = getTypeParamsString(this.typeParams);
-    return `${this.address.toShortString()}::${this.module}::${
+    return `${this.address.hex()}::${this.module}::${
       this.name
     }${typeParamString}`;
   }
 
+  getShortAddressFullName() : string {
+    const typeParamString = getTypeParamsString(this.typeParams);
+    return `${this.address.toShortString()}::${this.module}::${
+        this.name
+    }${typeParamString}`;
+  }
+
   getParamlessName(): string {
+    return `${this.address.hex()}::${this.module}::${this.name}`;
+  }
+
+  getShortAddressParamlessName(): string {
     return `${this.address.toShortString()}::${this.module}::${this.name}`;
   }
+
 
   getAptosMoveTypeTag(): Types.MoveStructTag {
     return this.getFullname();
@@ -80,13 +93,39 @@ export class TypeParamIdx {
 
 export type TypeTag = AtomicTypeTag | VectorTag | StructTag | TypeParamIdx;
 
-export function getTypeTagFullname(typeTag: TypeTag): string {
+function getTypeTagFullnameInner(typeTag: TypeTag, shortAddress: boolean): string {
   if (VectorTag.isInstance(typeTag)) {
     const vecTag = typeTag as VectorTag;
     return `vector<${getTypeTagFullname(vecTag.elementType)}>`;
   } else if (StructTag.isInstance(typeTag)) {
     const structTag = typeTag as StructTag;
-    return structTag.getFullname();
+    return shortAddress ?
+        structTag.getShortAddressFullName() : structTag.getFullname();
+  } else if (TypeParamIdx.isInstance(typeTag)) {
+    return `$tv${typeTag.index}`;
+  } else if (isAtomicTypeTag(typeTag)) {
+    return typeTag as AtomicTypeTag;
+  }
+  else {
+    throw new Error(`Unrecognized type: ${typeTag}`);
+  }
+}
+
+export function getTypeTagFullname(typeTag: TypeTag): string {
+  return getTypeTagFullnameInner(typeTag, false)
+}
+
+export function getShortAddressTypeTagFullname(typeTag: TypeTag): string {
+  return getTypeTagFullnameInner(typeTag, true)
+}
+
+function getTypeTagParamlessNameInner(typeTag: TypeTag, shortAddress = false): string {
+  if (VectorTag.isInstance(typeTag)) {
+    return `vector`;
+  } else if (StructTag.isInstance(typeTag)) {
+    const structTag = typeTag as StructTag;
+    return shortAddress ?
+        structTag.getShortAddressParamlessName() : structTag.getParamlessName();
   } else if (TypeParamIdx.isInstance(typeTag)) {
     return `$tv${typeTag.index}`;
   } else if (isAtomicTypeTag(typeTag)) {
@@ -98,19 +137,11 @@ export function getTypeTagFullname(typeTag: TypeTag): string {
 }
 
 export function getTypeTagParamlessName(typeTag: TypeTag): string {
-  if (VectorTag.isInstance(typeTag)) {
-    return `vector`;
-  } else if (StructTag.isInstance(typeTag)) {
-    const structTag = typeTag as StructTag;
-    return structTag.getParamlessName();
-  } else if (TypeParamIdx.isInstance(typeTag)) {
-    return `$tv${typeTag.index}`;
-  } else if (isAtomicTypeTag(typeTag)) {
-    return typeTag as AtomicTypeTag;
-  }
-  else {
-    throw new Error(`Unrecognized type: ${typeTag}`);
-  }
+  return getTypeTagParamlessNameInner(typeTag, false)
+}
+
+export function getShortAddressTypeTagParamlessName(typeTag: TypeTag): string {
+  return getTypeTagParamlessNameInner(typeTag, true)
 }
 
 export function getTypeParamsString(typeParams: TypeTag[]) {
