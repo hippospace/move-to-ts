@@ -1,7 +1,7 @@
 import { AptosClient, HexString, Types } from "aptos";
 import { AptosParserRepo, StructInfoType } from "./parserRepo";
 import {
-  getTypeTagFullname,
+  getShortAddressTypeTagFullname,
   parseMoveStructTag,
   StructTag,
   TypeTag,
@@ -129,7 +129,7 @@ class AccountCache {
     this.resources = new Map();
   }
   has(tag: TypeTag) {
-    return this.resources.has(getTypeTagFullname(tag));
+    return this.resources.has(getShortAddressTypeTagFullname(tag));
   }
   async has_async(tag: TypeTag, repo: AptosParserRepo, client: AptosClient) {
     try {
@@ -140,7 +140,7 @@ class AccountCache {
     }
   }
   get(tag: TypeTag) {
-    const fullname = getTypeTagFullname(tag);
+    const fullname = getShortAddressTypeTagFullname(tag);
     const resource = this.resources.get(fullname);
     if (!resource) {
       throw new Error(
@@ -161,14 +161,14 @@ class AccountCache {
       return repo.parse(resource.data, tag);
     } catch (e) {
       throw new Error(
-        `Account ${this.address.toShortString()} does not have resource ${getTypeTagFullname(
+        `Account ${this.address.toShortString()} does not have resource ${getShortAddressTypeTagFullname(
           tag
         )}`
       );
     }
   }
   set(tag: TypeTag, resource: any, overwrite = false) {
-    const fullname = getTypeTagFullname(tag);
+    const fullname = getShortAddressTypeTagFullname(tag);
     if (this.has(tag) && !overwrite) {
       throw new Error(
         `Account ${this.address.toShortString()} already has resource: ${fullname}`
@@ -177,7 +177,7 @@ class AccountCache {
     this.resources.set(fullname, resource);
   }
   move_from(tag: TypeTag): any {
-    const fullname = getTypeTagFullname(tag);
+    const fullname = getShortAddressTypeTagFullname(tag);
     const resource = this.resources.get(fullname);
     if (!resource) {
       throw new Error(
@@ -224,7 +224,7 @@ export class AptosLocalCache implements AptosDataCache {
     let account = this.accounts.get(address.toShortString());
     if (!account) {
       throw new Error(
-        `Resource ${getTypeTagFullname(
+        `Resource ${getShortAddressTypeTagFullname(
           tag
         )} does not exist for ${address.toShortString()}`
       );
@@ -235,7 +235,7 @@ export class AptosLocalCache implements AptosDataCache {
     let account = this.accounts.get(address.toShortString());
     if (!account) {
       throw new Error(
-        `Resource ${getTypeTagFullname(
+        `Resource ${getShortAddressTypeTagFullname(
           tag
         )} does not exist for ${address.toShortString()}`
       );
@@ -567,7 +567,7 @@ export class AptosResourceCache {
   Computes ResourceKey from owner address and resource TypeTag
   */
   getResourceKey(ownerAddress: HexString, typeTag: TypeTag) {
-    return `${ownerAddress.toShortString()}/${getTypeTagFullname(typeTag)}`;
+    return `${ownerAddress.toShortString()}/${getShortAddressTypeTagFullname(typeTag)}`;
   }
 }
 
