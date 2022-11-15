@@ -142,19 +142,34 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "clap"
-version = "3.2.21"
+version = "3.2.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ed5341b2301a26ab80be5cbdced622e80ed808483c52e45e3310a877d3b37d7"
+checksum = "71655c45cb9845d3270c9d6df84ebe72b4dad3c2ba3f7023ad47c144e4e473a5"
 dependencies = [
  "atty",
  "bitflags",
- "clap_derive",
- "clap_lex",
+ "clap_derive 3.2.18",
+ "clap_lex 0.2.4",
  "indexmap",
  "once_cell",
  "strsim",
  "termcolor",
  "textwrap",
+]
+
+[[package]]
+name = "clap"
+version = "4.0.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "389ca505fd2c00136e0d0cd34bcd8b6bd0b59d5779aab396054b716334230c1c"
+dependencies = [
+ "atty",
+ "bitflags",
+ "clap_derive 4.0.21",
+ "clap_lex 0.3.0",
+ "once_cell",
+ "strsim",
+ "termcolor",
 ]
 
 [[package]]
@@ -171,10 +186,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_derive"
+version = "4.0.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0177313f9f02afc995627906bbd8967e2be069f5261954222dac78290c2b9014"
+dependencies = [
+ "heck 0.4.0",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "clap_lex"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
+dependencies = [
+ "os_str_bytes",
+]
+
+[[package]]
+name = "clap_lex"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d4198f73e42b4936b35b5bb248d81d2b595ecb170da0bac7655c54eedfa8da8"
 dependencies = [
  "os_str_bytes",
 ]
@@ -936,7 +973,7 @@ source = "git+https://github.com/move-language/move?rev=547c7f79d1c46dccfcb10240
 dependencies = [
  "anyhow",
  "bcs",
- "clap",
+ "clap 3.2.23",
  "codespan-reporting",
  "difference",
  "hex",
@@ -980,7 +1017,7 @@ source = "git+https://github.com/move-language/move?rev=547c7f79d1c46dccfcb10240
 dependencies = [
  "anyhow",
  "bcs",
- "clap",
+ "clap 3.2.23",
  "codespan",
  "colored",
  "move-binary-format",
@@ -999,7 +1036,7 @@ version = "0.1.0"
 source = "git+https://github.com/move-language/move?rev=547c7f79d1c46dccfcb1024005d2a796be2480ec#547c7f79d1c46dccfcb1024005d2a796be2480ec"
 dependencies = [
  "anyhow",
- "clap",
+ "clap 3.2.23",
  "colored",
  "move-binary-format",
  "move-bytecode-source-map",
@@ -1108,7 +1145,7 @@ source = "git+https://github.com/move-language/move?rev=547c7f79d1c46dccfcb10240
 dependencies = [
  "anyhow",
  "bcs",
- "clap",
+ "clap 3.2.23",
  "colored",
  "dirs-next",
  "itertools",
@@ -1150,7 +1187,7 @@ dependencies = [
 name = "move-to-ts"
 version = "0.3.12"
 dependencies = [
- "clap",
+ "clap 4.0.25",
  "itertools",
  "move-command-line-common",
  "move-compiler",
@@ -1990,9 +2027,9 @@ dependencies = [
 
 [[package]]
 name = "textwrap"
-version = "0.15.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
+checksum = "222a222a5bfe1bba4a77b45ec488a741b3cb8872e5e499451fd7d0129c9c7c3d"
 
 [[package]]
 name = "thiserror"
