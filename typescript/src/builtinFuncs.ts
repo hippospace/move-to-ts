@@ -254,6 +254,8 @@ export function payloadArg(val: any) {
     }
   } else if (val instanceof HexString) {
     return val.toShortString();
+  } else if (val.hexString) {
+    return val.toShortString();
   } else if (typeof val === "boolean") {
     return val;
   } else if (val.typeTag instanceof StructTag) {

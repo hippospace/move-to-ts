@@ -1,7 +1,7 @@
 import { HexString } from "aptos";
 import { BCS } from "aptos";
 import { U128, U64, U8 } from "./builtinTypes";
-import { u128, u64, u8 } from "./builtinFuncs";
+import { moveValueToOpenApiObject, u128, u64, u8 } from "./builtinFuncs";
 import {
   AtomicTypeTag,
   SimpleStructTag,
@@ -117,6 +117,9 @@ export function serializeMoveValueWithoutTag(
     serializeMoveValue(serializer, value, AtomicTypeTag.Bool);
   } else if (value instanceof HexString) {
     serializeMoveValue(serializer, value, AtomicTypeTag.Address);
+  } else if (value.hexString) {
+    const addr = new HexString(value.hex());
+    serializeMoveValue(serializer, addr, AtomicTypeTag.Address);
   }
   // struct
   else if ((value as unknown as any).typeTag instanceof StructTag) {
