@@ -243,7 +243,7 @@ export function strToU8(str: string): U8[] {
   return result;
 }
 
-export function payloadArg(val: any) {
+export function payloadArg(val: any):any {
   if (val instanceof UnsignedInt) {
     if (val instanceof U8) {
       return val.toJsNumber();
@@ -271,7 +271,10 @@ export function payloadArg(val: any) {
     } else {
       throw new Error(`Unexpected struct type: ${tag.getFullname()}`);
     }
-  } else {
+  } else if (val instanceof Array) {
+    return val.map(payloadArg);
+  }
+  else {
     throw new Error(`Unexpected value type: ${typeof val}`);
   }
 }
