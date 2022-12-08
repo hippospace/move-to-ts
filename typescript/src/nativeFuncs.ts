@@ -139,6 +139,20 @@ export function aptos_std_aptos_hash_keccak256(
   throw new Error("Not implemented");
 }
 
+export function aptos_std_aptos_hash_ripemd160_internal(
+    bytes: U8[],
+    $c: AptosDataCache
+): U8[] {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_aptos_hash_sha2_512_internal(
+    bytes: U8[],
+    $c: AptosDataCache
+): U8[] {
+  throw new Error("Not implemented");
+}
+
 export function aptos_std_aptos_hash_sip_hash(
   bytes: U8[],
   $c: AptosDataCache
@@ -973,4 +987,10 @@ export function aptos_std_type_info_type_name(
     },
     newTag
   );
+}
+
+export function aptos_std_type_info_chain_id_internal(
+  $c: AptosDataCache,
+): U8 {
+  throw new Error("Not Implemented");
 }
