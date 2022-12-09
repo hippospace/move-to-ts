@@ -153,6 +153,13 @@ export function aptos_std_aptos_hash_sha2_512_internal(
   throw new Error("Not implemented");
 }
 
+export function aptos_std_aptos_hash_sha3_512_internal(
+    bytes: U8[],
+    $c: AptosDataCache
+): U8[] {
+  throw new Error("Not implemented");
+}
+
 export function aptos_std_aptos_hash_sip_hash(
   bytes: U8[],
   $c: AptosDataCache
