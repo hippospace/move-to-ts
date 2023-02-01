@@ -1,6 +1,6 @@
 {
   "name": "@manahippo/move-to-ts",
-  "version": "0.6.1",
+  "version": "0.6.3",
   "license": "MIT",
   "scripts": {
     "build": "rm -rf dist && rollup -c",

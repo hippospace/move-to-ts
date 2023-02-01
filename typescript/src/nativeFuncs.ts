@@ -955,7 +955,7 @@ export function aptos_std_type_info_type_of(
     throw new Error(`Expect 1 typetag, but received: ${tags.length}`);
   }
   const tag = tags[0];
-  if (!(tag instanceof StructTag)) {
+  if (!(StructTag.isInstance(tag))) {
     throw new Error("type_of requires Struct type as type argument");
   }
   const struct_name =

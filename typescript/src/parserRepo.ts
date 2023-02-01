@@ -41,7 +41,7 @@ export function parseStructProto(
   repo: AptosParserRepo,
   struct: StructInfoType
 ): any {
-  if (!(typeTag instanceof StructTag)) {
+  if (!(StructTag.isInstance(typeTag))) {
     throw new Error(
       `${struct.structName} expects a StructTag as typeTag but received: ${typeTag}`
     );
@@ -261,7 +261,7 @@ export function VectorParser(
   typeTag: TypeTag,
   repo: AptosParserRepo
 ): any {
-  if (!(typeTag instanceof VectorTag)) {
+  if (!(VectorTag.isInstance(typeTag))) {
     throw new Error(
       `VectorParser cannot parse type: ${getTypeTagParamlessName(typeTag)}`
     );
@@ -332,7 +332,7 @@ export class AptosParserRepo {
     field: string,
     query?: { start?: bigint|number; limit?: number }
   ) {
-    if (!(containerTypeTag instanceof StructTag)) {
+    if (!(StructTag.isInstance(containerTypeTag))) {
       throw new Error(
         `Event handler container struct should be a struct, but received: ${getTypeTagParamlessName(
           containerTypeTag

@@ -150,7 +150,7 @@ class AccountCache {
     return resource;
   }
   async get_async(tag: TypeTag, repo: AptosParserRepo, client: AptosClient) {
-    if (!(tag instanceof StructTag)) {
+    if (!(StructTag.isInstance(tag))) {
       throw new Error(`Expected StructTag`);
     }
     try {

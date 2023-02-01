@@ -25,7 +25,7 @@ export class StructTag {
     public typeParams: TypeTag[]
   ) {}
   static isInstance(val: any): val is StructTag {
-    return val.kind && val.kind === 'StructTag';
+    return val && val.kind && val.kind === 'StructTag';
   }
 
   getFullname(): string {
@@ -79,7 +79,7 @@ export class VectorTag {
   readonly kind = 'VectorTag';
   constructor(public elementType: TypeTag) {}
   static isInstance(val: any): val is VectorTag {
-    return val.kind && val.kind === 'VectorTag';
+    return val && val.kind && val.kind === 'VectorTag';
   }
 }
 
@@ -87,7 +87,7 @@ export class TypeParamIdx {
   readonly kind = "TypeParamIdx";
   constructor(public index: number) {}
   static isInstance(val: any): val is TypeParamIdx {
-    return val.kind && val.kind === 'TypeParamIdx';
+    return val && val.kind && val.kind === 'TypeParamIdx';
   }
 }
 

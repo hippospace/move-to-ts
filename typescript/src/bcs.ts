@@ -90,11 +90,11 @@ export function serializeMoveValue(
       throw new Error("Expected value to be U128");
     }
     serializer.serializeU128(v.toBigInt());
-  } else if (tag instanceof VectorTag) {
+  } else if (VectorTag.isInstance(tag)) {
     serializeVector(serializer, v, tag.elementType);
-  } else if (tag instanceof StructTag) {
+  } else if (StructTag.isInstance(tag)) {
     serializeStruct(serializer, v, tag);
-  } else if (v instanceof TypeParamIdx) {
+  } else if (TypeParamIdx.isInstance(v)) {
     throw new Error(
       "BCS serialization expected concrete TypeTag but received TypeParamIdx"
     );
@@ -122,7 +122,7 @@ export function serializeMoveValueWithoutTag(
     serializeMoveValue(serializer, addr, AtomicTypeTag.Address);
   }
   // struct
-  else if ((value as unknown as any).typeTag instanceof StructTag) {
+  else if (StructTag.isInstance((value as unknown as any).typeTag)) {
     const tag = (value as unknown as any).typeTag as StructTag;
     serializeStruct(serializer, value, tag);
   }
@@ -162,14 +162,14 @@ export function deserializeMoveValue(
   } else if (tag === AtomicTypeTag.U128) {
     const result = deserializer.deserializeU128();
     return u128(result.toString());
-  } else if (tag instanceof VectorTag) {
+  } else if (VectorTag.isInstance(tag)) {
     const length = deserializer.deserializeUleb128AsU32();
     const result: any[] = [];
     for (let i = 0; i < length; i++) {
       result.push(deserializeMoveValue(deserializer, tag.elementType));
     }
     return result;
-  } else if (tag instanceof StructTag) {
+  } else if (StructTag.isInstance(tag)) {
     if (tag instanceof SimpleStructTag) {
       const structInfo = tag.structInfo;
       const proto: any = {};

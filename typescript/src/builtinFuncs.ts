@@ -134,7 +134,7 @@ export function copy<T>(val: T): T {
     return val.copy() as unknown as T;
   } else if (val instanceof Array) {
     return val.map((ele) => copy(ele)) as unknown as T;
-  } else if (v.typeTag instanceof StructTag) {
+  } else if (StructTag.isInstance(v.typeTag)) {
     let proto = Object();
     const structInfo = v.constructor as StructInfoType;
     for (const field of structInfo.fields) {
@@ -221,7 +221,7 @@ export function set(lhs: any, rhs: any) {
     for (const val of rhs) {
       lhs.push(copy(val));
     }
-  } else if (lhs.typeTag instanceof StructTag) {
+  } else if (StructTag.isInstance(lhs.typeTag)) {
     // struct set
     const structInfo = lhs.constructor as StructInfoType;
     for (const field of structInfo.fields) {
@@ -258,7 +258,7 @@ export function payloadArg(val: any):any {
     return val.toShortString();
   } else if (typeof val === "boolean") {
     return val;
-  } else if (val.typeTag instanceof StructTag) {
+  } else if (StructTag.isInstance(val.typeTag)) {
     const tag = val.typeTag as StructTag;
     if (
       tag.address.toShortString() === "0x1" &&
@@ -294,7 +294,7 @@ export function moveValueToOpenApiObject(val: any, typeTag: TypeTag): any {
   }
   // vector
   else if (val instanceof Array) {
-    if (!(typeTag instanceof VectorTag)) {
+    if (!(VectorTag.isInstance(typeTag))) {
       throw new Error("Expected a vector value");
     }
     // special handler for U8[]
@@ -305,7 +305,7 @@ export function moveValueToOpenApiObject(val: any, typeTag: TypeTag): any {
   }
   // object / struct
   else if (typeof val === "object") {
-    if (!(typeTag instanceof StructTag)) {
+    if (!(StructTag.isInstance(typeTag))) {
       throw new Error("Expected a struct value");
     }
     // special handler for ASCII
