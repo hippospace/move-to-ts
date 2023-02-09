@@ -29,10 +29,7 @@ export class StructTag {
   }
 
   getFullname(): string {
-    const typeParamString = getTypeParamsString(this.typeParams);
-    return `${this.address.hex()}::${this.module}::${
-      this.name
-    }${typeParamString}`;
+    return this.getShortAddressFullName();
   }
 
   getShortAddressFullName() : string {
