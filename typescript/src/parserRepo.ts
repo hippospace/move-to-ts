@@ -304,7 +304,10 @@ export class AptosParserRepo {
     client: AptosClient,
     address: HexString,
     structTsType: StructInfoType,
-    typeParams: TypeTag[]
+    typeParams: TypeTag[],
+    query?: {
+      ledgerVersion?: number;
+    }
   ) {
     // make a concrete typeTag
     if (structTsType.typeParameters.length !== typeParams.length) {
@@ -320,7 +323,8 @@ export class AptosParserRepo {
     );
     const resource = await client.getAccountResource(
       address,
-      typeTag.getAptosMoveTypeTag()
+      typeTag.getAptosMoveTypeTag(),
+      query
     );
     const proto = parseStructProto(resource.data, typeTag, this, structTsType);
     return new structTsType(proto, typeTag);
@@ -345,7 +349,7 @@ export class AptosParserRepo {
       field,
       query
     );
-    return events.map((e) => {
+    return events.map((e: any) => {
       const tag = parseTypeTagOrThrow(e.type);
       return this.parse(e.data, tag);
     });

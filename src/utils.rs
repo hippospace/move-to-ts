@@ -65,9 +65,9 @@ pub fn generate_package_json(package_name: String, cli: bool, ui: bool) -> (Stri
     "typescript": "^4.6.4"
   }},
   "dependencies": {{
-    "aptos": "1.3.15",
+    "aptos": "1.6.0",
     "big-integer": "^1.6.51",{}
-    "@manahippo/move-to-ts": "^0.5.1"
+    "@manahippo/move-to-ts": "^1.0.2"
   }}
 }}
 "###,

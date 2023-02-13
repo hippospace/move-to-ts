@@ -217,6 +217,7 @@ pub fn write_app(
         }
         w.writeln("  loadFull=true,");
         w.writeln("  fillCache=true,");
+        w.writeln("  query?: {ledgerVersion?: number}");
         let tags = if sdef.type_parameters.is_empty() {
             "[] as TypeTag[]"
         } else {
@@ -224,7 +225,7 @@ pub fn write_app(
         };
         w.writeln(") {");
         w.writeln(format!(
-            "  const val = await {}.load(this.repo, this.client, owner, {});",
+            "  const val = await {}.load(this.repo, this.client, owner, {}, query);",
             sname, tags
         ));
         w.writeln("  if (loadFull) {");
@@ -882,14 +883,14 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                     // 5. resource loader
                     if sdef.abilities.has_ability_(Ability_::Key) {
                         w.new_line();
-                        w.writeln("static async load(repo: AptosParserRepo, client: AptosClient, address: HexString, typeParams: TypeTag[]) {");
-                        w.writeln(format!("  const result = await repo.loadResource(client, address, {}, typeParams);", name));
+                        w.writeln("static async load(repo: AptosParserRepo, client: AptosClient, address: HexString, typeParams: TypeTag[], query?: {ledgerVersion?: number;}) {");
+                        w.writeln(format!("  const result = await repo.loadResource(client, address, {}, typeParams, query);", name));
                         w.writeln(format!("  return result as unknown as {};", name));
                         w.write("}");
 
                         w.new_line();
-                        w.writeln("static async loadByApp(app: $.AppType, address: HexString, typeParams: TypeTag[]) {");
-                        w.writeln(format!("  const result = await app.repo.loadResource(app.client, address, {}, typeParams);", name));
+                        w.writeln("static async loadByApp(app: $.AppType, address: HexString, typeParams: TypeTag[], query?: {ledgerVersion?: number;}) {");
+                        w.writeln(format!("  const result = await app.repo.loadResource(app.client, address, {}, typeParams, query);", name));
                         w.writeln("  await result.loadFullState(app)");
                         w.writeln(format!("  return result as unknown as {};", name));
                         w.write("}");
