@@ -61,6 +61,7 @@ pub fn check_test(
 pub fn format_attribute_value(val: &AttributeValue, c: &mut Context) -> TermResult {
     match &val.value {
         AttributeValue_::Value(val) => val.term(c),
+        AttributeValue_::Module(mi) => mi.term(c),
         AttributeValue_::ModuleAccess(ma) => ma.term(c),
     }
 }

@@ -437,10 +437,14 @@ pub fn base_type_to_typetag_builder_inner(
                 }
                 BuiltinTypeName_::Bool => Ok("AtomicTypeTag.Bool".to_string()),
                 BuiltinTypeName_::U8 => Ok("AtomicTypeTag.U8".to_string()),
+                BuiltinTypeName_::U16 => Ok("AtomicTypeTag.U16".to_string()),
+                BuiltinTypeName_::U32 => Ok("AtomicTypeTag.U32".to_string()),
                 BuiltinTypeName_::U64 => Ok("AtomicTypeTag.U64".to_string()),
                 BuiltinTypeName_::U128 => Ok("AtomicTypeTag.U128".to_string()),
+                BuiltinTypeName_::U256 => Ok("AtomicTypeTag.U256".to_string()),
                 BuiltinTypeName_::Address => Ok("AtomicTypeTag.Address".to_string()),
                 BuiltinTypeName_::Signer => Ok("AtomicTypeTag.Signer".to_string()),
+                BuiltinTypeName_::Fun => Ok("AtomicTypeTag.Fun".to_string()),
             },
             TypeName_::ModuleType(mident, sname) => {
                 let address = format_address_hex(mident.value.address);
@@ -502,10 +506,14 @@ pub fn base_type_to_typetag(base_ty: &BaseType, c: &mut Context) -> TermResult {
                 }
                 BuiltinTypeName_::Bool => Ok("AtomicTypeTag.Bool".to_string()),
                 BuiltinTypeName_::U8 => Ok("AtomicTypeTag.U8".to_string()),
+                BuiltinTypeName_::U16 => Ok("AtomicTypeTag.U16".to_string()),
+                BuiltinTypeName_::U32 => Ok("AtomicTypeTag.U32".to_string()),
                 BuiltinTypeName_::U64 => Ok("AtomicTypeTag.U64".to_string()),
                 BuiltinTypeName_::U128 => Ok("AtomicTypeTag.U128".to_string()),
+                BuiltinTypeName_::U256 => Ok("AtomicTypeTag.U256".to_string()),
                 BuiltinTypeName_::Address => Ok("AtomicTypeTag.Address".to_string()),
                 BuiltinTypeName_::Signer => Ok("AtomicTypeTag.Signer".to_string()),
+                BuiltinTypeName_::Fun => Ok("AtomicTypeTag.Fun".to_string()),
             },
             TypeName_::ModuleType(mident, sname) => {
                 let address = format_address_hex(mident.value.address);

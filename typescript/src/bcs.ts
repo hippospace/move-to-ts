@@ -1,6 +1,6 @@
 import { HexString } from "aptos";
 import { BCS } from "aptos";
-import { U128, U64, U8 } from "./builtinTypes";
+import {U128, U16, U256, U32, U64, U8} from "./builtinTypes";
 import { moveValueToOpenApiObject, u128, u64, u8 } from "./builtinFuncs";
 import {
   AtomicTypeTag,
@@ -80,6 +80,16 @@ export function serializeMoveValue(
       throw new Error("Expected value to be U8");
     }
     serializer.serializeU8(v.toJsNumber());
+  } else if (tag === AtomicTypeTag.U16) {
+    if (!(v instanceof U16)) {
+      throw new Error("Expected value to be U16");
+    }
+    serializer.serializeU16(v.toJsNumber());
+  } else if (tag === AtomicTypeTag.U32) {
+    if (!(v instanceof U32)) {
+      throw new Error("Expected value to be U32");
+    }
+    serializer.serializeU32(v.toJsNumber());
   } else if (tag === AtomicTypeTag.U64) {
     if (!(v instanceof U64)) {
       throw new Error("Expected value to be U64");
@@ -90,6 +100,11 @@ export function serializeMoveValue(
       throw new Error("Expected value to be U128");
     }
     serializer.serializeU128(v.toBigInt());
+  } else if (tag === AtomicTypeTag.U256) {
+    if (!(v instanceof U256)) {
+      throw new Error("Expected value to be U256");
+    }
+    serializer.serializeU256(v.toBigInt());
   } else if (VectorTag.isInstance(tag)) {
     serializeVector(serializer, v, tag.elementType);
   } else if (StructTag.isInstance(tag)) {

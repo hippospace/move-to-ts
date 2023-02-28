@@ -9,7 +9,7 @@ pub mod utils;
 
 use crate::gen_cli::generate_cli;
 use crate::gen_ui::{gen_public_html, generate_ui};
-use crate::shared::{format_address, format_address_hex, is_same_package};
+use crate::shared::{format_address, is_same_package};
 use crate::utils::{generate_index, generate_topmost_index};
 use clap::Parser;
 use move_command_line_common::address::NumericalAddress;
@@ -38,7 +38,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     build_config.additional_named_addresses = config.named_addresses.clone();
     // build_config.additional_named_addresses =
     let resolution_graph = build_config
-        .resolution_graph_for_package(path)
+        .resolution_graph_for_package(path, &mut Vec::new())
         .expect("Failed to build resolution graph for package");
     /*
     1. Go through the compilation pipeline to report diagnostics if any, otherwise retain AST
@@ -146,7 +146,7 @@ fn build(path: &Path, config: &MoveToTsOptions) {
     };
     let mut ctx = Context::new(config, hlir_program.clone());
     for (mident, mdef) in hlir_program.modules.key_cloned_iter() {
-        let mod_name = mident.value.module.to_string();
+        // let mod_name = mident.value.module.to_string();
 
         // 2
         let result = ast_to_ts::translate_module(mident, mdef, &mut ctx);

@@ -81,15 +81,19 @@ pub fn stype_to_ts_parser(name: &String, loc: Loc, stype: &SingleType) -> TermRe
             }
             TypeName_::Builtin(builtin) => match &builtin.value {
                 BuiltinTypeName_::U8 => Ok(format!("u8({})", name)),
+                BuiltinTypeName_::U16 => Ok(format!("u16({})", name)),
+                BuiltinTypeName_::U32 => Ok(format!("u32({})", name)),
                 BuiltinTypeName_::U64 => Ok(format!("u64({})", name)),
                 BuiltinTypeName_::U128 => Ok(format!("u128({})", name)),
+                BuiltinTypeName_::U256 => Ok(format!("u256({})", name)),
                 BuiltinTypeName_::Bool => Ok(format!("{}=='true'", name)),
                 BuiltinTypeName_::Address => Ok(format!("new HexString({})", name)),
                 BuiltinTypeName_::Signer => unreachable!(),
                 BuiltinTypeName_::Vector => {
                     assert!(targs.len() == 1);
                     vector_type_ts_parser(name, &targs[0])
-                }
+                },
+                BuiltinTypeName_::Fun => Ok(format!("{}", name))
             },
         },
         _ => unreachable!(),

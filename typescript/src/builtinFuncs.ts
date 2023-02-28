@@ -6,8 +6,8 @@ import {
   substituteTypeParams,
 } from "./typeTag";
 import bigInt from "big-integer";
-import { U8, U64, U128, UnsignedInt, takeBigInt } from "./builtinTypes";
-import { HexString } from "aptos";
+import {U8, U16, U32, U64, U128, U256, UnsignedInt, takeBigInt} from "./builtinTypes";
+import {HexString, } from "aptos";
 import stringify from "json-stable-stringify";
 import { StructInfoType } from "./parserRepo";
 import { ActualStringClass } from "./nativeFuncs";
@@ -32,6 +32,18 @@ export function u8(
   return new U8(takeBigInt(from));
 }
 
+export function u16(
+    from: UnsignedInt<any> | bigInt.BigInteger | string | number
+) {
+  return new U16(takeBigInt(from));
+}
+
+export function u32(
+    from: UnsignedInt<any> | bigInt.BigInteger | string | number
+) {
+  return new U32(takeBigInt(from));
+}
+
 export function u64(
   from: UnsignedInt<any> | bigInt.BigInteger | string | number
 ) {
@@ -42,6 +54,12 @@ export function u128(
   from: UnsignedInt<any> | bigInt.BigInteger | string | number
 ) {
   return new U128(takeBigInt(from));
+}
+
+export function u256(
+    from: UnsignedInt<any> | bigInt.BigInteger | string | number
+) {
+  return new U256(takeBigInt(from));
 }
 
 export function deep_eq(lhs: any, rhs: any): boolean {

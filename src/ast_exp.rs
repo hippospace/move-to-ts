@@ -7,6 +7,7 @@ use move_compiler::{
     naming::ast::{BuiltinTypeName, BuiltinTypeName_, TParam},
     parser::ast::{BinOp, BinOp_, UnaryOp},
 };
+use move_compiler::expansion::ast::ModuleIdent;
 use move_ir_types::location::Loc;
 
 impl AstTsPrinter for Exp {
@@ -115,7 +116,7 @@ impl AstTsPrinter for Exp {
                 //Ok(rename(v))
             }
             E::Cast(e, ty) => Ok(format!("{}({})", builtin_cast_name(ty, c)?, e.term(c)?)),
-            E::Spec(_, _) => Ok("".to_string()),
+            E::Spec(_) => Ok("".to_string()),
             // FIXME: is this really how freeze should behave?
             E::Freeze(e) => e.term(c),
             E::UnresolvedError => {
@@ -355,10 +356,16 @@ impl AstTsPrinter for BuiltinTypeName {
             BuiltinTypeName_::Address => Ok("HexString".to_string()),
             BuiltinTypeName_::Bool => Ok("boolean".to_string()),
             BuiltinTypeName_::U8 => Ok("U8".to_string()),
+            BuiltinTypeName_::U16 => Ok("U16".to_string()),
+            BuiltinTypeName_::U32 => Ok("U32".to_string()),
             BuiltinTypeName_::U64 => Ok("U64".to_string()),
             BuiltinTypeName_::U128 => Ok("U128".to_string()),
+            BuiltinTypeName_::U256 => Ok("U256".to_string()),
             BuiltinTypeName_::Signer => Ok("HexString".to_string()),
             BuiltinTypeName_::Vector => {
+                panic!("Should be handled elsewhere as here we do not have type param info");
+            },
+            BuiltinTypeName_::Fun => {
                 panic!("Should be handled elsewhere as here we do not have type param info");
             }
         }
@@ -370,10 +377,14 @@ pub fn builtin_cast_name(builtin: &BuiltinTypeName, _c: &mut Context) -> TermRes
         BuiltinTypeName_::Address => derr!((builtin.loc, "Cannot cast to address")),
         BuiltinTypeName_::Bool => derr!((builtin.loc, "Cannot cast to bool")),
         BuiltinTypeName_::U8 => Ok("u8".to_string()),
+        BuiltinTypeName_::U16 => Ok("u16".to_string()),
+        BuiltinTypeName_::U32 => Ok("u32".to_string()),
         BuiltinTypeName_::U64 => Ok("u64".to_string()),
         BuiltinTypeName_::U128 => Ok("u128".to_string()),
+        BuiltinTypeName_::U256 => Ok("u256".to_string()),
         BuiltinTypeName_::Signer => derr!((builtin.loc, "Cannot cast to signer")),
         BuiltinTypeName_::Vector => derr!((builtin.loc, "Cannot cast to vector")),
+        BuiltinTypeName_::Fun => derr!((builtin.loc, "Cannot cast to fun")),
     }
 }
 
@@ -535,7 +546,7 @@ pub fn handle_binop_for_base_type(
                             ))
                         }
                         // precision-sensitive
-                        BuiltinTypeName_::U8 | BuiltinTypeName_::U64 | BuiltinTypeName_::U128 => {
+                        BuiltinTypeName_::U8 | BuiltinTypeName_::U16 | BuiltinTypeName_::U32 | BuiltinTypeName_::U64 | BuiltinTypeName_::U128 | BuiltinTypeName_::U256 => {
                             match binop.value {
                                 // operate directly using bigInt since they cannot go wrong
                                 BinOp_::Eq => {
@@ -604,6 +615,9 @@ pub fn handle_binop_for_base_type(
                                 format!("Vector does not have this binop: {}", binop)
                             )),
                         },
+                        BuiltinTypeName_::Fun => {
+                            Ok( format!("{}", ""))
+                        }
                     }
                 }
                 TypeName_::ModuleType(_mident, _s) => {
@@ -670,6 +684,13 @@ impl AstTsPrinter for UnaryOp {
     }
 }
 
+impl AstTsPrinter for ModuleIdent {
+    const CTOR_NAME: &'static str = "ModuleIdent";
+    fn term(&self, _c: &mut Context) -> TermResult {
+        Ok(format!("{}", ""))
+    }
+}
+
 impl AstTsPrinter for ModuleAccess {
     const CTOR_NAME: &'static str = "ModuleAccess";
     fn term(&self, c: &mut Context) -> TermResult {
@@ -690,8 +711,11 @@ impl AstTsPrinter for Value {
             V::Address(addr) => ts_format_numerical_address(addr),
             // FIXME bigInt needs type cast when assigned to U8/64/128?
             V::U8(u) => Ok(format!("u8(\"{}\")", u)),
+            V::U16(u) => Ok(format!("u16(\"{}\")", u)),
+            V::U32(u) => Ok(format!("u32(\"{}\")", u)),
             V::U64(u) => Ok(format!("u64(\"{}\")", u)),
             V::U128(u) => Ok(format!("u128(\"{}\")", u)),
+            V::U256(u) => Ok(format!("u256(\"{}\")", u)),
             V::Bool(b) => Ok(format!("{}", b)),
             V::Vector(_, values) => {
                 let mut vals = vec![];
@@ -715,8 +739,11 @@ impl AstTsPrinter for move_compiler::expansion::ast::Value {
             // FIXME bigInt needs type cast when assigned to U8/64/128?
             V::InferredNum(u) => Ok(format!("bigInt(\"{}\")", u)),
             V::U8(u) => Ok(format!("u8(\"{}\")", u)),
+            V::U16(u) => Ok(format!("u16(\"{}\")", u)),
+            V::U32(u) => Ok(format!("u32(\"{}\")", u)),
             V::U64(u) => Ok(format!("u64(\"{}\")", u)),
             V::U128(u) => Ok(format!("u128(\"{}\")", u)),
+            V::U256(u) => Ok(format!("u256(\"{}\")", u)),
             V::Bool(b) => Ok(format!("{}", b)),
             V::Bytearray(v) => {
                 let mut vals = vec![];

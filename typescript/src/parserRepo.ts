@@ -9,7 +9,7 @@ import {
 } from "./typeTag";
 import { AptosClient, HexString } from "aptos";
 import bigInt from "big-integer";
-import { U128, U64, U8 } from "./builtinTypes";
+import {U128, U16, U256, U32, U64, U8} from "./builtinTypes";
 import { strToU8, u8 } from "./builtinFuncs";
 
 export type TypeParamDeclType = {
@@ -143,6 +143,42 @@ export function U8Parser(
   return new U8(bigInt(data));
 }
 
+export function U16Parser(
+    data: any,
+    typeTag: TypeTag,
+    _repo: AptosParserRepo
+): U16 {
+  if (typeTag !== AtomicTypeTag.U16) {
+    throw new Error(
+        `U16Parser cannot parse type: ${getTypeTagParamlessName(typeTag)}`
+    );
+  }
+  if (typeof data !== "string") {
+    throw new Error(
+        `U16Parser expects string type as data but received: ${typeof data}`
+    );
+  }
+  return new U16(bigInt(data));
+}
+
+export function U32Parser(
+    data: any,
+    typeTag: TypeTag,
+    _repo: AptosParserRepo
+): U32 {
+  if (typeTag !== AtomicTypeTag.U32) {
+    throw new Error(
+        `U32Parser cannot parse type: ${getTypeTagParamlessName(typeTag)}`
+    );
+  }
+  if (typeof data !== "string") {
+    throw new Error(
+        `U32Parser expects string type as data but received: ${typeof data}`
+    );
+  }
+  return new U32(bigInt(data));
+}
+
 export function U64Parser(
   data: any,
   typeTag: TypeTag,
@@ -177,6 +213,24 @@ export function U128Parser(
     );
   }
   return new U128(bigInt(data));
+}
+
+export function U256Parser(
+    data: any,
+    typeTag: TypeTag,
+    _repo: AptosParserRepo
+): U256 {
+  if (typeTag !== AtomicTypeTag.U256) {
+    throw new Error(
+        `U256Parser cannot parse type: ${getTypeTagParamlessName(typeTag)}`
+    );
+  }
+  if (typeof data !== "string") {
+    throw new Error(
+        `U256Parser expects string type as data but received: ${typeof data}`
+    );
+  }
+  return new U256(bigInt(data));
 }
 
 export function BoolParser(
@@ -380,8 +434,11 @@ export class AptosParserRepo {
     // load the defaults
     this.addParser("bool", BoolParser);
     this.addParser("u8", U8Parser);
+    this.addParser("u16", U16Parser);
+    this.addParser("u32", U32Parser);
     this.addParser("u64", U64Parser);
     this.addParser("u128", U128Parser);
+    this.addParser("u256", U256Parser);
     this.addParser("address", AddressParser);
     this.addParser("vector", VectorParser);
   }

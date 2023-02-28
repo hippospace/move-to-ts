@@ -1,12 +1,15 @@
 // Copyright (c) Aptos
 // SPDX-License-Identifier: Apache-2.0
 
-import { HexString ,TxnBuilderTypes, BCS } from "aptos";
+import {HexString, TxnBuilderTypes, BCS} from "aptos";
 const {
   TypeTagBool,
   TypeTagU8,
+  TypeTagU16,
+  TypeTagU32,
   TypeTagU64,
   TypeTagU128,
+  TypeTagU256,
   TypeTagAddress,
   AccountAddress,
   TypeTagVector,
@@ -19,6 +22,7 @@ const {
   TransactionArgumentAddress,
   TransactionArgumentU8,
   TransactionArgumentU8Vector,
+
 }  = TxnBuilderTypes;
 
 function assertType(val: any, types: string[] | string, message?: string) {
@@ -158,11 +162,20 @@ export class TypeTagParser {
     if (tokenVal === "u8") {
       return new TypeTagU8();
     }
+    if (tokenVal === "u16") {
+      return new TypeTagU16();
+    }
+    if (tokenVal === "u32") {
+      return new TypeTagU32();
+    }
     if (tokenVal === "u64") {
       return new TypeTagU64();
     }
     if (tokenVal === "u128") {
       return new TypeTagU128();
+    }
+    if (tokenVal === "u256") {
+      return new TypeTagU256();
     }
     if (tokenVal === "bool") {
       return new TypeTagBool();

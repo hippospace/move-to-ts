@@ -1085,11 +1085,8 @@ pub fn write_query_function(
         .map(|(v, _)| v.to_string())
         .collect::<Vec<_>>();
 
-    let mut has_tags = false;
-
     if !f.signature.type_parameters.is_empty() {
         param_list.push("$p".to_string());
-        has_tags = true;
     }
 
     let move_to_err = derr!((return_type.loc, "Expect move_to to contain a struct type"));
@@ -1465,8 +1462,11 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
             BuiltinTypeName_::Bool
             | BuiltinTypeName_::Address
             | BuiltinTypeName_::U8
+            | BuiltinTypeName_::U16
+            | BuiltinTypeName_::U32
             | BuiltinTypeName_::U64
-            | BuiltinTypeName_::U128 => Ok(format!("$.payloadArg({})", name)),
+            | BuiltinTypeName_::U128
+            | BuiltinTypeName_::U256 => Ok(format!("$.payloadArg({})", name)),
             BuiltinTypeName_::Signer => unreachable!(),
             BuiltinTypeName_::Vector => {
                 // handle vector
@@ -1478,8 +1478,11 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
                         BuiltinTypeName_::U8 => Ok(format!("$.u8ArrayArg({})", name)),
                         BuiltinTypeName_::Bool
                         | BuiltinTypeName_::Address
+                        | BuiltinTypeName_::U16
+                        | BuiltinTypeName_::U32
                         | BuiltinTypeName_::U64
-                        | BuiltinTypeName_::U128 => {
+                        | BuiltinTypeName_::U128
+                        | BuiltinTypeName_::U256 => {
                             Ok(format!("{}.map(element => $.payloadArg(element))", name))
                         }
                         BuiltinTypeName_::Signer => unreachable!(),
@@ -1488,6 +1491,7 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
                             let inner_map = get_ts_handler_for_vector_in_vector(&inner_ty_args[0])?;
                             Ok(format!("{}.map({})", name, inner_map))
                         }
+                        BuiltinTypeName_::Fun => Ok("".to_string())
                     }
                 } else {
                     derr!((
@@ -1495,7 +1499,8 @@ pub fn get_ts_handler_for_script_function_param(name: &Var, ty: &SingleType) -> 
                         "This vector type is not supported as parameter of a script function"
                     ))
                 }
-            }
+            },
+            BuiltinTypeName_::Fun => Ok("".to_string())
         }
     } else {
         let err = derr!((
@@ -1524,8 +1529,11 @@ pub fn get_ts_handler_for_vector_in_vector(inner_ty: &BaseType) -> TermResult {
             BuiltinTypeName_::U8 => Ok("array => $.u8ArrayArg(array)".to_string()),
             BuiltinTypeName_::Bool
             | BuiltinTypeName_::Address
+            | BuiltinTypeName_::U16
+            | BuiltinTypeName_::U32
             | BuiltinTypeName_::U64
-            | BuiltinTypeName_::U128 => {
+            | BuiltinTypeName_::U128
+            | BuiltinTypeName_::U256 => {
                 Ok("array => array.map(ele => $.payloadArg(ele))".to_string())
             }
             BuiltinTypeName_::Signer => unreachable!(),
@@ -1534,6 +1542,7 @@ pub fn get_ts_handler_for_vector_in_vector(inner_ty: &BaseType) -> TermResult {
                 let inner_map = get_ts_handler_for_vector_in_vector(&inner_ty_args[0])?;
                 Ok(format!("array => array.map({})", inner_map))
             }
+            BuiltinTypeName_::Fun => Ok("".to_string())
         }
     } else {
         derr!((inner_ty.loc, "Unsupported vector-in-vector type"))

@@ -1,19 +1,20 @@
 [package]
 name = "move-to-ts"
-version = "0.3.12"
+version = "0.3.13"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 itertools = "0.10.5"
+thiserror = "1.0.38"
 clap = { version = "3.2.21", features = ["derive"] }
 
-move-core-types = { git = "https://github.com/move-language/move", rev = "547c7f79d1c46dccfcb1024005d2a796be2480ec" }
-move-compiler = { git = "https://github.com/move-language/move", rev = "547c7f79d1c46dccfcb1024005d2a796be2480ec" }
-move-ir-types = { git = "https://github.com/move-language/move", rev = "547c7f79d1c46dccfcb1024005d2a796be2480ec" }
-move-package = { git = "https://github.com/move-language/move", rev = "547c7f79d1c46dccfcb1024005d2a796be2480ec" }
-move-command-line-common = { git = "https://github.com/move-language/move", rev = "547c7f79d1c46dccfcb1024005d2a796be2480ec" }
+move-core-types = { git = "https://github.com/move-language/move", rev = "3b69b861372625e0247948bdc18254d2214528cc" }
+move-compiler = { git = "https://github.com/move-language/move", rev = "3b69b861372625e0247948bdc18254d2214528cc" }
+move-ir-types = { git = "https://github.com/move-language/move", rev = "3b69b861372625e0247948bdc18254d2214528cc" }
+move-package = { git = "https://github.com/move-language/move", rev = "3b69b861372625e0247948bdc18254d2214528cc" }
+move-command-line-common = { git = "https://github.com/move-language/move", rev = "3b69b861372625e0247948bdc18254d2214528cc" }
 
 [features]
 default = ["move-core-types/address32"]

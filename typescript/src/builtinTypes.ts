@@ -126,6 +126,42 @@ export class U8 extends UnsignedInt<U8> {
   max() { return U8.MAX; }
 }
 
+export class U16 extends UnsignedInt<U16> {
+  static MIN = bigInt(0);
+  static MAX = bigInt("65536");
+
+  make(value: bigInt.BigInteger) {
+    return new U16(value);
+  }
+
+  checkBounds() {
+    if (this.value.lt(U16.MIN) || this.value.gt(U16.MAX)) {
+      throw new Error(`Value out of bounds for U16: ${this.value}`);
+    }
+  }
+
+  min() { return U16.MIN; }
+  max() { return U16.MAX; }
+}
+
+export class U32 extends UnsignedInt<U32> {
+  static MIN = bigInt(0);
+  static MAX = bigInt("4294967296");
+
+  make(value: bigInt.BigInteger) {
+    return new U16(value);
+  }
+
+  checkBounds() {
+    if (this.value.lt(U32.MIN) || this.value.gt(U32.MAX)) {
+      throw new Error(`Value out of bounds for U32: ${this.value}`);
+    }
+  }
+
+  min() { return U32.MIN; }
+  max() { return U32.MAX; }
+}
+
 export class U64 extends UnsignedInt<U64> {
   static MIN = bigInt(0);
   static MAX = bigInt("18446744073709551615");
@@ -147,6 +183,24 @@ export class U64 extends UnsignedInt<U64> {
 export class U128 extends UnsignedInt<U128> {
   static MIN = bigInt(0);
   static MAX = bigInt("340282366920938463463374607431768211455");
+
+  make(value: bigInt.BigInteger) {
+    return new U128(value);
+  }
+
+  checkBounds() {
+    if (this.value.lt(U128.MIN) || this.value.gt(U128.MAX)) {
+      throw new Error(`Value out of bounds for U128: ${this.value}`);
+    }
+  }
+
+  min() { return U128.MIN; }
+  max() { return U128.MAX; }
+}
+
+export class U256 extends UnsignedInt<U256> {
+  static MIN = bigInt(0);
+  static MAX = bigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935");
 
   make(value: bigInt.BigInteger) {
     return new U128(value);
