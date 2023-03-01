@@ -1164,7 +1164,7 @@ dependencies = [
 
 [[package]]
 name = "move-to-ts"
-version = "0.3.13"
+version = "2.0.0"
 dependencies = [
  "clap",
  "itertools",
