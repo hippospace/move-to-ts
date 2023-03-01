@@ -126,6 +126,7 @@ pub fn rename(name: &impl fmt::Display) -> String {
         "new" => "new__".to_string(),
         "default" => "default__".to_string(),
         "for" => "for__".to_string(),
+        "Object" => "Object__".to_string(),
         _ => {
             if name_str.starts_with("%#") {
                 // replace temporaries
@@ -277,7 +278,7 @@ pub fn generate_topmost_index(packages: &[&String], is_async: bool) -> (String, 
     let content = format!(
         r###"
 import {{ AptosClient }} from "aptos";
-import {{ AptosParserRepo, AptosLocalCache, AptosSyncedCache, u8, u64, u128 }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, AptosLocalCache, AptosSyncedCache, u8, u16, u32, u64, u128, u256}} from "@manahippo/move-to-ts";
 {}
 {}
 export {{ u8, u64, u128 }};

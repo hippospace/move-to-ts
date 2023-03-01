@@ -117,6 +117,29 @@ export function aptos_std_multi_ed25519_signature_verify_strict_internal(
   throw new Error("Not implemented");
 }
 
+export function aptos_std_multi_ed25519_sign_internal(
+  sk: U8[],
+  message: U8[],
+  $c: AptosDataCache,
+): U8[] {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_multi_ed25519_generate_keys_internal(
+  threshold: U8,
+  n: U8,
+  $c: AptosDataCache,
+): [U8[], U8[]]  {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_multi_ed25519_public_key_validate_v2_internal(
+  bytes: U8[],
+  $c: AptosDataCache,
+): boolean{
+  throw new Error("Not implemented");
+}
+
 export function aptos_std_multi_ed25519_public_key_validate_internal(
     bytes: U8[],
     $c: AptosDataCache,
@@ -136,6 +159,12 @@ export function aptos_std_aptos_hash_keccak256(
     bytes: U8[],
     $c: AptosDataCache
 ): U8[] {
+  throw new Error("Not implemented");
+}
+export function aptos_std_aptos_hash_blake2b_256_internal(
+    bytes: U8[],
+    $c: AptosDataCache
+): U8[]{
   throw new Error("Not implemented");
 }
 
@@ -568,6 +597,13 @@ export function aptos_framework_code_request_publish(
   throw new Error("Not Implemented");
 }
 
+export function aptos_framework_create_signer_create_signer(
+  addr: HexString,
+  $c: AptosDataCache,
+): HexString {
+  throw new Error("Not Implemented");
+}
+
 export function aptos_framework_code_request_publish_with_allowed_deps(
     owner: HexString,
     expected_modules: ActualStringClass[],
@@ -590,6 +626,12 @@ export function aptos_std_bls12381_aggregate_pubkeys_internal(
   throw new Error("Not implemented");
 }
 
+export function aptos_std_bls12381_generate_keys_internal(
+    $c: AptosDataCache
+): [U8[], U8[]]{
+  throw new Error("Not implemented");
+}
+
 export function aptos_std_bls12381_aggregate_signatures_internal(
   signatures: any,
   $c: AptosDataCache
@@ -597,10 +639,25 @@ export function aptos_std_bls12381_aggregate_signatures_internal(
   throw new Error("Not implemented");
 }
 
+export function aptos_std_bls12381_generate_proof_of_possession_internal(
+    sk: U8[],
+    $c: AptosDataCache,
+): U8[] {
+  throw new Error("Not implemented");
+}
+
 export function aptos_std_bls12381_validate_pubkey_internal(
   pubkey: U8[],
   $c: AptosDataCache
 ): boolean {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_bls12381_sign_internal(
+  sk: U8[],
+  msg: U8[],
+  $c: AptosDataCache,
+): U8[] {
   throw new Error("Not implemented");
 }
 
@@ -652,6 +709,20 @@ export function aptos_std_bls12381_verify_signature_share_internal(
   c: any,
   $c: AptosDataCache
 ): boolean {
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_ed25519_generate_keys_internal(
+  $c: AptosDataCache,
+): [U8[], U8[]]{
+  throw new Error("Not implemented");
+}
+
+export function aptos_std_ed25519_sign_internal(
+  sk: U8[],
+  msg: U8[],
+  $c: AptosDataCache,
+): U8[] {
   throw new Error("Not implemented");
 }
 
@@ -803,6 +874,15 @@ export function aptos_framework_state_storage_get_state_storage_usage_only_at_ep
   $c: any
 ): ActualUsage {
   throw new Error("Not Implemented");
+}
+
+export function aptos_framework_object_exists_at (
+    object: HexString,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <T>*/
+): boolean {
+  throw new Error("Not Implemented");
+
 }
 
 export class ActualAggregator {

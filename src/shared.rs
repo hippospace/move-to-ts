@@ -522,7 +522,7 @@ pub fn base_type_to_typetag(base_ty: &BaseType, c: &mut Context) -> TermResult {
                 if c.is_current_module(mident) {
                     Ok(format!(
                         "new SimpleStructTag({}{})",
-                        sname,
+                        sname.term(c)?,
                         if tparams.len() == 2 {
                             "".to_string()
                         } else {

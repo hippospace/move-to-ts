@@ -240,7 +240,7 @@ pub fn generate_ui(ctx: &mut Context) -> Result<Vec<(String, String)>, Diagnosti
 import React, { useState } from 'react';
 import { Input } from 'semantic-ui-react';
 import ReactDOM from 'react-dom/client';
-import { AptosParserRepo, getTypeTagFullname, StructTag, TypeTag, AtomicTypeTag, VectorTag, parseTypeTagOrThrow, u8, u64, u128, print, strToU8, u8str, DummyCache }
+import { AptosParserRepo, getTypeTagFullname, StructTag, TypeTag, AtomicTypeTag, VectorTag, parseTypeTagOrThrow, u8, u16, u32, u64, u128, u256, print, strToU8, u8str, DummyCache }
 from
 "@manahippo/move-to-ts";
 import './index.css';

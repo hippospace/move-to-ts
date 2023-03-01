@@ -44,8 +44,8 @@ pub fn to_ts_string(v: &impl AstTsPrinter, c: &mut Context) -> Result<String, Di
     let mut lines = vec![
         "import * as $ from \"@manahippo/move-to-ts\";".to_string(),
         "import {AptosDataCache, AptosParserRepo, DummyCache, AptosLocalCache} from \"@manahippo/move-to-ts\";".to_string(),
-        "import {U8, U64, U128} from \"@manahippo/move-to-ts\";".to_string(),
-        "import {u8, u64, u128} from \"@manahippo/move-to-ts\";".to_string(),
+        "import {U8, U16, U32, U64, U128, U256} from \"@manahippo/move-to-ts\";".to_string(),
+        "import {u8, u16, u32, u64, u128, u256} from \"@manahippo/move-to-ts\";".to_string(),
         "import {TypeParamDeclType, FieldDeclType} from \"@manahippo/move-to-ts\";".to_string(),
         "import {AtomicTypeTag, StructTag, TypeTag, VectorTag, SimpleStructTag} from \"@manahippo/move-to-ts\";"
             .to_string(),
@@ -156,22 +156,23 @@ pub fn write_load_parsers(
     mident: &ModuleIdent,
     module: &ModuleDefinition,
     w: &mut TsgenWriter,
-    _c: &mut Context,
+    c: &mut Context,
 ) -> WriteResult {
     w.writeln("export function loadParsers(repo: AptosParserRepo) {");
 
     for (sname, _) in module.structs.key_cloned_iter() {
+        let renamed_sname = sname.term(c).unwrap();
         let paramless_name = format!(
             "{}::{}::{}",
             format_address_hex(mident.value.address),
             mident.value.module,
-            sname
+            renamed_sname
         );
         w.writeln(format!(
             "  repo.addParser({}, {}.{}Parser);",
             quote(&paramless_name),
-            sname,
-            sname
+            renamed_sname,
+            renamed_sname
         ));
     }
 
@@ -201,7 +202,8 @@ pub fn write_app(
 
     // struct loaders
     for (sname, sdef) in module.structs.key_cloned_iter() {
-        w.writeln(format!("get {}() {{ return {}; }}", sname, sname));
+        let renamed_sname = sname.term(c)?;
+        w.writeln(format!("get {}() {{ return {}; }}", renamed_sname, renamed_sname));
         if !sdef.abilities.has_ability_(Ability_::Key) {
             continue;
         }
@@ -210,7 +212,7 @@ pub fn write_app(
             .iter()
             .map(|tp| rename(&tp.param.user_specified_name))
             .join(", ");
-        w.writeln(format!("async load{}(", sname));
+        w.writeln(format!("async load{}(", renamed_sname));
         w.writeln("  owner: HexString,");
         if !sdef.type_parameters.is_empty() {
             w.writeln(format!("  $p: TypeTag[], /* <{}> */", tpnames));
@@ -226,7 +228,7 @@ pub fn write_app(
         w.writeln(") {");
         w.writeln(format!(
             "  const val = await {}.load(this.repo, this.client, owner, {}, query);",
-            sname, tags
+            renamed_sname, tags
         ));
         w.writeln("  if (loadFull) {");
         w.writeln("    await val.loadFullState(this);");
@@ -801,14 +803,14 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
     const CTOR_NAME: &'static str = "StructDef";
     fn write_ts(&self, w: &mut TsgenWriter, c: &mut Context) -> WriteResult {
         let (name, sdef) = self;
-
+        let renamed_sname = &name.term(c)?;
         w.new_line();
-        w.writeln(format!("export class {} ", name.term(c)?));
+        w.writeln(format!("export class {} ", renamed_sname));
         w.short_block(|w| {
             w.writeln("static moduleAddress = moduleAddress;");
             w.writeln("static moduleName = moduleName;");
             w.writeln("__app: $.AppType | null = null;");
-            w.writeln(format!("static structName: string = {};", quote(&name.term(c)?)));
+            w.writeln(format!("static structName: string = {};", quote(renamed_sname)));
 
             // 0. type parameters
             // 1. static field decl
@@ -875,24 +877,24 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
 
                     // 4. static Parser
                     w.new_line();
-                    w.writeln(format!("static {}Parser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : {} {{", name, name));
-                    w.writeln(format!("  const proto = $.parseStructProto(data, typeTag, repo, {});", name));
-                    w.writeln(format!("  return new {}(proto, typeTag);", name));
+                    w.writeln(format!("static {}Parser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : {} {{", renamed_sname, renamed_sname));
+                    w.writeln(format!("  const proto = $.parseStructProto(data, typeTag, repo, {});", renamed_sname));
+                    w.writeln(format!("  return new {}(proto, typeTag);", renamed_sname));
                     w.writeln("}");
 
                     // 5. resource loader
                     if sdef.abilities.has_ability_(Ability_::Key) {
                         w.new_line();
                         w.writeln("static async load(repo: AptosParserRepo, client: AptosClient, address: HexString, typeParams: TypeTag[], query?: {ledgerVersion?: number;}) {");
-                        w.writeln(format!("  const result = await repo.loadResource(client, address, {}, typeParams, query);", name));
-                        w.writeln(format!("  return result as unknown as {};", name));
+                        w.writeln(format!("  const result = await repo.loadResource(client, address, {}, typeParams, query);", renamed_sname));
+                        w.writeln(format!("  return result as unknown as {};", renamed_sname));
                         w.write("}");
 
                         w.new_line();
                         w.writeln("static async loadByApp(app: $.AppType, address: HexString, typeParams: TypeTag[], query?: {ledgerVersion?: number;}) {");
-                        w.writeln(format!("  const result = await app.repo.loadResource(app.client, address, {}, typeParams, query);", name));
+                        w.writeln(format!("  const result = await app.repo.loadResource(app.client, address, {}, typeParams, query);", renamed_sname));
                         w.writeln("  await result.loadFullState(app)");
-                        w.writeln(format!("  return result as unknown as {};", name));
+                        w.writeln(format!("  return result as unknown as {};", renamed_sname));
                         w.write("}");
                     }
 
@@ -903,7 +905,7 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                         w.writeln("static getTag(): StructTag {");
                         w.writeln(format!(
                             "  return new StructTag(moduleAddress, moduleName, {}, []);",
-                            quote(name)
+                            quote(renamed_sname)
                         ));
                         w.writeln("}");
                     }
@@ -913,7 +915,7 @@ impl AstTsPrinter for (StructName, &StructDefinition) {
                         w.writeln("static makeTag($p: TypeTag[]): StructTag {");
                         w.writeln(format!(
                             "  return new StructTag(moduleAddress, moduleName, {}, $p);",
-                            quote(name)
+                            quote(renamed_sname)
                         ));
                         w.writeln("}");
                     }

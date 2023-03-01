@@ -85,7 +85,7 @@ impl AstTsPrinter for Exp {
                 })?;
                 let proto = format!("{{ {} }}", inner_fields);
                 let tag = type_to_typetag(exp_ty, c)?;
-                Ok(format!("new {}({}, {})", s, proto, tag))
+                Ok(format!("new {}({}, {})", s.term(c)?, proto, tag))
             }
             E::ExpList(es) => {
                 // FIXME: for now just output as [...]
@@ -717,12 +717,18 @@ impl AstTsPrinter for Value {
             V::U128(u) => Ok(format!("u128(\"{}\")", u)),
             V::U256(u) => Ok(format!("u256(\"{}\")", u)),
             V::Bool(b) => Ok(format!("{}", b)),
-            V::Vector(_, values) => {
-                let mut vals = vec![];
-                for val in values {
-                    vals.push(val.term(c)?);
+            V::Vector(base_type, values) => {
+                if values.is_empty() {
+                    let ts_type = base_type_to_tstype(base_type, c).expect("un know base type");
+                    Ok(format!("[] as {}[]", ts_type))
+                } else {
+                    let mut vals = vec![];
+                    for val in values {
+                        vals.push(val.term(c)?);
+                    }
+                    Ok(format!("[{}]", vals.join(", ")))
                 }
-                Ok(format!("[{}]", vals.join(", ")))
+
             }
         }
     }
