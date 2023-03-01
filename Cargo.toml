@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 itertools = "0.10.5"
 thiserror = "1.0.38"
-clap = { version = "3.2.21", features = ["derive"] }
+clap = { version = "4.0.26", features = ["derive"] }
 
 move-core-types = { git = "https://github.com/move-language/move", rev = "3b69b861372625e0247948bdc18254d2214528cc" }
 move-compiler = { git = "https://github.com/move-language/move", rev = "3b69b861372625e0247948bdc18254d2214528cc" }
