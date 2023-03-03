@@ -416,7 +416,7 @@ export function aptos_framework_aggregator_add(
 }
 
 export function aptos_framework_aggregator_destroy(aggregator: any, $c: any) {
-  throw new Error("Not Implemented");
+
 }
 
 export function aptos_framework_aggregator_read(
@@ -601,7 +601,7 @@ export function aptos_framework_create_signer_create_signer(
   addr: HexString,
   $c: AptosDataCache,
 ): HexString {
-  throw new Error("Not Implemented");
+  return addr
 }
 
 export function aptos_framework_code_request_publish_with_allowed_deps(
