@@ -120,14 +120,16 @@ pub fn format_qualified_payload_fname_and_import(
 pub fn format_qualified_fname_and_import(
     mident: &ModuleIdent,
     name: &impl fmt::Display,
+    prefix: &str,
 ) -> (String, String) {
     // name exists in a different package, use fully qualified name
     let package_name = format_address(mident.value.address);
     (
         format!(
-            "{}.{}.query_{}",
+            "{}.{}.{}_{}",
             capitalize(&package_name),
             capitalize(&mident.value.module),
+            prefix,
             name
         ),
         package_name,
@@ -312,8 +314,8 @@ const {} = async (owner: string, {}) => {{
   const {{client}} = readConfig(program);
   const repo = getProjectRepo();
   const owner_ = new HexString(owner);
-  const value = await {}.load(repo, client, owner_, [{}])
-  print(value.{}({}));
+  const result__ = await {}.load(repo, client, owner_, [{}])
+  print(result__.{}({}));
 }}
 
 program
@@ -355,7 +357,7 @@ pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Dia
     arg_decls.push(format!("{}", "max_gas: string"));
 
     let (query_func_name, package_name) =
-        format_qualified_fname_and_import(&query.mi, &query.fname);
+        format_qualified_fname_and_import(&query.mi, &query.fname, "query");
 
     let type_tags_inner = query
         .func
@@ -392,8 +394,8 @@ pub fn generate_query_printer(query: &CmdParams) -> Result<(String, String), Dia
 const {} = async ({}) => {{
   const {{client, account}} = readConfig(program);
   const repo = getProjectRepo();
-  const value = await {}(client, getSimulationKeys(account), repo, {}{}[{}], {{maxGasAmount: parseInt(max_gas)}})
-  print(value);
+  const result__ = await {}(client, getSimulationKeys(account), repo, {}{}[{}], {{maxGasAmount: parseInt(max_gas)}})
+  print(result__);
 }}
 
 program
@@ -414,6 +416,86 @@ program
 
     Ok((body, package_name))
 }
+
+/// Generate query commands for functions marked with #[query]
+pub fn generate_view_printer(view: &CmdParams) -> Result<(String, String), Diagnostic> {
+    let mut arg_decls = vec![];
+    for tp in view.func.signature.type_parameters.iter() {
+        arg_decls.push(format!("{}: string", tp.user_specified_name));
+    }
+
+    let params_no_signer = view
+        .func
+        .signature
+        .parameters
+        .iter()
+        .filter(|(_, t)| !is_type_signer(t));
+    for (name, _) in params_no_signer.clone() {
+        arg_decls.push(format!("{}: string", name));
+    }
+    arg_decls.push(format!("{}", "ledger_version: string"));
+
+    let (query_func_name, package_name) =
+        format_qualified_fname_and_import(&view.mi, &view.fname, "view");
+
+    let type_tags_inner = view
+        .func
+        .signature
+        .type_parameters
+        .iter()
+        .map(|tp| format!("parseTypeTagOrThrow({})", tp.user_specified_name))
+        .join(", ");
+
+    let mut arguments = vec![];
+
+    for tp in view.func.signature.type_parameters.iter() {
+        arguments.push(format!("  .argument('<TYPE_{}>')", tp.user_specified_name));
+    }
+    for (name, _) in params_no_signer.clone() {
+        arguments.push(format!("  .argument('<{}>')", name));
+    }
+    arguments.push(format!("  .argument('[ledger_version]', '', '')"));
+
+    let mut param_handlers = vec![];
+    for (name, ty) in params_no_signer {
+        param_handlers.push(stype_to_ts_parser(&name.to_string(), name.0.loc, ty)?);
+    }
+
+    let cmd_func_name = format!("{}_{}", view.mi.value.module, view.fname);
+    let command_name = format!(
+        "{}:view-{}",
+        view.mi.value.module.to_string().replace('_', "-"),
+        view.fname.to_string().replace('_', "-")
+    );
+
+    let body = format!(
+        r###"
+const {} = async ({}) => {{
+  const {{client}} = readConfig(program);
+  const repo = getProjectRepo();
+  const result__ = await {}(client, repo, {}{}[{}], ledger_version === '' ? undefined : ledger_version)
+  print(result__);
+}}
+
+program
+  .command("{}")
+{}
+  .action({})
+"###,
+        cmd_func_name,
+        arg_decls.join(", "),
+        query_func_name,
+        param_handlers.join(", "),
+        if param_handlers.is_empty() { "" } else { ", " },
+        type_tags_inner,
+        command_name,
+        arguments.join("\n"),
+        cmd_func_name,
+    );
+
+    Ok((body, package_name))
+}
+
 
 pub fn generate_iter_table_printer(
     mi: &ModuleIdent,
@@ -450,8 +532,8 @@ const {} = async (owner: string{}) => {{
   const {{client}} = readConfig(program);
   const repo = getProjectRepo();
   const owner_ = new HexString(owner);
-  const value = await {}.load(repo, client, owner_, [{}])
-  const entries = await value.getIterTableEntries_{}(client, repo);
+  const result__ = await {}.load(repo, client, owner_, [{}])
+  const entries = await result__.getIterTableEntries_{}(client, repo);
   for (const entry of entries) {{
     console.log();
     console.log(`Entry:`);
@@ -529,6 +611,20 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
             return Err(diags);
         }
     }
+
+    for view in ctx.views.iter() {
+        let command_res = generate_view_printer(view);
+        if let Ok((cmd_str, package_name)) = command_res {
+            commands.push(cmd_str);
+            imported_packages.insert(package_name);
+        } else {
+            let diag = command_res.err().unwrap();
+            let mut diags = Diagnostics::new();
+            diags.add(diag);
+            return Err(diags);
+        }
+    }
+
     for show_iter_table in ctx.all_shows_iter_tables.iter() {
         let (mi, sname, sdef, field_name) = show_iter_table;
         let (printer_body, package_name) = generate_iter_table_printer(mi, sname, sdef, field_name);

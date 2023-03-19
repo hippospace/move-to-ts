@@ -130,6 +130,8 @@ pub struct Context {
     pub cmds: Vec<CmdParams>,
     // query info
     pub queries: Vec<CmdParams>,
+    // view info
+    pub views: Vec<CmdParams>,
     // all shows collected
     pub printer_methods: Vec<(
         ModuleIdent,
@@ -178,6 +180,7 @@ impl Context {
             tests: vec![],
             cmds: vec![],
             queries: vec![],
+            views: vec![],
             printer_methods: vec![],
             all_shows_iter_tables: vec![],
         }
@@ -251,8 +254,23 @@ impl Context {
         });
     }
 
+    pub fn add_view(&mut self, mi: &ModuleIdent, fname: &FunctionName, func: &Function) {
+        self.views.push(CmdParams {
+            mi: *mi,
+            fname: *fname,
+            func: func.clone(),
+            desc: None,
+        });
+    }
+
     pub fn has_query(&self, mi: &ModuleIdent, fname: &FunctionName) -> bool {
         self.queries
+            .iter()
+            .any(|params| params.mi == *mi && params.fname == *fname)
+    }
+
+    pub fn has_view(&self, mi: &ModuleIdent, fname: &FunctionName) -> bool {
+        self.views
             .iter()
             .any(|params| params.mi == *mi && params.fname == *fname)
     }
@@ -489,6 +507,17 @@ pub fn base_type_to_typetag_builder(
     c: &mut Context,
 ) -> TermResult {
     base_type_to_typetag_builder_inner(base_ty, tparams, c, false)
+}
+
+pub fn single_type_to_typetag(single_type: &SingleType, c: &mut Context) -> TermResult {
+    match &single_type.value {
+        SingleType_::Ref(_, base_type) => {
+            base_type_to_typetag(&base_type, c)
+        },
+        SingleType_::Base(base_type) => {
+            base_type_to_typetag(&base_type, c)
+        }
+    }
 }
 
 pub fn base_type_to_typetag(base_ty: &BaseType, c: &mut Context) -> TermResult {

@@ -12,7 +12,7 @@ import { TypeTagParser } from "./builder_utils";
 const { AccountAddress, Identifier, ModuleId, EntryFunction } = TxnBuilderTypes;
 
 import { AptosParserRepo } from "./parserRepo";
-import { StructTag } from "./typeTag";
+import {StructTag, TypeTag} from "./typeTag";
 import { U128, U64, U8 } from "./builtinTypes";
 import {payloadArg} from "./builtinFuncs";
 import {ActualStringClass} from "./nativeFuncs";
@@ -32,6 +32,20 @@ export type OptionTransaction = {
   gasUnitPrice?: number;
   // in s
   expireTimestamp?: number;
+}
+
+export function buildViewPayload(
+    moduleAddress: HexString,
+    moduleName: string,
+    funcName: string,
+    typeArguments: string[],
+    args: AcceptedScriptFuncArgType[],
+):Types.ViewRequest{
+  return {
+    function: `${moduleAddress.toShortString()}::${moduleName}::${funcName}`,
+    type_arguments: typeArguments,
+    arguments: args.map((v) => payloadArg(v))
+  };
 }
 
 export function buildPayload(
@@ -114,6 +128,14 @@ export async function sendPayloadTx(
     option?: OptionTransaction
 ) {
   return await sendPayloadTxAndLog(client, account, payload, option, false)
+}
+
+export async function sendViewPayload(
+    client: AptosClient,
+    payload: Types.ViewRequest,
+    ledger_version?: string
+){
+  return await client.view(payload, ledger_version)
 }
 
 export async function sendPayloadTxAndLog(
@@ -255,6 +277,26 @@ export function generateBCSSimulation(
   );
 
   return txnBuilder.sign(rawTxn);
+}
+
+export function takeViewFunctionValue(
+    value: Types.MoveValue,
+    type: TypeTag,
+    repo: AptosParserRepo
+): any{
+  return repo.parse(value as any, type)
+}
+
+export function takeViewFunctionValues(
+    values: Types.MoveValue[],
+    types: TypeTag[],
+    repo: AptosParserRepo
+): any[]{
+  let result: any[] = []
+  for (let i = 0; i < values.length; i++) {
+    result.push(takeViewFunctionValue(values[i], types[i], repo))
+  }
+  return result
 }
 
 export function takeSimulationValue<T>(

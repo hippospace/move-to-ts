@@ -432,14 +432,14 @@ export class AptosParserRepo {
   }
   addDefaultParsers() {
     // load the defaults
-    this.addParser("bool", BoolParser);
-    this.addParser("u8", U8Parser);
-    this.addParser("u16", U16Parser);
-    this.addParser("u32", U32Parser);
-    this.addParser("u64", U64Parser);
-    this.addParser("u128", U128Parser);
-    this.addParser("u256", U256Parser);
-    this.addParser("address", AddressParser);
+    this.addParser(AtomicTypeTag.Bool, BoolParser);
+    this.addParser(AtomicTypeTag.U8, U8Parser);
+    this.addParser(AtomicTypeTag.U16, U16Parser);
+    this.addParser(AtomicTypeTag.U32, U32Parser);
+    this.addParser(AtomicTypeTag.U64, U64Parser);
+    this.addParser(AtomicTypeTag.U128, U128Parser);
+    this.addParser(AtomicTypeTag.U256, U256Parser);
+    this.addParser(AtomicTypeTag.Address, AddressParser);
     this.addParser("vector", VectorParser);
   }
 }

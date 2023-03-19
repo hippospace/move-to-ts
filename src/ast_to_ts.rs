@@ -244,7 +244,7 @@ pub fn write_app(
 
     // payload builders & tx sender
     for (fname, func) in module.functions.key_cloned_iter() {
-        if func.entry.is_none() || !script_function_has_valid_parameter(&func.signature) {
+        if (func.entry.is_none() || !script_function_has_valid_parameter(&func.signature)) && !has_valid_attributes(func) {
             continue;
         }
         let tpnames = func
@@ -261,14 +261,6 @@ pub fn write_app(
             .filter(|(_, ty)| !is_type_signer(ty))
             .map(|(name, _)| rename(name))
             .join(", ");
-
-        // payload builder
-        w.writeln(format!("payload_{}(", fname));
-        write_parameters(&func.signature, w, c, true, false)?;
-        if !func.signature.type_parameters.is_empty() {
-            w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
-        }
-        w.writeln("  isJSON = false,");
         let tags = if func.signature.type_parameters.is_empty() {
             ""
         } else {
@@ -284,48 +276,96 @@ pub fn write_app(
         } else {
             ", "
         };
-        w.writeln("): TxnBuilderTypes.TransactionPayloadEntryFunction");
-        w.writeln("      | Types.TransactionPayload_EntryFunctionPayload {");
-        w.writeln(format!(
-            "  return buildPayload_{}({}{}{}{}isJSON);",
-            fname, args, separator, tags, possibly_comma,
-        ));
-        w.writeln("}");
-
-        // transaction sender
-        w.writeln(format!("async {}(", fname));
-        w.writeln("  _account: AptosAccount,");
-        write_parameters(&func.signature, w, c, true, false)?;
-        if !func.signature.type_parameters.is_empty() {
-            w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
-        }
-        w.writeln("  option?: OptionTransaction,");
-        w.writeln("  _isJSON = false");
-
-        w.writeln(") {");
-        w.writeln(format!(
-            "  const payload__ = buildPayload_{}({}{}{}{}_isJSON);",
-            fname, args, separator, tags, possibly_comma
-        ));
-        w.writeln("  return $.sendPayloadTx(this.client, _account, payload__, option);");
-        w.writeln("}");
-
-        // query sender
-        if c.has_query(mident, &fname) {
-            w.writeln(format!("async query_{}(", fname));
+        if c.has_view(mident, &fname) {
+            w.writeln(format!("payload_{}(", fname));
             write_parameters(&func.signature, w, c, true, false)?;
-            w.writeln("  $p: TypeTag[],");
-            w.writeln("  option?: OptionTransaction,");
-            w.writeln("  _isJSON = false,");
-            w.writeln("  fetcher: $.SimulationKeys = $.SIM_KEYS,");
+            if !func.signature.type_parameters.is_empty() {
+                w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
+            }
+            w.writeln("): Types.ViewRequest {");
+            w.writeln(format!(
+                "  return buildPayload_{}({}{}{}{});",
+                fname, args, separator, tags, possibly_comma,
+            ));
+            w.writeln("}");
+
+            // transaction sender
+            w.writeln(format!("async {}(", fname));
+            write_parameters(&func.signature, w, c, true, false)?;
+            if !func.signature.type_parameters.is_empty() {
+                w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
+            }
+            w.writeln("  ledger_version?: string");
+
             w.writeln(") {");
             w.writeln(format!(
-                "return query_{}(this.client, fetcher, this.repo, {}{}$p, option);",
+                "  const payload__ = buildPayload_{}({}{}{}{});",
+                fname, args, separator, tags, possibly_comma
+            ));
+            w.writeln("  return $.sendViewPayload(this.client, payload__, ledger_version);");
+            w.writeln("}");
+
+            w.writeln(format!("async view_{}(", fname));
+            write_parameters(&func.signature, w, c, true, false)?;
+            w.writeln("  $p: TypeTag[],");
+            w.writeln("  ledger_version?: string");
+            w.writeln(") {");
+            w.writeln(format!(
+                "  return view_{}(this.client, this.repo, {}{} $p, ledger_version);",
                 fname,
                 args,
                 if args.is_empty() { "" } else { "," }
             ));
             w.writeln("}");
+        } else {
+            w.writeln(format!("payload_{}(", fname));
+            write_parameters(&func.signature, w, c, true, false)?;
+            if !func.signature.type_parameters.is_empty() {
+                w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
+            }
+            w.writeln("  isJSON = false,");
+            w.writeln("): TxnBuilderTypes.TransactionPayloadEntryFunction");
+            w.writeln("      | Types.TransactionPayload_EntryFunctionPayload {");
+            w.writeln(format!(
+                "  return buildPayload_{}({}{}{}{}isJSON);",
+                fname, args, separator, tags, possibly_comma,
+            ));
+            w.writeln("}");
+
+            // transaction sender
+            w.writeln(format!("async {}(", fname));
+            w.writeln("  _account: AptosAccount,");
+            write_parameters(&func.signature, w, c, true, false)?;
+            if !func.signature.type_parameters.is_empty() {
+                w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
+            }
+            w.writeln("  option?: OptionTransaction,");
+            w.writeln("  _isJSON = false");
+
+            w.writeln(") {");
+            w.writeln(format!(
+                "  const payload__ = buildPayload_{}({}{}{}{}_isJSON);",
+                fname, args, separator, tags, possibly_comma
+            ));
+            w.writeln("  return $.sendPayloadTx(this.client, _account, payload__, option);");
+            w.writeln("}");
+            // query sender
+            if c.has_query(mident, &fname) {
+                w.writeln(format!("async query_{}(", fname));
+                write_parameters(&func.signature, w, c, true, false)?;
+                w.writeln("  $p: TypeTag[],");
+                w.writeln("  option?: OptionTransaction,");
+                w.writeln("  _isJSON = false,");
+                w.writeln("  fetcher: $.SimulationKeys = $.SIM_KEYS,");
+                w.writeln(") {");
+                w.writeln(format!(
+                    "  return query_{}(this.client, fetcher, this.repo, {}{}$p, option);",
+                    fname,
+                    args,
+                    if args.is_empty() { "" } else { "," }
+                ));
+                w.writeln("}");
+            }
         }
     }
 
@@ -969,10 +1009,10 @@ pub fn handle_function_cmd_directive(
     _w: &mut TsgenWriter,
     c: &mut Context,
 ) -> WriteResult {
-    if f.entry.is_none() {
+    if f.entry.is_none() && !has_valid_attributes(f) {
         return derr!((
             fname.0.loc,
-            "the cmd attribute only works on public entry functions"
+            "the cmd attribute only works on public entry functions or view functions"
         ));
     }
     let mut desc = None;
@@ -1131,6 +1171,74 @@ pub fn write_query_function(
     Ok(())
 }
 
+pub fn write_view_function(
+    fname: &FunctionName,
+    f: &Function,
+    w: &mut TsgenWriter,
+    c: &mut Context,
+) -> WriteResult {
+    let query_fname = format!("view_{}", fname);
+    w.writeln(format!("export async function {}(", query_fname));
+    w.increase_indent();
+
+    // params
+    w.writeln("client: AptosClient,");
+    w.writeln("repo: AptosParserRepo,");
+    write_parameters(&f.signature, w, c, true, false)?;
+    w.writeln("$p: TypeTag[],");
+    w.writeln("ledger_version?: string,");
+    w.decrease_indent();
+    w.write("): ");
+    let ret_type_str = type_to_tstype(&f.signature.return_type, c)?;
+    w.write(format!("Promise<{}>", ret_type_str));
+    w.writeln("{");
+    let mut param_list = f
+        .signature
+        .parameters
+        .iter()
+        .filter(|(_, t)| !is_type_signer(t))
+        .map(|(v, _)| v.to_string())
+        .collect::<Vec<_>>();
+
+    if !f.signature.type_parameters.is_empty() {
+        param_list.push("$p".to_string());
+    }
+
+    w.increase_indent();
+
+    // body
+    w.writeln(format!(
+        "const payload__ = buildPayload_{}({});",
+        fname,
+        param_list.join(", ")
+    ));
+
+    match &f.signature.return_type.value {
+        Type_::Unit => {
+            return derr!((f.signature.return_type.loc,"the view function must return a value"));
+        },
+        Type_::Single(single_type) => {
+            let output_tag = single_type_to_typetag(&single_type, c)?;
+            w.writeln(format!("const outputTypeTag = {};", output_tag));
+            w.writeln("const output = await $.sendViewPayload(client, payload__, ledger_version);");
+            w.writeln(format!("return $.takeViewFunctionValue(output, outputTypeTag, repo) as {};", ret_type_str));
+        },
+        Type_::Multiple(multiple) => {
+            let output_tags = &mut vec![];
+            for single_type in multiple {
+                output_tags.push(single_type_to_typetag(&single_type, c)?);
+            }
+            w.writeln(format!("const outputTypeTags = [{}];", output_tags.join(",")));
+            w.writeln("const output = await $.sendViewPayload(client, payload__, ledger_version);");
+            w.writeln(format!("return $.takeViewFunctionValues(output, outputTypeTags, repo) as {};", ret_type_str));
+        }
+    };
+    w.decrease_indent();
+    w.writeln("}");
+
+    Ok(())
+}
+
 pub fn handle_function_query_directive(
     fname: &FunctionName,
     f: &Function,
@@ -1180,6 +1288,45 @@ pub fn handle_function_query_directive(
         }
     }
 }
+
+pub fn handle_function_view_directive(
+    fname: &FunctionName,
+    f: &Function,
+    w: &mut TsgenWriter,
+    c: &mut Context,
+) -> WriteResult{
+    if !f.entry.is_none() {
+        return derr!((
+            fname.0.loc,
+            "the view attribute can not works on public entry functions"
+        ));
+    }
+    match &f.body.value {
+        FunctionBody_::Native => {
+            return derr!((
+                fname.0.loc,
+                "the view attribute can only be used on user-defined entry functions"
+            ))
+        }
+        FunctionBody_::Defined { locals: _, body } => {
+            if body.is_empty() {
+                // may not reached
+                return derr!((f.body.loc, "the view attribute can not be used on empty"));
+            }
+        }
+    }
+    match &f.signature.return_type.value {
+        Type_::Unit => {
+            return derr!((f.body.loc, "the view function must has a return value"));
+        },
+        _ => {
+           write_view_function(fname,f, w, c)?;
+           c.add_view(&c.current_module.unwrap(), fname, f);
+        }
+    }
+    Ok(())
+}
+
 
 pub fn handle_function_app_directive(
     fname: &FunctionName,
@@ -1234,6 +1381,13 @@ pub fn handle_function_directives(
                 Attribute_::Name(_) => {
                     w.new_line();
                     handle_function_query_directive(fname, f, w, c)?;
+                }
+                _ => return derr!((attr.loc, "the 'query' attribute has no parameters")),
+            },
+            "view" => match &attr.value {
+                Attribute_::Name(_) => {
+                    w.new_line();
+                    handle_function_view_directive(fname, f, w, c)?;
                 }
                 _ => return derr!((attr.loc, "the 'query' attribute has no parameters")),
             },
@@ -1418,6 +1572,54 @@ impl AstTsPrinter for (FunctionName, &Function) {
             w.new_line();
         }
 
+        if has_valid_attributes(func){
+            w.new_line();
+            w.writeln(format!("export function buildPayload_{} (", name));
+            write_parameters(&func.signature, w, c, true, false)?;
+            if num_tparams > 0 {
+                w.writeln(format!("  $p: TypeTag[], /* <{}>*/", tpnames));
+            }
+            // marks returnType or void
+            w.write("):Types.ViewRequest");
+            let params_no_signers = func
+                .signature
+                .parameters
+                .iter()
+                .filter(|(_n, ty)| !is_type_signer(ty))
+                .collect::<Vec<_>>();
+            w.short_block(|w| {
+                let mident = c.current_module.unwrap();
+                let address = format_address_hex(mident.value.address);
+                if num_tparams > 0 {
+                    w.writeln("const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));");
+                } else {
+                    w.writeln("const typeParamStrings = [] as string[];");
+                }
+                w.writeln("return $.buildViewPayload(");
+                // address
+                w.writeln(format!("  new HexString(\"{}\"),", address));
+                // moduleName
+                w.writeln(format!("  \"{}\",", mident.value.module));
+                // funcName
+                w.writeln(format!("  \"{}\",", name));
+                // type arguments
+                w.writeln("  typeParamStrings,");
+                // arguments
+                if params_no_signers.is_empty() {
+                    w.writeln("  [],");
+                } else {
+                    w.writeln("  [");
+                    for (pname, _) in params_no_signers.iter() {
+                        w.writeln(format!("    {},", pname,));
+                    }
+                    w.writeln("  ],");
+                }
+                w.writeln(");");
+                Ok(())
+            })?;
+            w.new_line();
+        }
+
         handle_function_directives(name, func, w, c)?;
 
         c.current_function_signature = None;
@@ -1443,7 +1645,15 @@ pub fn extract_builtin_type(ty: &SingleType) -> Result<(&BuiltinTypeName_, &Vec<
         SingleType_::Ref(_, base_ty) => extract_builtin_from_base_type(base_ty),
     }
 }
-
+fn has_valid_attributes(f: &Function) -> bool{
+    let attrs = &f.attributes;
+    for (name, _) in attrs.key_cloned_iter(){
+        if name.value.to_string().as_str() == "view" {
+            return true;
+        }
+    }
+    false
+}
 pub fn script_function_has_valid_parameter(sig: &FunctionSignature) -> bool {
     for (var, ty) in sig.parameters.iter() {
         if is_type_signer(ty) {
