@@ -263,19 +263,8 @@ impl AstTsPrinter for ExpListItem {
 
 pub fn base_type_to_tstype(base_ty: &BaseType, c: &mut Context) -> TermResult {
     match &base_ty.value {
-        BaseType_::Param(tp) => {
-            if c.current_function_signature.is_none() {
-                // inside struct decl, where type params are translated to "any"
-                return Ok("any".to_string());
-            }
-            // when TParam is used within a Type_, it is always used for instantiating a
-            // concrete type or at a call site. So just use the hard-coded type-param: tparams_
-            if let Some(idx) = c.get_tparam_index(tp) {
-                Ok(format!("$p[{}]", idx))
-            } else {
-                unreachable!("Non-existent type parameter");
-                //derr!((self.loc, "Non-existent type parameter"))
-            }
+        BaseType_::Param(_tp) => {
+            return Ok("any".to_string());
         }
         BaseType_::Apply(_abilities_opt, m, ss) => {
             match &m.value {

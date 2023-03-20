@@ -142,12 +142,13 @@ pub fn rename(name: &impl fmt::Display) -> String {
 }
 
 pub fn capitalize(name: &impl fmt::Display) -> String {
-    let name_str = format!("{}", name);
+    let name_str = format!("{}",name);
     let mut c = name_str.chars();
-    match c.next() {
+    let uppercase = match c.next() {
         None => String::new(),
         Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-    }
+    };
+    rename(&uppercase)
 }
 
 pub fn generate_index(package_name: &String, modules: &[&ModuleIdent]) -> (String, String) {

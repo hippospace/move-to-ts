@@ -929,6 +929,32 @@ export class ActualAggregator {
   }
 }
 
+export function aptos_std_algebra_add_internal (
+    handle_1: U64,
+    handle_2: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <F>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_std_algebra_deserialize_internal (
+    bytes: U8[],
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <G, F>*/
+): [boolean, U64] {
+  throw new Error("Not Implemented");
+}
+
+
+export function aptos_std_algebra_serialize_internal (
+    handle: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <G, F>*/
+): U8[] {
+  throw new Error("Not Implemented");
+}
+
 export function aptos_framework_aggregator_factory_new_aggregator(
   p1: any,
   p2: any,

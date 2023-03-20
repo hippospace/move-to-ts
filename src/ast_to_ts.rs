@@ -1565,7 +1565,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 } else {
                     w.writeln("  [");
                     for (pname, _) in params_no_signers.iter() {
-                        w.writeln(format!("    {},", pname,));
+                        w.writeln(format!("    {},", rename(pname),));
                     }
                     w.writeln("  ],");
                 }
@@ -1614,7 +1614,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
                 } else {
                     w.writeln("  [");
                     for (pname, _) in params_no_signers.iter() {
-                        w.writeln(format!("    {},", pname,));
+                        w.writeln(format!("    {},", rename(pname),));
                     }
                     w.writeln("  ],");
                 }
