@@ -244,7 +244,9 @@ pub fn write_app(
 
     // payload builders & tx sender
     for (fname, func) in module.functions.key_cloned_iter() {
-        if (func.entry.is_none() || !script_function_has_valid_parameter(&func.signature)) && !has_valid_attributes(func) {
+        let is_valid_entry_function = func.entry.is_some() && script_function_has_valid_parameter(&func.signature);
+        let is_view_function = has_view_attribute(func);
+        if !is_valid_entry_function && !is_view_function {
             continue;
         }
         let tpnames = func
@@ -271,12 +273,8 @@ pub fn write_app(
         } else {
             ", "
         };
-        let possibly_comma = if args.is_empty() && tags.is_empty() {
-            ""
-        } else {
-            ", "
-        };
-        if c.has_view(mident, &fname) {
+
+        if is_view_function {
             w.writeln(format!("payload_{}(", fname));
             write_parameters(&func.signature, w, c, true, false)?;
             if !func.signature.type_parameters.is_empty() {
@@ -284,8 +282,8 @@ pub fn write_app(
             }
             w.writeln("): Types.ViewRequest {");
             w.writeln(format!(
-                "  return buildPayload_{}({}{}{}{});",
-                fname, args, separator, tags, possibly_comma,
+                "  return buildPayload_{}({}{}{});",
+                fname, args, separator, tags,
             ));
             w.writeln("}");
 
@@ -299,8 +297,8 @@ pub fn write_app(
 
             w.writeln(") {");
             w.writeln(format!(
-                "  const payload__ = buildPayload_{}({}{}{}{});",
-                fname, args, separator, tags, possibly_comma
+                "  const payload__ = buildPayload_{}({}{}{});",
+                fname, args, separator, tags
             ));
             w.writeln("  return $.sendViewPayload(this.client, payload__, ledger_version);");
             w.writeln("}");
@@ -317,7 +315,13 @@ pub fn write_app(
                 if args.is_empty() { "" } else { "," }
             ));
             w.writeln("}");
-        } else {
+        }
+        else {
+            let possibly_comma = if args.is_empty() && tags.is_empty() {
+                ""
+            } else {
+                ", "
+            };
             w.writeln(format!("payload_{}(", fname));
             write_parameters(&func.signature, w, c, true, false)?;
             if !func.signature.type_parameters.is_empty() {
@@ -1009,10 +1013,10 @@ pub fn handle_function_cmd_directive(
     _w: &mut TsgenWriter,
     c: &mut Context,
 ) -> WriteResult {
-    if f.entry.is_none() && !has_valid_attributes(f) {
+    if f.entry.is_none() {
         return derr!((
             fname.0.loc,
-            "the cmd attribute only works on public entry functions or view functions"
+            "the cmd attribute only works on public entry functions"
         ));
     }
     let mut desc = None;
@@ -1221,7 +1225,7 @@ pub fn write_view_function(
             let output_tag = single_type_to_typetag(&single_type, c)?;
             w.writeln(format!("const outputTypeTag = {};", output_tag));
             w.writeln("const output = await $.sendViewPayload(client, payload__, ledger_version);");
-            w.writeln(format!("return $.takeViewFunctionValue(output, outputTypeTag, repo) as {};", ret_type_str));
+            w.writeln(format!("return $.takeViewFunctionValue(output[0], outputTypeTag, repo) as {};", ret_type_str));
         },
         Type_::Multiple(multiple) => {
             let output_tags = &mut vec![];
@@ -1572,7 +1576,7 @@ impl AstTsPrinter for (FunctionName, &Function) {
             w.new_line();
         }
 
-        if has_valid_attributes(func){
+        if has_view_attribute(func){
             w.new_line();
             w.writeln(format!("export function buildPayload_{} (", name));
             write_parameters(&func.signature, w, c, true, false)?;
@@ -1645,7 +1649,7 @@ pub fn extract_builtin_type(ty: &SingleType) -> Result<(&BuiltinTypeName_, &Vec<
         SingleType_::Ref(_, base_ty) => extract_builtin_from_base_type(base_ty),
     }
 }
-fn has_valid_attributes(f: &Function) -> bool{
+fn has_view_attribute(f: &Function) -> bool{
     let attrs = &f.attributes;
     for (name, _) in attrs.key_cloned_iter(){
         if name.value.to_string().as_str() == "view" {
