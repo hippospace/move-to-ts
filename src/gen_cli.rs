@@ -612,18 +612,18 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
         }
     }
 
-    for view in ctx.views.iter() {
-        let command_res = generate_view_printer(view);
-        if let Ok((cmd_str, package_name)) = command_res {
-            commands.push(cmd_str);
-            imported_packages.insert(package_name);
-        } else {
-            let diag = command_res.err().unwrap();
-            let mut diags = Diagnostics::new();
-            diags.add(diag);
-            return Err(diags);
-        }
-    }
+    // for view in ctx.views.iter() {
+    //     let command_res = generate_view_printer(view);
+    //     if let Ok((cmd_str, package_name)) = command_res {
+    //         commands.push(cmd_str);
+    //         imported_packages.insert(package_name);
+    //     } else {
+    //         let diag = command_res.err().unwrap();
+    //         let mut diags = Diagnostics::new();
+    //         diags.add(diag);
+    //         return Err(diags);
+    //     }
+    // }
 
     for show_iter_table in ctx.all_shows_iter_tables.iter() {
         let (mi, sname, sdef, field_name) = show_iter_table;
