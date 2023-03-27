@@ -1,7 +1,7 @@
 import { HexString } from "aptos";
 import { BCS } from "aptos";
-import {U128, U16, U256, U32, U64, U8} from "./builtinTypes";
-import { moveValueToOpenApiObject, u128, u64, u8 } from "./builtinFuncs";
+import { U8, U16, U32, U64, U128, U256} from "./builtinTypes";
+import { u8, u16, u32, u64, u128, u256} from "./builtinFuncs";
 import {
   AtomicTypeTag,
   SimpleStructTag,
@@ -124,11 +124,17 @@ export function serializeMoveValueWithoutTag(
 ) {
   if (value instanceof U8) {
     serializeMoveValue(serializer, value, AtomicTypeTag.U8);
-  } else if (value instanceof U64) {
+  } else if (value instanceof U16) {
+    serializeMoveValue(serializer, value, AtomicTypeTag.U16);
+  } else if (value instanceof U32) {
+    serializeMoveValue(serializer, value, AtomicTypeTag.U32);
+  }else if (value instanceof U64) {
     serializeMoveValue(serializer, value, AtomicTypeTag.U64);
   } else if (value instanceof U128) {
     serializeMoveValue(serializer, value, AtomicTypeTag.U128);
-  } else if (typeof value === "boolean") {
+  }  else if (value instanceof U256) {
+    serializeMoveValue(serializer, value, AtomicTypeTag.U256);
+  }else if (typeof value === "boolean") {
     serializeMoveValue(serializer, value, AtomicTypeTag.Bool);
   } else if (value instanceof HexString) {
     serializeMoveValue(serializer, value, AtomicTypeTag.Address);
@@ -171,13 +177,22 @@ export function deserializeMoveValue(
   } else if (tag === AtomicTypeTag.U8) {
     const result = deserializer.deserializeU8();
     return u8(result.toString());
+  } else if (tag === AtomicTypeTag.U16) {
+    const result = deserializer.deserializeU16();
+    return u16(result.toString());
+  } else if (tag === AtomicTypeTag.U32) {
+    const result = deserializer.deserializeU32();
+    return u32(result.toString());
   } else if (tag === AtomicTypeTag.U64) {
     const result = deserializer.deserializeU64();
     return u64(result.toString());
   } else if (tag === AtomicTypeTag.U128) {
     const result = deserializer.deserializeU128();
     return u128(result.toString());
-  } else if (VectorTag.isInstance(tag)) {
+  } else if (tag === AtomicTypeTag.U256) {
+    const result = deserializer.deserializeU256();
+    return u256(result.toString());
+  }else if (VectorTag.isInstance(tag)) {
     const length = deserializer.deserializeUleb128AsU32();
     const result: any[] = [];
     for (let i = 0; i < length; i++) {

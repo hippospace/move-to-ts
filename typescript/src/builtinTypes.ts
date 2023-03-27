@@ -149,7 +149,7 @@ export class U32 extends UnsignedInt<U32> {
   static MAX = bigInt("4294967296");
 
   make(value: bigInt.BigInteger) {
-    return new U16(value);
+    return new U32(value);
   }
 
   checkBounds() {
@@ -203,15 +203,15 @@ export class U256 extends UnsignedInt<U256> {
   static MAX = bigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935");
 
   make(value: bigInt.BigInteger) {
-    return new U128(value);
+    return new U256(value);
   }
 
   checkBounds() {
-    if (this.value.lt(U128.MIN) || this.value.gt(U128.MAX)) {
+    if (this.value.lt(U256.MIN) || this.value.gt(U256.MAX)) {
       throw new Error(`Value out of bounds for U128: ${this.value}`);
     }
   }
 
-  min() { return U128.MIN; }
-  max() { return U128.MAX; }
+  min() { return U256.MIN; }
+  max() { return U256.MAX; }
 }
