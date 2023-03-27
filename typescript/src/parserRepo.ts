@@ -153,9 +153,9 @@ export function U16Parser(
         `U16Parser cannot parse type: ${getTypeTagParamlessName(typeTag)}`
     );
   }
-  if (typeof data !== "string") {
+  if (typeof data !== "number") {
     throw new Error(
-        `U16Parser expects string type as data but received: ${typeof data}`
+        `U16Parser expects number type as data but received: ${typeof data}`
     );
   }
   return new U16(bigInt(data));
@@ -171,9 +171,9 @@ export function U32Parser(
         `U32Parser cannot parse type: ${getTypeTagParamlessName(typeTag)}`
     );
   }
-  if (typeof data !== "string") {
+  if (typeof data !== "number") {
     throw new Error(
-        `U32Parser expects string type as data but received: ${typeof data}`
+        `U32Parser expects number type as data but received: ${typeof data}`
     );
   }
   return new U32(bigInt(data));
