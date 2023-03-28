@@ -38,6 +38,7 @@ attributes that will guide the transpiler to generate specific TypeScript utilit
 
 - `#[cmd]`: automatically generate command-line tool for invoking `public entry` functions
 - `#[method]`: allows you to call methods written in Move from TypeScript frontend
+- `#[view]`: allows you to perform arbitrary computation onchain using Move code, and return
 - `#[query]`: allows you to perform arbitrary computation onchain using Move code, and return
 the result of the computation to your TypeScript frontend, without going through consensus.
 
@@ -151,7 +152,8 @@ Example in Move:
 Usage in TypeScript:
 ```
 // note that this computation is performed in a fullnode and therefore has access to realtime onchain data
-const poolList = await view_get_pool_list(aptosClient, repo, []);
+let app = new App(aptosClient)
+const poolList = await app.address_name.module_name.view_get_pool_list([]);
 ```
 
 ## `#[query]`
@@ -205,7 +207,8 @@ Usage in TypeScript:
 ```
 // performs simulated computation using get_pool_list, and returns the the result from compute_pool_list()
 // note that this computation is performed in a fullnode and therefore has access to realtime onchain data
-const poolList = await query_get_pool_list(aptosClient, aptosAccount, repo, []);
+let app = new App(aptosClient)
+const poolList = await app.address_name.module_name.query_get_pool_list([]);
 ```
 
 
