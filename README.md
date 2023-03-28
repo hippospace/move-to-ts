@@ -38,6 +38,7 @@ attributes that will guide the transpiler to generate specific TypeScript utilit
 
 - `#[cmd]`: automatically generate command-line tool for invoking `public entry` functions
 - `#[method]`: allows you to call methods written in Move from TypeScript frontend
+- `#[view]`: allows you to perform arbitrary computation onchain using Move code, and return
 - `#[query]`: allows you to perform arbitrary computation onchain using Move code, and return
 the result of the computation to your TypeScript frontend, without going through consensus.
 
@@ -116,6 +117,45 @@ const orderBook = await OrderBook.load(...);
 const [quoteReceived, basePaid] = orderBook.simulate_swap_sdk(true, u64(100000))
 ```
 
+## `#[view]`
+
+The view attribute allows you to:
+1. Write arbitrary computation in Move, and return the result
+2. Execute the computation using realtime onchain data
+3. Obtain a specified output from fullnode as serialized return value
+
+Example in Move:
+```
+    struct PoolInfo has store, copy, drop {
+        pool_type: u8,
+        pool_idx: u8,
+    }
+
+    struct PoolList has key, copy, drop, store {
+        list: vector<PoolInfo>,
+    }
+
+    // computes some arbitrary Struct for output
+    #[view]
+    public fun get_pool_list(): PoolList {
+        let list = vector::empty<PoolInfo>();
+        vector::push_back(&mut list, PoolInfo {
+            pool_type: 0,
+            pool_idx: 0,
+        });
+
+        PoolList { list }
+    }
+
+```
+
+Usage in TypeScript:
+```
+// note that this computation is performed in a fullnode and therefore has access to realtime onchain data
+let app = new App(aptosClient)
+const poolList = await app.address_name.module_name.view_get_pool_list([]);
+```
+
 ## `#[query]`
 
 The query attribute allows you to:
@@ -125,6 +165,8 @@ The query attribute allows you to:
 
 Below we give a rather arbitrary example. In general, though, you may use it to query for example the complete list of
 users in a lending protocol that are eligible for liquidation.
+
+Notes, #[query] is an early solution designed by move-to-ts, now you can use #[view], which is natively supported by aptos
 
 Example in Move:
 ```
@@ -165,7 +207,8 @@ Usage in TypeScript:
 ```
 // performs simulated computation using get_pool_list, and returns the the result from compute_pool_list()
 // note that this computation is performed in a fullnode and therefore has access to realtime onchain data
-const poolList = await query_get_pool_list(aptosClient, aptosAccount, repo, []);
+let app = new App(aptosClient)
+const poolList = await app.address_name.module_name.query_get_pool_list([]);
 ```
 
 
