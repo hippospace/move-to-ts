@@ -611,19 +611,21 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
             return Err(diags);
         }
     }
-
-    // for view in ctx.views.iter() {
-    //     let command_res = generate_view_printer(view);
-    //     if let Ok((cmd_str, package_name)) = command_res {
-    //         commands.push(cmd_str);
-    //         imported_packages.insert(package_name);
-    //     } else {
-    //         let diag = command_res.err().unwrap();
-    //         let mut diags = Diagnostics::new();
-    //         diags.add(diag);
-    //         return Err(diags);
-    //     }
-    // }
+    for view in ctx.views.iter() {
+        if view.mi.value.address.into_addr_bytes().to_string().as_str() == "0x1" {
+            continue
+        }
+        let command_res = generate_view_printer(view);
+        if let Ok((cmd_str, package_name)) = command_res {
+            commands.push(cmd_str);
+            imported_packages.insert(package_name);
+        } else {
+            let diag = command_res.err().unwrap();
+            let mut diags = Diagnostics::new();
+            diags.add(diag);
+            return Err(diags);
+        }
+    }
 
     for show_iter_table in ctx.all_shows_iter_tables.iter() {
         let (mi, sname, sdef, field_name) = show_iter_table;

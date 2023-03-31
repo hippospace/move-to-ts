@@ -127,6 +127,7 @@ pub fn rename(name: &impl fmt::Display) -> String {
         "default" => "default__".to_string(),
         "for" => "for__".to_string(),
         "Object" => "Object__".to_string(),
+        "U256" => "U256__".to_string(),
         _ => {
             if name_str.starts_with("%#") {
                 // replace temporaries
