@@ -127,7 +127,12 @@ pub fn rename(name: &impl fmt::Display) -> String {
         "default" => "default__".to_string(),
         "for" => "for__".to_string(),
         "Object" => "Object__".to_string(),
+        "U16" => "U16__".to_string(),
+        "u16" => "u16__".to_string(),
+        "U32" => "U32__".to_string(),
+        "u32" => "u32__".to_string(),
         "U256" => "U256__".to_string(),
+        "u256" => "u256__".to_string(),
         _ => {
             if name_str.starts_with("%#") {
                 // replace temporaries
@@ -247,24 +252,24 @@ pub fn generate_topmost_index(packages: &[&String], is_async: bool) -> (String, 
     let filename = "index.ts".to_string();
     let exports = packages
         .iter()
-        .map(|package_name| format!("export * as {} from './{}';\n", package_name, package_name))
+        .map(|package_name| format!("export * as {} from './{}';\n", rename(package_name), package_name))
         .collect::<Vec<_>>()
         .join("");
 
     let imports = packages
         .iter()
-        .map(|package_name| format!("import * as {} from './{}';\n", package_name, package_name))
+        .map(|package_name| format!("import * as {} from './{}';\n", rename(package_name), package_name))
         .collect::<Vec<_>>()
         .join("");
 
     let loads = packages
         .iter()
-        .map(|p| format!("  {}.loadParsers(repo);", p))
+        .map(|p| format!("  {}.loadParsers(repo);", rename(p)))
         .join("\n");
 
     let app_fields = packages
         .iter()
-        .map(|p| format!("  {} : {}.App", p, p))
+        .map(|p| format!("  {} : {}.App", rename(p), rename(p)))
         .join("\n");
 
     let app_field_inits = packages
@@ -272,7 +277,7 @@ pub fn generate_topmost_index(packages: &[&String], is_async: bool) -> (String, 
         .map(|p| {
             format!(
                 "    this.{} = new {}.App(client, this.parserRepo, this.cache);",
-                p, p
+                rename(p), rename(p)
             )
         })
         .join("\n");

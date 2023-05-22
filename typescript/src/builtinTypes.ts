@@ -208,7 +208,7 @@ export class U256 extends UnsignedInt<U256> {
 
   checkBounds() {
     if (this.value.lt(U256.MIN) || this.value.gt(U256.MAX)) {
-      throw new Error(`Value out of bounds for U128: ${this.value}`);
+      throw new Error(`Value out of bounds for U256: ${this.value}`);
     }
   }
 
