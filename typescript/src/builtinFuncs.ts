@@ -192,6 +192,8 @@ export function printerReplacer(key: string, val: any) {
     if (tagFullname === "0x1::string::String") {
       const bytes = val.bytes as U8[];
       return u8str(bytes);
+    } else if (tagFullname === "0x1::object::Object"){
+      return val.inner;
     } else if (tagFullname === "0x1::type_info::TypeInfo") {
       const account_address = (
         val.account_address as HexString
@@ -286,6 +288,12 @@ export function payloadArg(val: any):any {
       const stringVal = val as ActualStringClass;
       const strVal = u8str(stringVal.bytes);
       return strVal;
+    } else if (
+        tag.address.toShortString() === "0x1" &&
+        tag.module === "object" &&
+        tag.name === "Object"
+    ) {
+      return val.inner.toShortString();
     } else {
       throw new Error(`Unexpected struct type: ${tag.getFullname()}`);
     }

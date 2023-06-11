@@ -269,10 +269,10 @@ ansi-styles@^4.1.0:
   dependencies:
     color-convert "^2.0.1"
 
-aptos@1.7.2:
-  version "1.7.2"
-  resolved "https://registry.yarnpkg.com/aptos/-/aptos-1.7.2.tgz#089251ecd2031980c07d2364503ee93ba33d56c7"
-  integrity sha512-unM7bPbu3UGoVB/EhTvA+QDo8nqb6pDfqttsKwC7nYavQnl4t5dxCoFfIFcbijBtSOTfo4is5ldi4Uz4cY9ESA==
+aptos@1.10.0:
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/aptos/-/aptos-1.10.0.tgz#83b1e89d47f76e872f8c8fceafa58e9445282c14"
+  integrity sha512-iapFseSv1GQn9nVXZzuk9LyrFCN/3/lg/kPgjbAeM2M66Fb2TZkN8khbTat4ol5qo4TXPWoMJdyzR8PwE6KlXA==
   dependencies:
     "@noble/hashes" "1.1.3"
     "@scure/bip39" "1.1.0"

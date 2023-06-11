@@ -15,7 +15,7 @@ import { AptosParserRepo } from "./parserRepo";
 import {StructTag, TypeTag} from "./typeTag";
 import { U128, U64, U8 } from "./builtinTypes";
 import {payloadArg} from "./builtinFuncs";
-import {ActualStringClass} from "./nativeFuncs";
+import {ActualObjectClass, ActualStringClass} from "./nativeFuncs";
 import {serializeMoveValueWithoutTag} from "./bcs";
 
 type AcceptedScriptFuncArgType =
@@ -25,7 +25,8 @@ type AcceptedScriptFuncArgType =
   | U128
   | HexString
   | boolean
-  | ActualStringClass;
+  | ActualStringClass
+  | ActualObjectClass;
 
 export type OptionTransaction = {
   maxGasAmount?: number;

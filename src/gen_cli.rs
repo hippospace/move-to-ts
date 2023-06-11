@@ -29,6 +29,11 @@ pub fn check_allowed_structs_for_entry_function(
             "new ActualStringClass({{bytes: strToU8({})}}, parseTypeTagOrThrow('0x1::string::String'))",
             name
         ))
+    } else if short_name == "0x1::object::Object" {
+        Ok(format!(
+            "new ActualObjectClass({{inner: new HexString({})}}, parseTypeTagOrThrow('0x1::object::Object'))",
+            name
+        ))
     } else {
         derr!((
             loc,
@@ -640,7 +645,7 @@ pub fn generate_cli(ctx: &Context) -> Result<(String, String), Diagnostics> {
     let filename = "cli.ts".to_string();
     let content = format!(
         r###"
-import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u16, u32, u64, u128, u256, print, strToU8, u8str, DummyCache, ActualStringClass, sendPayloadTx, sendPayloadTxAndLog, getSimulationKeys }} from "@manahippo/move-to-ts";
+import {{ AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u16, u32, u64, u128, u256, print, strToU8, u8str, DummyCache, ActualStringClass, ActualObjectClass, sendPayloadTx, sendPayloadTxAndLog, getSimulationKeys }} from "@manahippo/move-to-ts";
 import {{ AptosAccount, AptosClient, HexString, Types }} from "aptos";
 import {{ Command }} from "commander";
 import {{ getProjectRepo }} from "./";

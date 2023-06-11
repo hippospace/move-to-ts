@@ -383,7 +383,7 @@ export function std_vector_destroy_empty(
 }
 
 export function std_vector_swap(
-  vec: any[],
+  vec: ActualStringClass[],
   i: U64,
   j: U64,
   $c: AptosDataCache,
@@ -928,7 +928,198 @@ export class ActualAggregator {
     this.__app = app;
   }
 }
+export function aptos_std_crypto_algebra_add_internal (
+    handle_1: U64,
+    handle_2: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <S>*/
+): U64{
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_deserialize_internal (
+    bytes: U8[],
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <S, F>*/
+): [boolean, U64]{
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_pairing_internal (
+    g1_handle: U64,
+    g2_handle: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <G1, G2, Gt>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_multi_scalar_mul_internal (
+    element_handles: U64[],
+    scalar_handles: U64[],
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <G, S>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_zero_internal (
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <S>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_upcast_internal (
+    handle: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <S, L>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_debug_native_print (
+    x: any,
+    $c: AptosDataCache,
+): void {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_debug_native_stack_trace (
+    $c: AptosDataCache,
+): any {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_string_utils_native_format (
+    s: any,
+    type_tag: boolean,
+    canonicalize: boolean,
+    single_line: boolean,
+    include_int_types: boolean,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <T>*/
+): any {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_string_utils_native_format_list (
+    fmt: U8[],
+    val: any,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <T>*/
+): any {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_sub_internal (
+    handle_1: U64,
+    handle_2: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <G>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_sqr_internal (
+    handle: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <G>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_serialize_internal (
+    handle: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <S, F>*/
+): U8[] {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_scalar_mul_internal (
+    element_handle: U64,
+    scalar_handle: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <G, S>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_order_internal (
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <G>*/
+): U8[] {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_one_internal (
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <S>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_neg_internal (
+    handle: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <F>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_multi_pairing_internal (
+    g1_handles: U64[],
+    g2_handles: U64[],
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <G1, G2, Gt>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_mul_internal (
+    handle_1: U64,
+    handle_2: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <F>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_inv_internal (
+    handle: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <F>*/
+): [boolean, U64] {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_hash_to_internal (
+    dst: U8[],
+    bytes: U8[],
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <S, H>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_from_u64_internal (
+    value: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <S>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_eq_internal (
+    handle_1: U64,
+    handle_2: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <S>*/
+): boolean {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_downcast_internal (
+    handle: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <L, S>*/
+): [boolean, U64] {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_double_internal (
+    element_handle: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <G>*/
+): U64 {
+  throw new Error("Not Implemented");
+}
+export function aptos_std_crypto_algebra_div_internal (
+    handle_1: U64,
+    handle_2: U64,
+    $c: AptosDataCache,
+    $p: TypeTag[], /* <F>*/
+): [boolean, U64] {
+  throw new Error("Not Implemented");
 
+}
 export function aptos_std_algebra_add_internal (
     handle_1: U64,
     handle_2: U64,
@@ -1052,7 +1243,37 @@ function stringToU8Array(val: string): U8[] {
     (u) => new U8(bigInt(u))
   );
 }
+export class ActualObjectClass
+{
+  static moduleAddress = new HexString("0x1");
+  static moduleName = "object";
+  __app: AppType | null = null;
+  static structName: string = "Object";
+  static typeParameters: TypeParamDeclType[] = [
+    { name: "T", isPhantom: true }
+  ];
+  static fields: FieldDeclType[] = [
+    { name: "inner", typeTag: AtomicTypeTag.Address }];
 
+  inner: HexString;
+
+  constructor(proto: any, public typeTag: TypeTag) {
+    this.inner = proto['inner'] as HexString;
+  }
+
+  static Object__Parser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : ActualObjectClass {
+    const proto = parseStructProto(data, typeTag, repo, ActualObjectClass);
+    return new ActualObjectClass(proto, typeTag);
+  }
+
+  static makeTag($p: TypeTag[]): StructTag {
+    return new StructTag(ActualObjectClass.moduleAddress, ActualObjectClass.moduleName, "Object__", $p);
+  }
+  async loadFullState(app: AppType) {
+    this.__app = app;
+  }
+
+}
 export function aptos_std_type_info_type_of(
   $c: AptosDataCache,
   tags: TypeTag[]
