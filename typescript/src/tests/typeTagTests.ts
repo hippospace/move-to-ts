@@ -1,5 +1,6 @@
 import { AtomicTypeTag, getTypeTagFullname, parseTypeTag } from "../typeTag";
 import { assert, print } from "../utils";
+import {codeToStr, strToCode} from "../builtinFuncs";
 
 export function test() {
   function testAtomicTags() {
@@ -75,4 +76,13 @@ export function test() {
   genericTest(
     "0xfff29aab::sss::lV3<0xfff2775c19aab::coins::CoinA, 0xfff2775c19aab::coins::CoinB>"
   );
+  function codeTest(){
+    const code = '0x54'
+    const str = "T"
+    assert(codeToStr(code) === str)
+    console.log('Passed: codeToStr')
+    assert(strToCode(str) === code)
+    console.log('Passed: strToCode')
+  }
+  codeTest()
 }

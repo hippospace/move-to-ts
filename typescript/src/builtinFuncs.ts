@@ -11,6 +11,7 @@ import {HexString, } from "aptos";
 import stringify from "json-stable-stringify";
 import { StructInfoType } from "./parserRepo";
 import { ActualStringClass } from "./nativeFuncs";
+import {TextDecoder} from "util";
 
 export function abortCode(code: any) {
   if (code instanceof U64) {
@@ -253,6 +254,36 @@ export function set(lhs: any, rhs: any) {
 export function u8str(array: U8[]): string {
   const u8array = new Uint8Array(array.map((u) => u.toJsNumber()));
   return new TextDecoder().decode(u8array);
+}
+
+export function hexToBytes(hex: string): Uint8Array {
+  if (typeof hex !== 'string') {
+    throw new TypeError('hexToBytes: expected string, got ' + typeof hex);
+  }
+  if (hex.length % 2) throw new Error('hexToBytes: received invalid unpadded hex');
+  const array = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < array.length; i++) {
+    const j = i * 2;
+    const hexByte = hex.slice(j, j + 2);
+    const byte = Number.parseInt(hexByte, 16);
+    if (Number.isNaN(byte) || byte < 0) throw new Error('Invalid byte sequence');
+    array[i] = byte;
+  }
+  return array;
+}
+
+export function codeToStr(code: string): string{
+  if (code.startsWith('0x')){
+    code = code.slice(2)
+  }
+  return new TextDecoder().decode(hexToBytes(code))
+}
+export function strToCode(str: string): string{
+  let code = ''
+  for (let i = 0; i < str.length; i++) {
+    code += str.charCodeAt(i).toString(16)
+  }
+  return '0x'+code
 }
 
 export function strToU8(str: string): U8[] {
