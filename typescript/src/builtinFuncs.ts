@@ -11,7 +11,6 @@ import {HexString, } from "aptos";
 import stringify from "json-stable-stringify";
 import { StructInfoType } from "./parserRepo";
 import { ActualStringClass } from "./nativeFuncs";
-import {TextDecoder} from "util";
 
 export function abortCode(code: any) {
   if (code instanceof U64) {
