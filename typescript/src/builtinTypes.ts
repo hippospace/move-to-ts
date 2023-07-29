@@ -2,6 +2,7 @@ import bigInt from "big-integer";
 import { isAnyUnsignedInt, isUnsignedInt } from "./typeTest";
 
 export interface IntInterface<T> {
+  kind: string;
   value: bigInt.BigInteger;
   make(value: bigInt.BigInteger): T;
 }
@@ -21,10 +22,18 @@ export function takeBigInt(
 }
 
 export class UnsignedInt<T extends IntInterface<T>> {
+  public kind: string;
   public value: bigInt.BigInteger;
   constructor(value: bigInt.BigInteger | UnsignedInt<any> | string | number) {
     this.value = takeBigInt(value);
     this.checkBounds();
+    const subKind = (this as any).kind;
+    if (subKind) {
+      this.kind = subKind;
+    }
+    else {
+      this.kind = 'nokind';
+    }
   }
 
   checkBounds() {}
