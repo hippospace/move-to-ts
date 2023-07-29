@@ -12,6 +12,7 @@ import {
   VectorTag,
 } from "./typeTag";
 import { StructInfoType } from "./parserRepo";
+import { isHexString } from "./typeTest";
 
 /*
 BCS serialization of Move values
@@ -64,7 +65,7 @@ export function serializeMoveValue(
   tag: TypeTag
 ) {
   if (tag === AtomicTypeTag.Address) {
-    if (!(v instanceof HexString)) {
+    if (!(isHexString(v))) {
       throw new Error("Expected value to be HexString");
     }
     serializer.serializeFixedBytes(addressToUint8Array(v));
@@ -76,32 +77,32 @@ export function serializeMoveValue(
     }
     serializer.serializeBool(v);
   } else if (tag === AtomicTypeTag.U8) {
-    if (!(v instanceof U8)) {
+    if (!(U8.isInstance(v))) {
       throw new Error("Expected value to be U8");
     }
     serializer.serializeU8(v.toJsNumber());
   } else if (tag === AtomicTypeTag.U16) {
-    if (!(v instanceof U16)) {
+    if (!(U16.isInstance(v))) {
       throw new Error("Expected value to be U16");
     }
     serializer.serializeU16(v.toJsNumber());
   } else if (tag === AtomicTypeTag.U32) {
-    if (!(v instanceof U32)) {
+    if (!(U32.isInstance(v))) {
       throw new Error("Expected value to be U32");
     }
     serializer.serializeU32(v.toJsNumber());
   } else if (tag === AtomicTypeTag.U64) {
-    if (!(v instanceof U64)) {
+    if (!(U64.isInstance(v))) {
       throw new Error("Expected value to be U64");
     }
     serializer.serializeU64(v.toBigInt());
   } else if (tag === AtomicTypeTag.U128) {
-    if (!(v instanceof U128)) {
+    if (!(U128.isInstance(v))) {
       throw new Error("Expected value to be U128");
     }
     serializer.serializeU128(v.toBigInt());
   } else if (tag === AtomicTypeTag.U256) {
-    if (!(v instanceof U256)) {
+    if (!(U256.isInstance(v))) {
       throw new Error("Expected value to be U256");
     }
     serializer.serializeU256(v.toBigInt());
@@ -122,21 +123,21 @@ export function serializeMoveValueWithoutTag(
   serializer: BCS.Serializer,
   value: any
 ) {
-  if (value instanceof U8) {
+  if (U8.isInstance(value)) {
     serializeMoveValue(serializer, value, AtomicTypeTag.U8);
-  } else if (value instanceof U16) {
+  } else if (U16.isInstance(value)) {
     serializeMoveValue(serializer, value, AtomicTypeTag.U16);
-  } else if (value instanceof U32) {
+  } else if (U32.isInstance(value)) {
     serializeMoveValue(serializer, value, AtomicTypeTag.U32);
-  }else if (value instanceof U64) {
+  }else if (U64.isInstance(value)) {
     serializeMoveValue(serializer, value, AtomicTypeTag.U64);
-  } else if (value instanceof U128) {
+  } else if (U128.isInstance(value)) {
     serializeMoveValue(serializer, value, AtomicTypeTag.U128);
-  }  else if (value instanceof U256) {
+  }  else if (U256.isInstance(value)) {
     serializeMoveValue(serializer, value, AtomicTypeTag.U256);
   }else if (typeof value === "boolean") {
     serializeMoveValue(serializer, value, AtomicTypeTag.Bool);
-  } else if (value instanceof HexString) {
+  } else if (isHexString(value)) {
     serializeMoveValue(serializer, value, AtomicTypeTag.Address);
   } else if (value.hexString) {
     const addr = new HexString(value.hex());
@@ -200,7 +201,7 @@ export function deserializeMoveValue(
     }
     return result;
   } else if (StructTag.isInstance(tag)) {
-    if (tag instanceof SimpleStructTag) {
+    if (SimpleStructTag.isInstance(tag)) {
       const structInfo = tag.structInfo;
       const proto: any = {};
       for (const field of structInfo.fields) {

@@ -1,6 +1,7 @@
 import bigInt from "big-integer";
+import { isAnyUnsignedInt, isUnsignedInt } from "./typeTest";
 
-interface IntInterface<T> {
+export interface IntInterface<T> {
   value: bigInt.BigInteger;
   make(value: bigInt.BigInteger): T;
 }
@@ -12,7 +13,7 @@ export function takeBigInt(
     return bigInt(from);
   } else if (typeof from === "number") {
     return bigInt(from);
-  } else if (from instanceof UnsignedInt) {
+  } else if (isAnyUnsignedInt(from)) {
     return from.value;
   } else {
     return from;
@@ -109,6 +110,12 @@ export class UnsignedInt<T extends IntInterface<T>> {
 }
 
 export class U8 extends UnsignedInt<U8> {
+  kind = 'U8';
+
+  static isInstance(v: any): v is U8 {
+    return v && v.kind === 'U8';
+  }
+
   static MIN = bigInt(0);
   static MAX = bigInt(255);
 
@@ -127,6 +134,12 @@ export class U8 extends UnsignedInt<U8> {
 }
 
 export class U16 extends UnsignedInt<U16> {
+  kind = 'U16';
+
+  static isInstance(v: any): v is U16 {
+    return v && v.kind === 'U16';
+  }
+
   static MIN = bigInt(0);
   static MAX = bigInt("65536");
 
@@ -145,6 +158,12 @@ export class U16 extends UnsignedInt<U16> {
 }
 
 export class U32 extends UnsignedInt<U32> {
+  kind = 'U32';
+
+  static isInstance(v: any): v is U32 {
+    return v && v.kind === 'U32';
+  }
+
   static MIN = bigInt(0);
   static MAX = bigInt("4294967296");
 
@@ -163,6 +182,12 @@ export class U32 extends UnsignedInt<U32> {
 }
 
 export class U64 extends UnsignedInt<U64> {
+  kind = 'U64';
+
+  static isInstance(v: any): v is U64 {
+    return v && v.kind === 'U64';
+  }
+
   static MIN = bigInt(0);
   static MAX = bigInt("18446744073709551615");
 
@@ -181,6 +206,12 @@ export class U64 extends UnsignedInt<U64> {
 }
 
 export class U128 extends UnsignedInt<U128> {
+  kind = 'U128';
+
+  static isInstance(v: any): v is U128 {
+    return v && v.kind === 'U128';
+  }
+
   static MIN = bigInt(0);
   static MAX = bigInt("340282366920938463463374607431768211455");
 
@@ -199,6 +230,12 @@ export class U128 extends UnsignedInt<U128> {
 }
 
 export class U256 extends UnsignedInt<U256> {
+  kind = 'U256';
+
+  static isInstance(v: any): v is U256 {
+    return v && v.kind === 'U256';
+  }
+
   static MIN = bigInt(0);
   static MAX = bigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935");
 

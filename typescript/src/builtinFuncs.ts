@@ -11,9 +11,10 @@ import {HexString, } from "aptos";
 import stringify from "json-stable-stringify";
 import { StructInfoType } from "./parserRepo";
 import { ActualStringClass } from "./nativeFuncs";
+import { isHexString, isUnsignedInt } from "./typeTest";
 
 export function abortCode(code: any) {
-  if (code instanceof U64) {
+  if (U64.isInstance(code)) {
     // consier making it nicer by parsing the first and second byte??
     return new Error(`${code.value.toString()}`);
   }
@@ -143,12 +144,12 @@ export function veq(lhs: any, rhs: any): boolean {
 
 export function copy<T>(val: T): T {
   const v = val as unknown as any;
-  if (val instanceof HexString) {
+  if (isHexString(val)) {
     // address & signer are immutable
     return val;
   } else if (typeof val === "boolean") {
     return val;
-  } else if (val instanceof UnsignedInt) {
+  } else if (isUnsignedInt(val)) {
     return val.copy() as unknown as T;
   } else if (val instanceof Array) {
     return val.map((ele) => copy(ele)) as unknown as T;
@@ -170,14 +171,14 @@ export function printerReplacer(key: string, val: any) {
   if (key === "typeTag" || key === "__app") {
     return undefined;
   }
-  if (val instanceof HexString) {
+  if (isHexString(val)) {
     return val.toShortString();
   } else if (typeof val === "boolean") {
     return val;
   } else if (typeof val === "string") {
     return val;
-  } else if (val instanceof UnsignedInt) {
-    if (val instanceof U8) {
+  } else if (isUnsignedInt(val)) {
+    if (U8.isInstance(val)) {
       return val.toJsNumber();
     } else {
       return val.value.toString();
@@ -185,7 +186,7 @@ export function printerReplacer(key: string, val: any) {
   } else if (val instanceof Array) {
     // optimize for U8[]?
     return val;
-  } else if (val.typeTag instanceof StructTag) {
+  } else if (StructTag.isInstance(val.typeTag)) {
     // check for String
     const tag = val.typeTag as StructTag;
     const tagFullname = tag.getFullname();
@@ -220,15 +221,15 @@ export function print<T>(val: T) {
 }
 
 export function set(lhs: any, rhs: any) {
-  if (lhs instanceof HexString) {
-    if (!(rhs instanceof HexString)) {
+  if (isHexString(lhs)) {
+    if (!(isHexString(rhs))) {
       throw new Error("Expect both lhs and rhs to be HexString!");
     }
     (lhs as unknown as any).hexString = (rhs as unknown as any).hexString;
   } else if (typeof lhs === "boolean") {
     throw new Error("Mutating boolean value by reference not supported");
-  } else if (lhs instanceof UnsignedInt) {
-    if (!(rhs instanceof UnsignedInt)) {
+  } else if (isUnsignedInt(lhs)) {
+    if (!(isUnsignedInt(rhs))) {
       throw new Error("Expect both lhs and rhs to be UnsignedInt!");
     }
     lhs.$set(rhs);
@@ -294,15 +295,15 @@ export function strToU8(str: string): U8[] {
 }
 
 export function payloadArg(val: any):any {
-  if (val instanceof UnsignedInt) {
-    if (val instanceof U8) {
+  if (isUnsignedInt(val)) {
+    if (U8.isInstance(val)) {
       return val.toJsNumber();
-    } else if (val instanceof U64 || val instanceof U128) {
+    } else if (U64.isInstance(val) || U128.isInstance(val)) {
       return val.value.toString();
     } else {
       throw new Error("Only expect U8, U64, or U128 for integer types");
     }
-  } else if (val instanceof HexString) {
+  } else if (isHexString(val)) {
     return val.toShortString();
   } else if (val.hexString) {
     return val.toShortString();
@@ -341,11 +342,11 @@ export function u8ArrayArg(val: U8[]): string {
 }
 
 export function moveValueToOpenApiObject(val: any, typeTag: TypeTag): any {
-  if (val instanceof U8) {
+  if (U8.isInstance(val)) {
     return val.toJsNumber();
-  } else if (val instanceof U64 || val instanceof U128) {
+  } else if (U64.isInstance(val) || U128.isInstance(val)) {
     return val.value.toString();
-  } else if (val instanceof HexString) {
+  } else if (isHexString(val)) {
     return val.hex();
   }
   // vector

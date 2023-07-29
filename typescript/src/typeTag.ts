@@ -66,6 +66,11 @@ export class StructTag {
 }
 
 export class SimpleStructTag extends StructTag {
+  readonly subkind = 'SimpleStructTag';
+  static isInstance(val: any): val is SimpleStructTag {
+    return val && val.subkind === 'SimpleStructTag';
+  }
+
   constructor(public structInfo: StructInfoType, typeParams: TypeTag[] = []) {
     super(
       structInfo.moduleAddress,

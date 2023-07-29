@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {HexString, TxnBuilderTypes, BCS} from "aptos";
+import { isHexString } from "./typeTest";
 const {
   TypeTagBool,
   TypeTagU8,
@@ -277,7 +278,7 @@ export function serializeArg(argVal: any, argType: TxnBuilderTypes.TypeTag, seri
   }
   if (argType instanceof TypeTagAddress) {
     let addr: TxnBuilderTypes.AccountAddress;
-    if (typeof argVal === "string" || argVal instanceof HexString) {
+    if (typeof argVal === "string" || isHexString(argVal)) {
       addr = AccountAddress.fromHex(argVal);
     } else if (argVal instanceof AccountAddress) {
       addr = argVal;
