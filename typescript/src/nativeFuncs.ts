@@ -823,9 +823,111 @@ export function aptos_std_table_drop_unchecked_box(
   return $c.table_drop_unchecked_box(table);
 }
 
+export function aptos_framework_aggregator_v2_copy_snapshot (
+  snapshot: any,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <Element>*/
+): any {
+  throw new Error("Not Implemented");
+
+}
+
+export function aptos_framework_aggregator_v2_create_aggregator (
+  max_value: any,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <IntElement>*/
+): any {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_aggregator_v2_create_snapshot (
+  value: any,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <Element>*/
+): any {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_aggregator_v2_create_unbounded_aggregator (
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <IntElement>*/
+): any {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_aggregator_v2_read (
+  aggregator: any,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <IntElement>*/
+): any {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_aggregator_v2_read_snapshot (
+  snapshot: any,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <Element>*/
+): any {
+  throw new Error("Not Implemented");
+}
+export function aptos_framework_aggregator_v2_snapshot (
+  aggregator: any,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <IntElement>*/
+): any {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_event_write_module_event_to_store (
+  msg: any,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <T>*/
+): void {
+  throw new Error("Not Implemented");
+
+}
+export function aptos_framework_aggregator_v2_string_concat (
+  before: any,
+  snapshot: any,
+  after: any,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <IntElement>*/
+): any {
+  throw new Error("Not Implemented");
+}
+export function aptos_framework_aggregator_v2_try_sub (
+  aggregator: any,
+  value: any,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <IntElement>*/
+): boolean {
+  throw new Error("Not Implemented");
+
+}
+
+export function aptos_framework_aggregator_v2_try_add (
+  aggregator: any,
+  value: any,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <IntElement>*/
+): boolean {
+  throw new Error("Not Implemented");
+
+}
+
 export function aptos_framework_transaction_context_get_script_hash(
   $c: AptosDataCache
 ): U8[] {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_transaction_context_generate_unique_address (
+  $c: AptosDataCache,
+): HexString {
+  throw new Error("Not Implemented");
+}
+
+export function aptos_framework_transaction_context_get_txn_hash($c: AptosDataCache): U8[]{
   throw new Error("Not Implemented");
 }
 
